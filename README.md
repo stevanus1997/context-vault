@@ -15,6 +15,14 @@ AI-first product boilerplate — lapisan AI + knowledge (bukan kode) untuk menge
 ```
 Lalu `architect` (fondasi teknis), `feature` (bikin fitur), `ship`/`drop` (lifecycle), `render-docs` (doc human-readable).
 
+## Fondasi teknis
+```
+/architect          # tetapkan stack (greenfield) / rekam stack+capabilities (brownfield) + konvensi
+/extract            # (brownfield, opsional) front-load business/ dari kode existing
+```
+Urutan brownfield: `/init` -> `/architect` -> `/extract` (opsional) -> `/feature`.
+Urutan greenfield: `/init` -> `/architect` -> `/feature`.
+
 ## Bikin fitur
 ```
 /feature <nama>     # konduktor: intake (bisnis) -> fanout (lintas-app) -> plan (teknis)
