@@ -1,0 +1,15 @@
+# Visual companion / brainstorming artifacts
+.superpowers/
+
+# OS
+.DS_Store
+
+# Node (relevan pas apps udah ada)
+node_modules/
+dist/
+build/
+.env
+.env.local
+
+# Logs
+*.log
