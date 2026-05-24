@@ -29,8 +29,14 @@ Urutan greenfield: `/init` -> `/architect` -> `/feature`.
 ```
 Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada gate; agent `critic` me-review di gate penting.
 
+## Selesai & lifecycle
+```
+/ship <fitur>       # finishing: review + quality + cek alignment ke business -> PR -> tandai shipped
+/drop <fitur>       # batalkan fitur (tandai dropped + alasan, simpan sebagai memori keputusan)
+```
+
 ## Desain
 Lihat `docs/superpowers/specs/2026-05-24-ai-first-boilerplate-design.md`.
 
 ## Status
-Fase 1 (foundation + init). Roadmap di `docs/superpowers/plans/`.
+Fase 1–4 selesai: init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop). Berikutnya Fase 5: render-docs (doc human-readable).
