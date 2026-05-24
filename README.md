@@ -35,8 +35,14 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 /drop <fitur>       # batalkan fitur (tandai dropped + alasan, simpan sebagai memori keputusan)
 ```
 
+## Dokumentasi
+```
+/render-docs        # generate doc HTML human-readable dari knowledge -> control/docs/site/index.html
+```
+Otomatis dipanggil `ship`; bisa juga manual untuk preview.
+
 ## Desain
 Lihat `docs/superpowers/specs/2026-05-24-ai-first-boilerplate-design.md`.
 
 ## Status
-Fase 1–4 selesai: init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop). Berikutnya Fase 5: render-docs (doc human-readable).
+Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end.
