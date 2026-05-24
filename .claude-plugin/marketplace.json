@@ -1,0 +1,19 @@
+{
+  "name": "context-vault",
+  "owner": {
+    "name": "stevanus",
+    "email": "stevanus.yohanesvcn@gmail.com"
+  },
+  "metadata": {
+    "description": "AI-first product boilerplate.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "context-vault",
+      "source": "./plugin",
+      "description": "Skills, agent, dan rules untuk mengelola produk multi-app secara AI-first.",
+      "version": "0.1.0"
+    }
+  ]
+}
