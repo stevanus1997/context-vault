@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__PRODUCT__ — Product Docs</title>
+<style>
+  :root{ --bg:#fbfaf8; --panel:#f4f1ea; --ink:#37352f; --muted:#8a8578;
+         --line:#eae3d3; --accent:#b08968; --chip:#efe9dc; --chipink:#7a6f54; }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);
+       color:var(--ink);line-height:1.6;display:flex}
+  aside{width:240px;min-height:100vh;background:var(--panel);border-right:1px solid var(--line);
+        padding:24px 16px;position:sticky;top:0;align-self:flex-start}
+  aside h1{font-size:16px;margin:0 0 4px} aside .tag{color:var(--muted);font-size:12px;margin-bottom:20px}
+  aside nav a{display:block;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
+  aside nav a:hover{background:#fff}
+  main{flex:1;padding:40px 48px;max-width:900px}
+  section{margin-bottom:48px} h2{font-size:24px;border-bottom:2px solid var(--line);padding-bottom:8px}
+  h3{font-size:17px;margin-top:24px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:12px 0;
+        box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .card h3{margin-top:0}
+  .chip{display:inline-block;background:var(--chip);color:var(--chipink);padding:3px 10px;
+        border-radius:999px;font-size:12px;margin:2px 4px 2px 0}
+  .meta{color:var(--muted);font-size:13px}
+  .status{font-size:12px;padding:2px 8px;border-radius:6px}
+  .status.active{background:#e6efe1;color:#4a7a3f} .status.shipped{background:#dfeaf6;color:#3a6ea5}
+  table{border-collapse:collapse;width:100%} td,th{border:1px solid var(--line);padding:8px 10px;text-align:left;font-size:14px}
+  code{background:var(--panel);padding:1px 5px;border-radius:4px;font-size:13px}
+</style>
+</head>
+<body>
+<aside>
+  <h1>📦 __PRODUCT__</h1>
+  <div class="tag">Product Docs · auto-generated</div>
+  <nav>
+    <a href="#overview">📊 Overview</a>
+    <a href="#apps">🧩 Apps</a>
+    <a href="#capabilities">🔌 Kapabilitas</a>
+    <a href="#flows">🔀 Flows</a>
+    <a href="#glossary">📖 Glossary</a>
+  </nav>
+</aside>
+<main>
+  <!-- SLOT:overview -->
+  <section id="overview"><h2>Overview</h2><p class="meta">Ringkasan produk dari domain.md.</p></section>
+  <!-- SLOT:apps -->
+  <section id="apps"><h2>Apps</h2>
+    <div class="card"><h3>web <span class="meta">· fullstack</span></h3>
+      <p>Builder + dashboard.</p>
+      <div><span class="chip">auth</span><span class="chip">checkout</span></div></div>
+  </section>
+  <!-- SLOT:capabilities -->
+  <section id="capabilities"><h2>Kapabilitas</h2><p class="meta">Matriks kapabilitas × app.</p></section>
+  <!-- SLOT:flows -->
+  <section id="flows"><h2>Flows</h2><p class="meta">Business flows dari flows.md.</p></section>
+  <!-- SLOT:glossary -->
+  <section id="glossary"><h2>Glossary</h2><p class="meta">Istilah dari glossary.md.</p></section>
+</main>
+</body>
+</html>
