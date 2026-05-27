@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__PRODUCT__ — Business Discovery</title>
+<style>
+  /* palet warm di-reuse dari render-docs/template.html */
+  :root{ --bg:#fbfaf8; --panel:#f4f1ea; --ink:#37352f; --muted:#8a8578;
+         --line:#eae3d3; --accent:#b08968; --chip:#efe9dc; --chipink:#7a6f54;
+         --ok:#4a7a3f; --okbg:#e6efe1; --warn:#9a6b2f; --warnbg:#f3e8d6; --spec:#a14b4b; --specbg:#f3dede; }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);
+       color:var(--ink);line-height:1.6;display:flex}
+  aside{width:240px;min-height:100vh;background:var(--panel);border-right:1px solid var(--line);
+        padding:24px 16px;position:sticky;top:0;align-self:flex-start}
+  aside h1{font-size:16px;margin:0 0 4px} aside .tag{color:var(--muted);font-size:12px;margin-bottom:20px}
+  aside nav a{display:block;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
+  aside nav a:hover{background:#fff}
+  main{flex:1;padding:40px 48px;max-width:900px}
+  section{margin-bottom:48px} h2{font-size:24px;border-bottom:2px solid var(--line);padding-bottom:8px}
+  h3{font-size:17px;margin-top:24px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:12px 0;
+        box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .card h3{margin-top:0}
+  .chip{display:inline-block;background:var(--chip);color:var(--chipink);padding:3px 10px;
+        border-radius:999px;font-size:12px;margin:2px 4px 2px 0}
+  .meta{color:var(--muted);font-size:13px}
+  .conf{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+  .conf.verified{background:var(--okbg);color:var(--ok)}
+  .conf.assumed{background:var(--warnbg);color:var(--warn)}
+  .conf.spec{background:var(--specbg);color:var(--spec)}
+  sup.ref a{color:var(--accent);text-decoration:none;font-size:11px}
+  .verdict{font-size:18px;font-weight:700;padding:4px 12px;border-radius:8px;display:inline-block}
+  .verdict.go{background:var(--okbg);color:var(--ok)}
+  .verdict.caution{background:var(--warnbg);color:var(--warn)}
+  .verdict.nogo{background:var(--specbg);color:var(--spec)}
+  table{border-collapse:collapse;width:100%} td,th{border:1px solid var(--line);padding:8px 10px;text-align:left;font-size:14px}
+  code{background:var(--panel);padding:1px 5px;border-radius:4px;font-size:13px}
+  ol.sources{font-size:13px;color:var(--muted)} ol.sources a{color:var(--accent)}
+</style>
+</head>
+<body>
+<aside>
+  <h1>🧭 __PRODUCT__</h1>
+  <div class="tag">Business Discovery · draft</div>
+  <nav>
+    <a href="#ide">💡 Ide</a>
+    <a href="#masalah">🎯 Masalah</a>
+    <a href="#pengguna">👥 Pengguna</a>
+    <a href="#value">✨ Value</a>
+    <a href="#pasar">📈 Pasar</a>
+    <a href="#kompetitor">⚔️ Kompetitor</a>
+    <a href="#monetisasi">💰 Monetisasi</a>
+    <a href="#risiko">⚠️ Risiko</a>
+    <a href="#verdict">⚖️ Verdict</a>
+    <a href="#sumber">🔗 Sumber</a>
+  </nav>
+  <div class="tag" style="margin-top:20px">Label: <span class="conf verified">terverifikasi</span> <span class="conf assumed">asumsi</span> <span class="conf spec">spekulatif</span></div>
+</aside>
+<main>
+  <!-- SLOT:ide -->
+  <section id="ide"><h2>Ide</h2><p class="meta">Ide mentah + konsep yang dipertajam.</p></section>
+  <!-- SLOT:masalah -->
+  <section id="masalah"><h2>Masalah</h2><p class="meta">Masalah yang dipecahkan + buat siapa.</p></section>
+  <!-- SLOT:pengguna -->
+  <section id="pengguna"><h2>Pengguna / Segmen</h2><p class="meta">Target pengguna & segmen.</p></section>
+  <!-- SLOT:value -->
+  <section id="value"><h2>Value Proposition</h2><p class="meta">Nilai inti & kenapa beda.</p></section>
+  <!-- SLOT:pasar -->
+  <section id="pasar"><h2>Pasar</h2><p class="meta">Ukuran/arah pasar — tiap klaim berlabel + bersumber.</p></section>
+  <!-- SLOT:kompetitor -->
+  <section id="kompetitor"><h2>Kompetitor</h2><p class="meta">Pemain existing + posisi/harga.</p></section>
+  <!-- SLOT:monetisasi -->
+  <section id="monetisasi"><h2>Monetisasi</h2><p class="meta">Model pendapatan kandidat.</p></section>
+  <!-- SLOT:risiko -->
+  <section id="risiko"><h2>Risiko</h2><p class="meta">Yang bisa bikin gagal.</p></section>
+  <!-- SLOT:verdict -->
+  <section id="verdict"><h2>Verdict</h2><p class="meta"><span class="verdict caution">GO / CAUTION / NO-GO</span> + alasan. Keputusan akhir di tangan operator.</p></section>
+  <!-- SLOT:sumber -->
+  <section id="sumber"><h2>Sumber</h2><ol class="sources"><li>Daftar sumber riset (URL + tanggal akses).</li></ol></section>
+</main>
+</body>
+</html>
