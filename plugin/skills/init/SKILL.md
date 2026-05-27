@@ -24,6 +24,8 @@ Sampaikan kesimpulan deteksi + rekomendasi:
 Minta user konfirmasi sebelum lanjut. JANGAN menulis apa pun sebelum dikonfirmasi.
 
 ### 3. Framing Q&A (singkat, level produk)
+> Bila framing produk SUDAH tersedia (mis. dipanggil setelah skill `discovery`: nama produk + satu kalimat + apps sudah diketahui), JANGAN tanya ulang — pakai itu, cukup konfirmasi ringkas ke user, lalu lanjut ke langkah 4.
+
 Tanyakan satu per satu:
 - Nama produk?
 - Satu kalimat: ngapain & buat siapa?
