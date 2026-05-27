@@ -10,10 +10,19 @@ AI-first product boilerplate — lapisan AI + knowledge (bukan kode) untuk menge
 
 ## Mulai produk
 ```
-# di folder produk (baru atau existing)
+# punya ide masih MENTAH? mulai dari sini (business consultant, lalu auto lanjut ke init)
+/discovery
+
+# produk sudah jelas (atau existing)? langsung:
 /init
 ```
 Lalu `architect` (fondasi teknis), `feature` (bikin fitur), `ship`/`drop` (lifecycle), `render-docs` (doc human-readable).
+
+## Validasi ide (opsional, greenfield)
+```
+/discovery          # business consultant pra-init: riset pasar/kompetitor/monetisasi + verdict go/no-go
+```
+Buat ide yang masih mentah. Nol teknis. Output: dok strategis HTML (`control/docs/discovery.html`) + seed awal `control/business/`; di akhir otomatis panggil `/init`. Tiap klaim disitasi + dilabeli keyakinan; `critic` menantang sebelum kamu menerima.
 
 ## Fondasi teknis
 ```
@@ -21,7 +30,8 @@ Lalu `architect` (fondasi teknis), `feature` (bikin fitur), `ship`/`drop` (lifec
 /extract            # (brownfield, opsional) front-load business/ dari kode existing
 ```
 Urutan brownfield: `/init` -> `/architect` -> `/extract` (opsional) -> `/feature`.
-Urutan greenfield: `/init` -> `/architect` -> `/feature`.
+Urutan greenfield (ide jelas): `/init` -> `/architect` -> `/feature`.
+Urutan greenfield (ide mentah): `/discovery` -> `/init` -> `/architect` -> `/feature`.
 
 ## Bikin fitur
 ```
@@ -45,4 +55,4 @@ Otomatis dipanggil `ship`; bisa juga manual untuk preview.
 Lihat `docs/superpowers/specs/2026-05-24-ai-first-boilerplate-design.md`.
 
 ## Status
-Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end.
+Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end. **Tambahan:** `discovery` — business consultant pra-`init` (validasi ide mentah → seed `business/` + HTML strategis).
