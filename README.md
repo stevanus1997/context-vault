@@ -29,15 +29,17 @@ Buat ide yang masih mentah. Nol teknis. Output: dok strategis HTML (`control/doc
 /architect          # tetapkan stack (greenfield) / rekam stack+capabilities (brownfield) + konvensi
 /extract            # (brownfield, opsional) front-load business/ dari kode existing
 ```
-Urutan brownfield: `/init` -> `/architect` -> `/extract` (opsional) -> `/feature`.
-Urutan greenfield (ide jelas): `/init` -> `/architect` -> `/feature`.
-Urutan greenfield (ide mentah): `/discovery` -> `/init` -> `/architect` -> `/feature`.
+Urutan brownfield: `/init` -> `/architect` -> `/extract` (opsional) -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
+Urutan greenfield (ide jelas): `/init` -> `/architect` -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
+Urutan greenfield (ide mentah): `/discovery` -> `/init` -> `/architect` -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
 
 ## Bikin fitur
 ```
 /feature <nama>     # konduktor: intake (bisnis) -> fanout (lintas-app) -> plan (teknis)
+/breakdown <nama>   # pecah plan flat -> tasks.yaml (task kecil berurutan, tanpa kode)
+/build <nama>       # eksekusi tasks.yaml: implementer subagent per task (TDD) + review + gate
 ```
-Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada gate; agent `critic` me-review di gate penting.
+Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada gate; agent `critic` me-review di gate penting. `breakdown` & `build` dipanggil eksplisit (boleh sesi terpisah) sebelum `ship`.
 
 ## Selesai & lifecycle
 ```
