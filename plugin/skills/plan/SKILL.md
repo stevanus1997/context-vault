@@ -39,3 +39,4 @@ Tampilkan tiap plan → minta **approve per app**.
 ## Catatan
 - JANGAN menetapkan stack/framework di sini — itu sudah ditetapkan `architect`. `plan` membaca yang ADA. Bila app belum punya fondasi, hentikan & arahkan user menjalankan `architect` dulu.
 - Setelah semua plan di-approve, kontrol kembali ke `feature` (yang menandai status `active`).
+- `plan` tetap FLAT. Dekomposisi jadi task kecil (siap-eksekusi) = jatah skill `breakdown`, bukan di sini.
