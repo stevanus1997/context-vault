@@ -29,8 +29,8 @@ Jangan lanjut tahap berikutnya sebelum gate tahap sebelumnya di-approve user.
 Setelah semua `plan` di-approve, set `control/features/<nama>/feature.yaml` → `status: active`.
 
 ### 4. Ringkas
-Tampilkan artifact yang dihasilkan (`business.md`, `fanout.md`, `plans/*`). Sarankan langkah berikutnya: implementasi (pakai pola executing-plans/subagent), lalu `ship` (Fase 4) saat selesai.
+Tampilkan artifact yang dihasilkan (`business.md`, `fanout.md`, `plans/*`). Sarankan langkah berikutnya: jalankan `breakdown` (pecah plan jadi `tasks.yaml`) lalu `build` (eksekusi) — sebaiknya masing-masing sesi terpisah — baru `ship` saat selesai.
 
 ## Catatan
 - `intake`/`fanout`/`plan` modular — bisa dipanggil sendiri untuk mengulang satu tahap (mis. `fanout` ulang setelah revisi `business.md`).
-- Transisi `shipped`/`dropped` ditangani skill `ship`/`drop` (Fase 4).
+- Eksekusi implementasi ditangani `breakdown` → `build`; transisi `shipped`/`dropped` ditangani `ship`/`drop`.
