@@ -11,5 +11,8 @@ build/
 .env
 .env.local
 
+# Exception: `build/` di atas untuk artefak app, BUKAN skill dir `build`
+!plugin/skills/build/
+
 # Logs
 *.log
