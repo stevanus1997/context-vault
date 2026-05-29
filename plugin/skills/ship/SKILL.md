@@ -33,5 +33,5 @@ Baca `control/features/<fitur>/feature.yaml` (harus `status: active`), `business
 - Regenerate doc: invoke skill `render-docs` bila tersedia; bila belum ada (Fase 5), ingatkan user untuk regenerate nanti.
 
 ## Catatan
-- `ship` TIDAK mengeksekusi/menulis fitur — implementasi dilakukan sebelumnya (pola executing-plans/subagent). `ship` = finishing gate + kirim.
+- `ship` TIDAK mengeksekusi/menulis fitur — implementasi dilakukan sebelumnya oleh `build` (atau manual). `ship` = finishing gate + kirim, dan yang membuat PR / menandai `shipped` (bukan `build`).
 - Hanya jalan pada fitur `status: active`. Bila belum, hentikan & jelaskan.
