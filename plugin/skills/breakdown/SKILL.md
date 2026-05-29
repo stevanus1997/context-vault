@@ -1,0 +1,35 @@
+---
+name: breakdown
+description: Use untuk memecah plan flat sebuah fitur (status active) jadi tasks.yaml — daftar task kecil berurutan (files + approach + test cases, TANPA kode) yang nanti dieksekusi build. Trigger — "breakdown <fitur>", "pecah task <fitur>", "bikin tasks <fitur>". Jalankan dari root produk yang punya control/.
+---
+
+# breakdown — Plan Flat → Task List (`tasks.yaml`)
+
+Tujuan: ubah `plans/*.md` (flat) jadi rencana kerja siap-eksekusi: task kecil, berurutan, ber-dependency, dengan `files` + `approach` + kasus `test` — TANPA kode. Output dimakan `build`. Jalankan dari root produk (punya `control/`).
+
+> Skema lengkap `tasks.yaml` + aturan granularitas + contoh ada di `${CLAUDE_PLUGIN_ROOT}/skills/breakdown/reference.md` — baca itu dulu.
+
+## Langkah
+
+### 1. Baca input
+Baca `control/features/<fitur>/plans/_shared.md` + `plans/<app>.md` + `fanout.md` (untuk Urutan lintas-app) + `control/workspace.yaml` (app/path/stack). **Prasyarat:** `feature.yaml` `status: active`. Bila belum, hentikan & arahkan ke `feature`/`plan`. (Boleh mengintip ringan struktur kode untuk menakar granularitas; baca-kode mendalam = jatah `build`.)
+
+### 2. Iris milestone + task
+Iris jadi **milestone** (slice logis: fondasi dulu, turunan menyusul) lalu **task** di dalamnya. Granularitas: **satu task = unit testable terkecil**. Rasionalisasi hierarki fitur (mis. "register by google" = flow OAuth yang sama dengan "login by google" → satu milestone OAuth per provider).
+
+### 3. Enrich tiap task
+Isi tiap task: `files` (path create/modify/test — WHERE), `approach` (1-2 baris HOW ringkas), `test` (daftar kasus yang harus lulus — WHAT). **JANGAN tulis kode implementasi** — itu jatah `build` (just-in-time, lawan kode terkini). `breakdown` **TIDAK** memanggil `writing-plans`.
+
+### 4. Urutan & dependency
+Tentukan `deps` tiap task dari: kontrak `_shared.md` (fondasi paling dulu), Urutan `fanout.md` (lintas-app, mis. `api` sebelum `web`), dependency logis intra-app.
+
+### 5. Critic (opsional)
+Untuk fitur besar/berisiko, invoke subagent `critic` atas peta task: urutan keliru? milestone kegedean? dependency kelewat?
+
+### 6. Tulis output (GATE)
+Tulis `control/features/<fitur>/tasks.yaml` sesuai skema reference, semua `status: pending`. Tampilkan **PETA TASK** (milestone × app × task + `deps` + `files` + kasus `test`) → minta **approve/koreksi**. Di gate ini pengguna belum melihat kode — hanya menyetujui rencana kerja. Murah & cepat.
+
+## Catatan
+- Output = input `build`. JANGAN nulis kode di sini.
+- `tasks.yaml` `status` jadi sumber progres + mekanisme resume `build`.
+- `plan` tetap flat; `breakdown` yang menambah struktur task.
