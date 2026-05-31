@@ -44,6 +44,8 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 
 > `breakdown` kini bisa wakili kerja non-file (`actions:` migrate/install/env) & langkah manusia (`manual:`/status `needs_human`); `build` jalanin+verifikasi actions (migrasi lewat gate) dan uji integrasi cross-app; `build`/`ship` sadar multi-repo (branch & PR per repo).
 
+> Kalau sebuah fitur butuh **app baru** (belum ada di `workspace.yaml`), `fanout` nandain dan `feature` otomatis panggil `add-app` (declare entri → `architect` → `wire`) sebelum `plan`. `add-app <nama>` juga bisa dipanggil standalone buat numbuhin produk pasca-`init`.
+
 ## Selesai & lifecycle
 ```
 /ship <fitur>       # finishing: review + quality + cek alignment ke business -> PR -> tandai shipped
