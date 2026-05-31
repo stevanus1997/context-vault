@@ -28,7 +28,7 @@ Boot app-app terkait bareng (path/stack `workspace.yaml`), jalankan contract/smo
 - Ada langkah `manual:` (`tasks.yaml`) yang belum dikonfirmasi beres? (env/secret/OAuth app prod)
 
 ### 5. Putuskan
-- **Semua hijau →** lanjut Step 5.
+- **Semua hijau →** lanjut Step 6.
 - **Ada merah →** laporkan kegagalan/misalignment ke user, **STOP — jangan ship.** Jangan rubber-stamp.
 
 ### 6. Kirim & tandai (GATE)
