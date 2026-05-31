@@ -19,22 +19,27 @@ Baca `control/features/<fitur>/tasks.yaml` + `plans/*` + `_shared.md` + `control
 
 ### 2. Pilih task
 Ambil task `pending` pertama yang seluruh `deps`-nya `done`.
+Bila task terpilih punya `manual:` yang belum dikonfirmasi beres → set `status: needs_human`, **STOP SELURUH build**, lapor checklist langkah manual ke user; **jangan dispatch** (hemat ronde implementer). Lanjut setelah user konfirmasi beres.
 
 ### 3. Dispatch implementer subagent
-Rakit prompt LENGKAP dari task (paste teks task; **jangan** suruh subagent baca `tasks.yaml`): `desc` + `files` + `approach` + kasus `test` + potongan `_shared.md` + konvensi + stack + pointer file pola. **Untuk tiap `deps`: baca file dep yang sudah ada di disk & paste signature/ekspor ASLINYA** ke prompt — jangan biarkan implementer nebak dari teks `approach`. Pilih model sesuai kompleksitas. Subagent menulis kode **TDD** (test dari kasus dulu → hijau), commit, self-review → balik **ringkasan + status**. Bila subagent **balik nanya** (spec kurang) sebelum mulai: jawab → re-dispatch dengan jawaban di-paste; jangan tandai gagal. (Detail rakitan prompt + matrix status balikan: `reference.md` bagian B & E.)
+Rakit prompt LENGKAP dari task (paste teks task; **jangan** suruh subagent baca `tasks.yaml`): `desc` + `files` + `approach` + kasus `test` + potongan `_shared.md` + konvensi + stack + pointer file pola. **Untuk tiap `deps`: baca file dep yang sudah ada di disk & paste signature/ekspor ASLINYA** ke prompt — jangan biarkan implementer nebak dari teks `approach`. Pilih model sesuai kompleksitas. Subagent menulis kode **TDD** (test dari kasus dulu → hijau), commit, self-review → balik **ringkasan + status**. Bila subagent **balik nanya** (spec kurang) sebelum mulai: jawab → re-dispatch dengan jawaban di-paste; jangan tandai gagal.
+
+**Actions task** (bila ada): `install`/`cmd` → `build` jalanin lalu verifikasi (paket masuk `package.json`, perintah exit 0); **`migrate` → JANGAN auto: tampilkan rencana migrasi + minta approve user dulu** (destruktif), baru apply; `env` → `build` tulis ke `.env` app (nilai dari `manual:`/prompt user). Actions terverifikasi = prasyarat task `done`.
+
+(Detail rakitan prompt + matrix status balikan: `reference.md` bagian B & E.)
 
 ### 4. Verifikasi + Review 2-tahap
 **Sebelum percaya report:** pastikan subagent beneran commit (HEAD repo app maju dari SHA sebelum dispatch) & **jalankan ulang test app** — jangan tandai apa pun atas dasar klaim "DONE" doang.
 Lalu dispatch **spec-reviewer** ("verifikasi dengan baca kode, jangan percaya report") → bila lulus, **code-quality-reviewer**. Reviewer nemu masalah → implementer (subagent sama; prompt re-dispatch HARUS self-contained: teks task penuh + temuan reviewer + SHA/file yang disentuh) perbaiki → review ulang. **Cap maksimal 3 ronde** — kalau belum lulus juga, set `blocked` + laporkan objeksi yang nggak kelar (jangan loop selamanya, jangan rubber-stamp).
 
 ### 5. Tandai status
-Set `status`: `in_progress` saat mulai, `done` saat lulus DUA review (atomik — tulis ke `tasks.yaml`). Buntu → `blocked`, **STOP**, laporkan (sandar `systematic-debugging`). **JANGAN** tandai `done` palsu.
+Set `status`: `in_progress` saat mulai, `done` saat lulus DUA review + semua `actions` terverifikasi (atomik — tulis ke `tasks.yaml`). **Task ber-`manual:` belum beres → `needs_human` (sudah dideteksi di step 2: STOP + lapor checklist; bukan `blocked` — ini nunggu manusia, bukan error).** Buntu/error → `blocked`, **STOP**, laporkan (sandar `systematic-debugging`). **JANGAN** tandai `done` palsu.
 
 ### 6. Gate per segmen (mode A adaptif)
 Semua task satu segmen (default **app × milestone**) `done` → **BERHENTI**: tampilkan diff segmen + hasil test + "dibangun vs task" + **challenge checklist** → minta **approve/revisi**. Adaptif: app pemegang `_shared.md`/berisiko → boleh per-task; milestone mapan → boleh gabung; fitur 1-app → 1 gate. (Detail: `reference.md` bagian D.)
 
 ### 7. Selesai
-Ulang sampai semua task `done`. **Hard guard sebelum nyatakan selesai:** verifikasi SETIAP task di SETIAP milestone berstatus `done` — bila masih ada `pending`/`in_progress`/`blocked`, JANGAN bilang siap-ship; laporkan task mana yang belum & kenapa. Baru kalau semua `done` → laporkan **"fitur <fitur> siap di-`ship`"**. Serahkan ke `ship` — **JANGAN** jalankan `finishing-a-development-branch` (itu jatah `ship`). `feature.yaml` `status` tetap `active`.
+Ulang sampai semua task `done`. **Hard guard sebelum nyatakan selesai:** verifikasi SETIAP task di SETIAP milestone berstatus `done` — bila masih ada `pending`/`in_progress`/`blocked`/`needs_human`, JANGAN bilang siap-ship; laporkan task mana yang belum & kenapa. Baru kalau semua `done` → laporkan **"fitur <fitur> siap di-`ship`"**. Serahkan ke `ship` — **JANGAN** jalankan `finishing-a-development-branch` (itu jatah `ship`). `feature.yaml` `status` tetap `active`.
 
 ## Catatan
 - `build` BUKAN urusannya: nentuin stack (→ `architect`), mecah task (→ `breakdown`), bikin PR / tandai `shipped` (→ `ship`).
