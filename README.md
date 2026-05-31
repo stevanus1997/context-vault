@@ -41,6 +41,8 @@ Urutan greenfield (ide mentah): `/discovery` -> `/init` -> `/architect` -> `/fea
 ```
 Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada gate; agent `critic` me-review di gate penting. `breakdown` & `build` dipanggil eksplisit (boleh sesi terpisah) sebelum `ship`.
 
+> `breakdown` kini bisa wakili kerja non-file (`actions:` migrate/install/env) & langkah manusia (`manual:`/status `needs_human`); `build` jalanin+verifikasi actions (migrasi lewat gate) dan uji integrasi cross-app; `build`/`ship` sadar multi-repo (branch & PR per repo).
+
 ## Selesai & lifecycle
 ```
 /ship <fitur>       # finishing: review + quality + cek alignment ke business -> PR -> tandai shipped
