@@ -33,7 +33,7 @@ Tanyakan satu per satu:
 
 ### 4. Scaffold control/
 - Copy isi `${CLAUDE_PLUGIN_ROOT}/template/control/` ke `<produk>/control/` (mis. `cp -R "${CLAUDE_PLUGIN_ROOT}/template/control/." "<produk>/control/"`).
-- Ganti placeholder `<PRODUCT>` dengan nama produk di SEMUA file `control/` yang baru di-scaffold (semua `business/*.md` **dan** `conventions.md`) — `<PRODUCT>` selalu berarti nama produk, jadi jangan tinggalkan satu pun. Pakai in-place replace (mis. `sed`/`perl`) ketimbang meng-Edit, supaya tidak perlu Read tiap file hasil copy lebih dulu. Placeholder konten lain (mis. `<satu kalimat: ngapain & buat siapa>`, `<siapa>`, `<nilai inti>`) dibiarkan; itu tumbuh belakangan lewat `feature`/`architect`.
+- Ganti placeholder `<PRODUCT>` dengan nama produk di SEMUA file `control/` yang baru di-scaffold (semua `business/*.md`, `conventions.md`, **dan** `invariants.md`) — `<PRODUCT>` selalu berarti nama produk, jadi jangan tinggalkan satu pun. Pakai in-place replace (mis. `sed`/`perl`) ketimbang meng-Edit, supaya tidak perlu Read tiap file hasil copy lebih dulu. Placeholder konten lain (mis. `<satu kalimat: ngapain & buat siapa>`, `<siapa>`, `<nilai inti>`) dibiarkan; itu tumbuh belakangan lewat `feature`/`architect`.
 - **Greenfield:** biarkan `business/` tetap skeleton (akan tumbuh lewat fitur).
 - **Existing:** isi `domain.md` dengan ringkasan dari README bila ada; deteksi `stack` tiap app dari `package.json`. (Capture mendalam stack/capabilities = tugas skill `architect` di langkah berikutnya, bukan di sini.)
 
