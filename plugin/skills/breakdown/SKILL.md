@@ -18,15 +18,19 @@ Baca `control/features/<fitur>/plans/_shared.md` + `plans/<app>.md` + `fanout.md
 Iris jadi **milestone** (slice logis: fondasi dulu, turunan menyusul) lalu **task** di dalamnya. Granularitas: **satu task = unit testable terkecil**. Rasionalisasi hierarki fitur (mis. "register by google" = flow OAuth yang sama dengan "login by google" → satu milestone OAuth per provider).
 
 ### 3. Enrich tiap task
-Isi tiap task: `files` (path create/modify/test — WHERE), `approach` (1-2 baris HOW ringkas), `test` (daftar kasus yang harus lulus — WHAT). **JANGAN tulis kode implementasi** — itu jatah `build` (just-in-time, lawan kode terkini). `breakdown` **TIDAK** memanggil `writing-plans`.
+Isi tiap task: `files` (path create/modify/test — WHERE), `approach` (1-2 baris HOW ringkas), `test` (daftar kasus yang harus lulus — WHAT). **Kerja non-file** (migrasi DB, `npm install`, wiring env/secret, perintah infra) → taruh di **`actions:`** (jangan kubur di `approach`). **Langkah yang AI nggak bisa** (bikin OAuth app, set secret prod, provision DB) → **`manual:`**. **JANGAN tulis kode implementasi** — itu jatah `build`. `breakdown` **TIDAK** memanggil `writing-plans`. (Skema actions/manual: `reference.md` §A & §D.)
 
-### 4. Urutan & dependency
+### 4. Coverage check + task integrasi
+- **Coverage:** tiap keputusan `_shared.md` ("env yang dibagi", mekanisme) & tiap baris Model/Schema di `plans/<app>.md` HARUS ke-map ke sebuah task/`action`/`manual` — jangan ada yang menguap. Tampilkan peta plan→task di gate.
+- **Task integrasi:** untuk tiap dependency lintas-app di `_shared.md`/`fanout.md`, munculkan satu task `app: integration` (`deps` ke KEDUA sisi, `test` = roundtrip end-to-end). Fitur 1-app tanpa `_shared.md` → skip.
+
+### 5. Urutan & dependency
 Tentukan `deps` tiap task dari: kontrak `_shared.md` (fondasi paling dulu), Urutan `fanout.md` (lintas-app, mis. `api` sebelum `web`), dependency logis intra-app.
 
-### 5. Critic (opsional)
+### 6. Critic (opsional)
 Untuk fitur besar/berisiko, invoke subagent `critic` atas peta task: urutan keliru? milestone kegedean? dependency kelewat?
 
-### 6. Tulis output (GATE)
+### 7. Tulis output (GATE)
 Tulis `control/features/<fitur>/tasks.yaml` sesuai skema reference, semua `status: pending`. **Bila `tasks.yaml` sudah ada (re-breakdown):** JANGAN timpa buta jadi semua-`pending`. Untuk task ber-`id` sama, **pertahankan `status`** (`done`/`in_progress`/`blocked`); ubah `files`/`approach`/`test` hanya bila plan-nya berubah; tambah task baru sebagai `pending`. Bila ada task `done` yang plan asalnya berubah, **tandai perlu-rebuild & BERHENTI minta konfirmasi** sebelum nulis (jangan diam-diam buang progres `build`). Tampilkan **PETA TASK** (milestone × app × task + `deps` + `files` + kasus `test`) → minta **approve/koreksi**. Di gate ini pengguna belum melihat kode — hanya menyetujui rencana kerja. Murah & cepat.
 
 ## Catatan
