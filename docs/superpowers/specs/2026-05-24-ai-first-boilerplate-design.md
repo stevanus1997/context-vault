@@ -68,6 +68,7 @@ control/
 │   ├── flows.md          # business process / flow
 │   └── glossary.md       # istilah
 ├── conventions.md        # konvensi & kontrak teknis lintas-app
+├── invariants.md         # invarian platform (tenancy/money/idempotency/authz/PII-PCI/rate-limit; dikunci architect)
 ├── features/
 │   └── <nama-fitur>/
 │       ├── feature.yaml  # status + metadata
@@ -150,7 +151,7 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 - **Perilaku:**
   - *Greenfield (mode setup):* Q&A teknikal untuk menetapkan stack tiap app + konvensi lintas-app → tulis `workspace.yaml.stack` + `conventions.md` (+ scaffold dasar).
   - *Brownfield (mode capture):* scan kode tiap repo → rekam stack + konvensi, **populate `capabilities`** dari nama route/module/folder, flag divergensi antar-repo (mis. ORM berbeda).
-- **Output:** `workspace.yaml` (stack + capabilities) + `conventions.md`.
+- **Output:** `workspace.yaml` (stack + capabilities) + `conventions.md` + `invariants.md` (invarian platform dikunci sekali, gated, `critic` wajib — sebelum `wire`).
 - **Gate:** review stack/konvensi/capabilities.
 - **Catatan:** bisa di-jalankan ulang saat menambah app/shared package.
 
@@ -188,6 +189,7 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 - **Perilaku:** dijalankan setelah implementasi (manual/pakai pola existing). Langkah:
   1. **Code review** atas diff fitur.
   2. **Quality gate** — test, lint, typecheck, build.
+  2.5. **Security & Compliance gate** — berskala ke `sensitivity` fitur; `payments`/`pii` → subagent `security-critic` red-team diff (secret/PII/PCI/authz/webhook); temuan high → STOP.
   3. **Business alignment** — bandingkan kode yang jadi vs `business.md` + `plan` (pakai `critic`): apakah yang dibangun sesuai maksud bisnis? ada scope creep / requirement kelewat? *(Cek ini hanya mungkin karena ada `business.md` — payoff sistem knowledge, sekaligus jawaban P3.)*
   - Jika **semua hijau:** buat **PR** dengan deskripsi auto dari `business.md`+`fanout.md`+`plans`+diff (multi-repo → PR per app yang kena) → set status `shipped` → trigger `render-docs`.
   - Jika **ada merah:** laporkan kegagalan/misalignment, **stop — tidak ship** (anti-yes-man, tidak rubber-stamp).
@@ -205,7 +207,9 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 
 ## 10. Agent: `critic`
 
-Agent terpisah (konteks sendiri) yang tugasnya **mencari celah/bentrok/blind-spot**. Dipanggil di gate penting (`intake` untuk keputusan fondasi, `ship` untuk business alignment). Mengembalikan daftar keberatan; agent utama wajib menanggapi sebelum gate lewat. Pemisahan ini menghilangkan bias "yang mengusulkan = yang menilai".
+Agent terpisah (konteks sendiri) yang tugasnya **mencari celah/bentrok/blind-spot**. Dipanggil di gate penting (`intake` untuk keputusan fondasi, `architect` untuk kunci invarian, `ship` untuk business alignment). Mengembalikan daftar keberatan; agent utama wajib menanggapi sebelum gate lewat. Pemisahan ini menghilangkan bias "yang mengusulkan = yang menilai".
+
+Agent kedua **`security-critic`** (read-only, konteks sendiri): dipanggil `ship` di Security & Compliance Gate untuk fitur ber-`sensitivity` — red-team DIFF mencari kerentanan (secret/PII/PCI/authz-tenant/webhook-signature/input). Sama prinsipnya: penilai ≠ pengusul.
 
 ## 11. Anti-Yes-Man (P3)
 
@@ -267,9 +271,9 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 ## 17. Komponen (ringkas)
 
 - **Skills (15):** `discovery` · `init` · `architect` · `wire` · `add-app` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
-- **Agent:** `critic`
+- **Agent:** `critic` · `security-critic`
 - **Rules:** `anti-yes-man.md`
-- **Knowledge (`control/`):** `workspace.yaml` · `business/` · `conventions.md` · `features/` · `docs/`
+- **Knowledge (`control/`):** `workspace.yaml` · `business/` · `conventions.md` · `invariants.md` · `features/` · `docs/`
 
 ## 18. Open Questions (untuk dipertimbangkan saat implementasi)
 
