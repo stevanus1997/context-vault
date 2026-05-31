@@ -29,4 +29,4 @@ Tulis ke `control/business/domain.md`, `flows.md`, `glossary.md` (format sama de
 
 ## Catatan
 - `extract` OPSIONAL & sekali jalan. Default sistem = just-in-time lewat `feature`/`plan`.
-- Jalankan SETELAH `architect` (butuh path app; lebih baik bila `capabilities` sudah terisi).
+- Jalankan SETELAH `architect` (butuh path app; lebih baik bila `capabilities` sudah terisi). Independen dari `wire`: bila wiring app belum lengkap, `wire(repair)` yang menanganinya (bukan `extract`).
