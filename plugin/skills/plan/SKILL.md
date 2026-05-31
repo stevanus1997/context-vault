@@ -37,7 +37,7 @@ Test         : <...>
 Tampilkan tiap plan → minta **approve per app**.
 
 ## Catatan
-- JANGAN menetapkan stack/framework di sini — itu sudah ditetapkan `architect`. `plan` membaca yang ADA. Bila app belum punya fondasi, hentikan & arahkan user menjalankan `architect` dulu.
+- JANGAN menetapkan stack/framework di sini — itu sudah ditetapkan `architect`. `plan` membaca yang ADA. Bila app belum punya fondasi (skeleton belum jalan), hentikan & arahkan user menjalankan `wire` dulu (bring-up; `wire` jalan setelah `architect`).
 - Setelah semua plan di-approve, kontrol kembali ke `feature` (yang menandai status `active`).
 - `plan` tetap FLAT. Dekomposisi jadi task kecil (siap-eksekusi) = jatah skill `breakdown`, bukan di sini.
 - Bila `tasks.yaml` sudah ada untuk fitur ini (sudah pernah `breakdown`), revisi `plan` membuatnya **basi** — ingatkan user menjalankan `breakdown` ulang (yang mempertahankan status task `done`) sebelum `build` lanjut.
