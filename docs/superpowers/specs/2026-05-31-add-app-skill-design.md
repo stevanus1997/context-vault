@@ -41,7 +41,7 @@ Akar: spec induk §16 (line 262–263) menaruh "orchestrator" lintas-app sebagai
 **Non-Tujuan:**
 - `add-app` **bukan** `init`. Ia tidak bootstrap produk, tidak deteksi topologi, tidak scaffold `control/`. Ia mengasumsikan `control/` sudah ada (kalau belum → arahkan ke `init`).
 - `add-app` **tidak** memutuskan stack (itu `architect`) dan **tidak** scaffold/DB/wiring/smoke sendiri (itu `wire`). Ia delegasi.
-- `add-app` **tidak** men-handle **shared package** (ui-kit/types/dll) di v1. Shared package tak punya DB/FE↔BE/smoke — beda cabang. Di-defer (lihat §11 Future). Catatan `architect` "nambah app/shared package" tetap; `add-app` fokus **app** (fe/be/fullstack).
+- `add-app` **tidak** men-handle **shared package** (ui-kit/types/dll) di v1. Shared package tak punya DB/FE↔BE/smoke — beda cabang. Di-defer (lihat §12 Future). Catatan `architect` "nambah app/shared package" tetap; `add-app` fokus **app** (fe/be/fullstack).
 - `add-app` **tidak** membuat repo fisik untuk multi-repo. Ia mencatat `path` + `repo_url`; bring-up fisik di-defer ke `wire` + user (gated) — konsisten prinsip `init` "repo app TIDAK dimigrasi/dikelola hub".
 - **Tidak** ada eksekusi kode fitur. App baru keluar dari `add-app` sebagai **skeleton kosong-tapi-jalan**; table/endpoint fitur = jatah `build`.
 
@@ -76,7 +76,7 @@ Sumbu konseptual spec: **siapa yang menulis entri app, dan kapan.**
 
 Pemisahan bersih:
 - **`init` vs `add-app`:** `init` = bootstrap produk (topologi + `control/` + app **awal**). `add-app` = numbuhin produk **existing** dengan **satu** app. Tidak tumpang tindih: `add-app` menolak jalan bila `control/` belum ada.
-- **`add-app` vs `architect`/`wire`:** `add-app` menulis **identitas** app (name/path/type/responsibility) lalu **memanggil** `architect` (stack) + `wire` (bring-up). `architect`/`wire` tetap bisa jalan standalone, tapi cara **kanonik** nambah app = lewat `add-app`. Catatan "bisa di-rerun saat nambah app" di `architect`/`wire` diklarifikasi mengarah ke `add-app` (§10).
+- **`add-app` vs `architect`/`wire`:** `add-app` menulis **identitas** app (name/path/type/responsibility) lalu **memanggil** `architect` (stack) + `wire` (bring-up). `architect`/`wire` tetap bisa jalan standalone, tapi cara **kanonik** nambah app = lewat `add-app`. Catatan "bisa di-rerun saat nambah app" di `architect`/`wire` diklarifikasi mengarah ke `add-app` (§11).
 - **`add-app` vs `fanout`:** `fanout` **mengusulkan** app baru (nama + peran, ditandai `NEW`); `add-app` yang **mewujudkan** (tulis entri + bring-up). `fanout` tak pernah menulis entri app.
 
 ## 6. Skill `add-app` — Prosedur
