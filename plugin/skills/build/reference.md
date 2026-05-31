@@ -67,3 +67,12 @@ Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yam
   - `BLOCKED` → root-cause dulu: bug lokal → `systematic-debugging`; task salah → balik `breakdown`; kontrak salah → balik `plan`. Re-dispatch ke model sama tanpa perubahan = anti-pola.
 - **Eksekusi `actions`:** `install`/`cmd` → jalankan + verifikasi (paket/exit-code). `migrate` → **GATE**: tampilkan + approve sebelum apply (destruktif). `env` → tulis ke `.env` app. Semua action terverifikasi = syarat `done`.
 - **`needs_human`** (task ber-`manual:` belum beres): dideteksi di step 2 → STOP seluruh build, lapor checklist; resume setelah user konfirmasi langkah manual beres → jalankan `actions` terkait → `in_progress`. Hitung sebagai BELUM siap-ship.
+
+## F. Multi-repo (probe & branch)
+
+Probe identitas repo tiap app NYATA: `git -C <path> rev-parse --show-toplevel`.
+- `toplevel(app) == toplevel(hub)` atau antar-app sama → **SAMA repo** (monorepo/nested) → satu branch `feature/<fitur>`, nanti 1 PR.
+- `toplevel(app) != toplevel(hub)` → **repo TERPISAH** → branch `feature/<fitur>` sendiri per repo, nanti PR sendiri.
+- probe error → belum git repo → minta user `git init`/skip.
+
+Implementer subagent commit di repo app-nya (`git -C <path>`). `build` memastikan branch ada SEBELUM dispatch task yang nulis ke repo itu. **Pseudo-app `integration` dilewati** saat probe/branch (tak punya `path`/repo sendiri); ia jalan di atas repo app-app di `deps`-nya yang branch-nya sudah dibuat. Eksekusi tetap sekuensial sesuai `deps` (tak ada dua subagent nulis tree sama serempak).
