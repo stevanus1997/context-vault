@@ -21,7 +21,7 @@ Untuk tiap app, cek kode di `path`-nya:
 ### 3a. SETUP (app greenfield)
 - Q&A **TEKNIKAL** (bukan bisnis): framework, bahasa, DB/ORM, lib kunci.
 - Tulis hasil ke `stack` app di `control/workspace.yaml` (mis. `stack: { framework: Next.js, db: Postgres, orm: Prisma }`).
-- Usulkan command bootstrap RESMI stack-nya (mis. `npx create-next-app@latest apps/web`) → **GATE: user yang jalanin.** `architect` TIDAK menulis kode framework sendiri — delegasi ke scaffolder resmi.
+- Catat command bootstrap RESMI stack-nya (mis. `npx create-next-app@latest apps/web`) sebagai bagian keputusan. **Eksekusi scaffold/bring-up = jatah `wire`** (gated), BUKAN di sini. `architect` TIDAK menulis/menjalankan kode framework — ia menetapkan, `wire` yang men-scaffold lewat scaffolder resmi.
 
 ### 3b. CAPTURE (app existing)
 - Scan `package.json` + struktur folder/route di `path` app → rekam `stack` (framework, db bila terbaca) ke `control/workspace.yaml`.
@@ -37,9 +37,9 @@ Tetapkan/rekam kontrak bersama (auth, format API, shared package, ORM standar) �
 - Ada yang over-engineered / bisa lebih sederhana?
 
 ### 6. Tulis output (GATE)
-Tampilkan `stack` & `capabilities` per app (`workspace.yaml`) + isi `conventions.md` → minta **approve**. Sarankan langkah berikutnya: `extract` (brownfield, opsional) atau langsung `feature`.
+Tampilkan `stack` & `capabilities` per app (`workspace.yaml`) + isi `conventions.md` → minta **approve**. Sarankan langkah berikutnya: `wire` (bring-up: scaffold + DB + wiring + env jadi skeleton jalan) sebelum `feature`. (Brownfield: `extract` opsional dulu.)
 
 ## Catatan
-- `architect` = KNOWLEDGE fondasi (stack/konvensi/capabilities), BUKAN generator kode. Kode app dibuat scaffolder resmi (setup) atau sudah ada (capture).
+- `architect` = KNOWLEDGE fondasi (stack/konvensi/capabilities), BUKAN generator kode. Kode app dibuat scaffolder resmi (setup — **dijalankan `wire`**, gated) atau sudah ada (capture).
 - Bisa di-rerun saat nambah app/shared package.
 - Sesudah ini, skill `plan` membaca `stack` + `conventions.md` + kode yang ada — tidak menetapkan stack lagi.
