@@ -63,5 +63,6 @@ Lapor "**app `<nama>` siap di-`feature`**".
 ## Catatan
 - **Cara kanonik nambah app pasca-`init`.** `architect`/`wire` boleh jalan standalone, tapi yang **nulis entri app baru** cuma `add-app`. `init` cuma declare app AWAL pas bootstrap.
 - **Multi-repo:** `add-app` cuma nyatet `path` + `repo_url`. Pembuatan repo fisik (git init/remote) di-defer ke `wire` + user (gated) — repo app tidak dikelola hub.
+- **Invarian platform tak di-relock.** `architect` (langkah 4) yang dipanggil `add-app` hanya set `stack` app baru + konfirmasi `invariants.md` yang sudah resolved — invarian level-produk dikunci sekali, bukan per app baru.
 - **Beberapa app baru dalam 1 fitur:** dipanggil sekali per app (oleh `feature`). Ikuti "Urutan" di `fanout.md` bila ada.
 - TIDAK nyentuh `control/business/*` dan TIDAK bikin table/kode fitur (itu `build`).

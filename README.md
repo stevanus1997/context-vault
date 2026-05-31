@@ -26,7 +26,7 @@ Buat ide yang masih mentah. Nol teknis. Output: dok strategis HTML (`control/doc
 
 ## Fondasi teknis
 ```
-/architect          # tetapkan stack (greenfield) / rekam stack+capabilities (brownfield) + konvensi
+/architect          # tetapkan stack (greenfield) / rekam stack+capabilities (brownfield) + konvensi + kunci invarian platform
 /wire               # bring-up: scaffold app + DB + wiring FE↔BE + env (skeleton kosong-tapi-jalan, gated)
 /extract            # (brownfield, opsional) front-load business/ dari kode existing
 ```
@@ -48,7 +48,7 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 
 ## Selesai & lifecycle
 ```
-/ship <fitur>       # finishing: review + quality + cek alignment ke business -> PR -> tandai shipped
+/ship <fitur>       # finishing: review + quality + security gate (sensitivity-scaled) + cek alignment ke business -> PR -> tandai shipped
 /drop <fitur>       # batalkan fitur (tandai dropped + alasan, simpan sebagai memori keputusan)
 ```
 
