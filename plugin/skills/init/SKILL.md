@@ -64,5 +64,5 @@ Copy juga `${CLAUDE_PLUGIN_ROOT}/template/.claude/settings.json` ke `<produk>/.c
 Tampilkan struktur `control/` yang dibuat + isi `workspace.yaml`. Konfirmasi ke user. Sarankan langkah berikutnya: `architect` (setup/capture fondasi teknis).
 
 ## Catatan
-- `init` hanya men-scaffold + seed tipis. Knowledge bisnis tumbuh just-in-time lewat `feature`. Fondasi teknis ditangani `architect`.
+- `init` hanya men-scaffold + seed tipis. Knowledge bisnis tumbuh just-in-time lewat `feature`. Fondasi teknis ditangani `architect` (keputusan stack) lalu `wire` (bring-up: skeleton kosong-tapi-jalan).
 - Untuk multi-repo, `control/` adalah repo/hub tersendiri; repo app TIDAK dimigrasi.
