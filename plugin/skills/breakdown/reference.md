@@ -19,11 +19,27 @@ milestones:
           - modify: <path relatif app>   # boleh + komentar singkat
           - test:   <path test relatif app>
         approach: <1-2 baris HOW ringkas; boleh rujuk task lain, mis. "pakai util T1">
+        actions:                   # OPSIONAL — kerja non-file; build yang EKSEKUSI + VERIFIKASI
+          - install: <pkg>         #   build: `npm install <pkg>` (auto), verifikasi masuk package.json
+          - cmd: <perintah>        #   perintah lain non-destruktif (auto), mis. "npx prisma generate"
+          - migrate: <deskripsi>   #   DESTRUKTIF → build TAMPILKAN + GATE sebelum apply (jangan auto)
+          - env: [VAR1, VAR2]      #   build tulis var ke .env (nilai dari manual:/prompt user)
+        manual:                    # OPSIONAL — langkah yang AI NGGAK BISA (butuh manusia)
+          - <mis. "bikin OAuth app di Google Console, dapetin client id + secret">
         test:                      # WHAT di-assert (kasus), BUKAN kode test
-          - <kasus 1>
+          - <kasus 1>              #   boleh kriteria non-unit: "typecheck hijau", "migration apply bersih"
           - <kasus 2>
         deps: []                   # id task lain yang harus done dulu
-        status: pending            # pending | in_progress | done | blocked
+        status: pending            # pending | in_progress | done | blocked | needs_human
+      # Task integrasi cross-app (lihat §D-3 & spec S2): menjalankan >1 app bareng
+      - id: T_INT
+        app: integration           # pseudo-app — gate-nya membentang beberapa tree, tak punya path sendiri
+        desc: <uji end-to-end flow lintas-app, mis. register via web → user di DB api>
+        approach: boot app terkait (path/stack dari workspace.yaml) lalu jalankan flow nyata
+        test:
+          - <roundtrip nyata; shape data cocok di dua sisi kontrak _shared.md>
+        deps: [<id sisi A>, <id sisi B>]   # KEDUA sisi kontrak
+        status: pending
 ```
 
 ## B. Aturan granularitas & enrich
@@ -35,6 +51,9 @@ milestones:
 - **`deps`** topologis: fondasi (`_shared.md`) paling dulu; lintas-app ikut Urutan `fanout.md` (mis. `api` sebelum `web`); intra-app sesuai logika.
 - **Rasionalisasi hierarki:** varian yang flow-nya identik digabung (mis. "register by google" = "login by google" → satu milestone OAuth/provider).
 - **JANGAN panggil `writing-plans`** — `breakdown` sengaja TIDAK menghasilkan plan monolitik berisi kode (lihat spec §7.1).
+- **`actions:` untuk kerja non-file.** Migrasi DB, `npm install`, wiring env/secret, perintah infra TIDAK boleh terkubur di `approach` — taruh di `actions:` biar `build` eksekusi & verifikasi eksplisit. `install`/`cmd` auto; `migrate` (destruktif) lewat GATE; `env` ditulis `build` (nilai dari `manual:`/user).
+- **`manual:` untuk langkah AI-nggak-bisa.** Bikin OAuth app, set secret produksi, provision DB → daftar di `manual:`; `build` pause (`needs_human`) & lapor checklist.
+- **`test:` boleh non-unit.** Untuk task non-unit-testable (config, scaffold, shared types), `test:` boleh berisi kriteria seperti "typecheck hijau"/"build sukses"/"file ada & ke-import"; size-nya "satu artifact koheren".
 
 ## C. Contoh (fitur `auth`, 2 app: api + web)
 
@@ -130,3 +149,9 @@ milestones:
     tasks: []   # T13 api callback, T14 web button
   # M4 Facebook, M5 Apple — pola sama
 ```
+
+## D. Kerja non-file, langkah manual, & task integrasi
+
+1. **`actions` (kerja AI bisa, non-file).** Jenis: `install` (auto), `cmd` (auto), `migrate` (GATE — destruktif), `env` (build tulis ke `.env`). `build` mengeksekusi + memverifikasi tiap action sebagai bagian dari `done`.
+2. **`manual` + status `needs_human` (kerja manusia).** Task ber-`manual:` yang belum beres → `build` set `status: needs_human`, **STOP SELURUH build**, lapor checklist; lanjut setelah user beresin. `needs_human` ≠ `blocked` (blocked = ada error/bug; needs_human = bener, nunggu manusia).
+3. **Task integrasi (`app: integration`).** Untuk tiap dependency lintas-app di `_shared.md`/`fanout.md`, munculkan SATU task integrasi: `deps` ke KEDUA sisi kontrak, `test` = roundtrip end-to-end nyata. Pseudo-app `integration` tak punya `path`/repo sendiri (jalan di atas repo app-app di `deps`-nya). Fitur 1-app tanpa `_shared.md` → tidak perlu.
