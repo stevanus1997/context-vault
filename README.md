@@ -16,7 +16,7 @@ AI-first product boilerplate — lapisan AI + knowledge (bukan kode) untuk menge
 # produk sudah jelas (atau existing)? langsung:
 /init
 ```
-Lalu `architect` (fondasi teknis), `feature` (bikin fitur), `ship`/`drop` (lifecycle), `render-docs` (doc human-readable).
+Lalu `architect` (fondasi teknis), `wire` (bring-up skeleton kosong-tapi-jalan), `feature` (bikin fitur), `ship`/`drop` (lifecycle), `render-docs` (doc human-readable).
 
 ## Validasi ide (opsional, greenfield)
 ```
@@ -27,11 +27,12 @@ Buat ide yang masih mentah. Nol teknis. Output: dok strategis HTML (`control/doc
 ## Fondasi teknis
 ```
 /architect          # tetapkan stack (greenfield) / rekam stack+capabilities (brownfield) + konvensi
+/wire               # bring-up: scaffold app + DB + wiring FE↔BE + env (skeleton kosong-tapi-jalan, gated)
 /extract            # (brownfield, opsional) front-load business/ dari kode existing
 ```
-Urutan brownfield: `/init` -> `/architect` -> `/extract` (opsional) -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
-Urutan greenfield (ide jelas): `/init` -> `/architect` -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
-Urutan greenfield (ide mentah): `/discovery` -> `/init` -> `/architect` -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
+Urutan brownfield: `/init` -> `/architect` -> `/extract` (opsional) -> `/wire` -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
+Urutan greenfield (ide jelas): `/init` -> `/architect` -> `/wire` -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
+Urutan greenfield (ide mentah): `/discovery` -> `/init` -> `/architect` -> `/wire` -> `/feature` -> `/breakdown` -> `/build` -> `/ship`.
 
 ## Bikin fitur
 ```
