@@ -10,7 +10,7 @@ Tujuan: pastikan fitur yang sudah diimplementasi BENAR & selaras bisnis, lalu ki
 ## Langkah
 
 ### 1. Baca fitur & cek kesiapan
-Baca `control/features/<fitur>/feature.yaml` (harus `status: active`), `business.md`, `fanout.md`, `plans/*`. Tentukan app yang kena dari `fanout.md` + `path`/`stack` dari `control/workspace.yaml`.
+Baca `control/features/<fitur>/feature.yaml` (harus `status: active`, + field `sensitivity`), `business.md`, `fanout.md`, `plans/*`. Tentukan app yang kena dari `fanout.md` + `path`/`stack` dari `control/workspace.yaml`.
 **Cek kelengkapan build:** bila `tasks.yaml` ada, verifikasi SEMUA task `done`. Ada task belum-`done` (`pending`/`in_progress`/`blocked`/`needs_human`/status belum-selesai lain) → **BERHENTI**, arahkan balik ke `build` (jangan ship fitur setengah jadi). Bila `tasks.yaml` tidak ada, konfirmasi implementasi dilakukan manual. **Guard diff kosong:** kalau tidak ada perubahan kode terhadap base, jangan bikin PR — laporkan.
 
 ### 2. Per app yang kena
@@ -26,9 +26,16 @@ Boot app-app terkait bareng (path/stack `workspace.yaml`), jalankan contract/smo
 - Ada scope creep / requirement kelewat?
 - Ada risiko yang belum ke-cover?
 - Ada langkah `manual:` (`tasks.yaml`) yang belum dikonfirmasi beres? (env/secret/OAuth app prod)
+- Ada temuan dari Security & Compliance Gate (step 4.5) yang belum kelar? (secret/PII/PCI/authz/webhook-signature)
+
+### 4.5 Security & Compliance Gate (STOP-on-fail, sebobot quality gate)
+Berskala ke `feature.yaml` `sensitivity` (baca di step 1):
+- **`sensitivity` kosong →** quick scan murah: grep diff fitur untuk secret hardcoded (API key/token/password/connstring di luar env) + PII di log. Temuan → angkat ke Putuskan.
+- **`sensitivity` memuat `payments`/`pii` →** invoke subagent **`security-critic`** atas diff penuh (lintas repo yang kena, path/SHA dari code-review step 2) + `control/invariants.md`. Temuan **severity high** = **RED**.
+Disisipkan di sini (desimal 4.5) supaya tak me-renumber Step 5/6 & cross-ref internal "lanjut Step 6" tetap valid.
 
 ### 5. Putuskan
-- **Semua hijau →** lanjut Step 6.
+- **Semua hijau (termasuk Security Gate) →** lanjut Step 6.
 - **Ada merah →** laporkan kegagalan/misalignment ke user, **STOP — jangan ship.** Jangan rubber-stamp.
 
 ### 6. Kirim & tandai (GATE)
