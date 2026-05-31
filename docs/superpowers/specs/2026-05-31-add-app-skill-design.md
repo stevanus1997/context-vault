@@ -137,7 +137,7 @@ Natural, tanpa logika khusus:
 - **`plan/SKILL.md`:** tidak berubah (app sudah ada + wired saat plan jalan); guard "app belum punya fondasi → wire" tetap.
 - **`README.md`:** tambah `add-app` ke daftar skill + gambarkan cabang mid-`feature` di lifecycle.
 - **`plugin/.claude-plugin/plugin.json`:** sebut `add-app` di deskripsi (sejajar penambahan `wire`).
-- **Spec induk `2026-05-24-…-design.md`:** tambah `add-app` ke §13 (daftar skill) & §17 Komponen (Skills 14 → 15); catat "nambah app mid-product" kini **in-scope** (§16).
+- **Spec induk `2026-05-24-…-design.md`:** §12 Lifecycle — tambah catatan cabang-dipicu (`feature` → `add-app` saat butuh app baru); §17 Komponen — tambah `add-app` (Skills 14 → 15). (§9 detail per-skill & §16 v1-list **dibiarkan** seperti perlakuan saat `wire` ditambahkan — tidak ditambah subsection/entri baru; §16 sudah stale sejak sebelum `wire`. Status "in-scope" dinyatakan konseptual di §3 spec ini.)
 
 ## 12. Scope v1 & Future
 
