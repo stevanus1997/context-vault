@@ -41,6 +41,9 @@ Stack: Express + Prisma + Postgres
 -> Pakai test-driven-development. Commit setelah hijau. Balik ringkasan + status.
 ```
 
+### Task integrasi (`app: integration`)
+Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yaml`), kontrak `_shared.md` yang diuji, kasus `test` roundtrip. Subagent menjalankan kedua app bareng (mis. start `api`, panggil dari `web`/HTTP), assert shape data cocok dua sisi. Status sama (DONE/BLOCKED/...). Konteks berat (boot+log) tetap di subagent.
+
 ## C. Pilih model (hemat biaya & cepat)
 - Task mekanikal (1-2 file, spec jelas) → model murah/cepat.
 - Integrasi multi-file / pattern-matching → model standar.
