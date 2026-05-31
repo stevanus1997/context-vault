@@ -32,7 +32,7 @@ Tulis `control/features/<fitur>/fanout.md`:
 Dependency lintas-app: <... bila ada>
 Urutan: <... bila ada>
 ```
-Lalu **update `capabilities`** app terkait di `control/workspace.yaml` (tambah kapabilitas baru yang diperkenalkan fitur ini).
+Lalu **update `capabilities`** app terkait di `control/workspace.yaml` (tambah kapabilitas baru yang diperkenalkan fitur ini). **Add-only-if-absent:** kalau kapabilitas sudah ada, jangan tambah lagi (re-run fanout nggak boleh bikin entri ganda).
 
 Tampilkan `fanout.md` + perubahan capabilities → minta **approve/koreksi** (user paling tahu peta produk).
 

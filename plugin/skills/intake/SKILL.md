@@ -45,7 +45,7 @@ Aturan      : <... + referensi business/ bila relevan>
 Hasil/Reward: <...>
 Out of scope: <...>
 ```
-Lalu **promosikan fakta DURABLE** ke knowledge (konservatif — hanya yang benar lepas dari fitur): aturan domain → `business/domain.md`; flow → `business/flows.md`; istilah → `business/glossary.md`.
+Lalu **promosikan fakta DURABLE** ke knowledge (konservatif — hanya yang benar lepas dari fitur): aturan domain → `business/domain.md`; flow → `business/flows.md`; istilah → `business/glossary.md`. **Idempotent:** sebelum nambah, cek apakah fakta serupa sudah ada di file tujuan — update yang ada, jangan duplikat (re-run intake nggak boleh numpuk aturan ganda).
 
 Tampilkan `business.md` + daftar promosi knowledge → minta **approve**. Boleh tulis draft dulu lalu konfirmasi.
 

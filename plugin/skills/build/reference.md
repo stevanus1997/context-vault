@@ -22,7 +22,8 @@ Dari satu entri `tasks.yaml`, controller (`build`) merakit prompt berisi:
 - **Kontrak:** potongan `_shared.md` yang relevan.
 - **Konvensi & stack:** dari `conventions.md` + `workspace.yaml` `stack` app.
 - **Pointer pola:** tunjuk 1-2 file existing sebagai contoh gaya (mis. route sejenis).
-- **Instruksi:** pakai `test-driven-development`; commit setelah hijau; self-review; balik **ringkasan + status**.
+- **Signature dep (WAJIB bila ada `deps`):** untuk tiap task di `deps`, baca file yang dibuat/diubahnya **di disk** lalu paste signature/ekspor TERKINI-nya (mis. `hash(pw: string): Promise<string>`, `issueSession(userId): string`). Implementer membangun di atas kode NYATA, bukan tebakan dari teks `approach`.
+- **Instruksi:** pakai `test-driven-development`; commit setelah hijau; self-review; balik **ringkasan + status**. Bila spec kurang, subagent boleh **balik nanya dulu** sebelum mulai (jangan nebak).
 
 JANGAN suruh subagent membaca `tasks.yaml` — paste teksnya.
 
@@ -53,6 +54,11 @@ Stack: Express + Prisma + Postgres
 - Selalu hormati `deps` + Urutan `fanout` (mis. `web` dibangun setelah `api` nyata, bukan yang direncanakan).
 
 ## E. Status & resume
-- `build` set `status` task: `in_progress` → `done` (atomik, tulis ke `tasks.yaml`) setelah lulus DUA review.
-- Buntu → `blocked` + STOP + lapor (sandar `systematic-debugging`). Jangan `done` palsu.
-- Resume: sesi baru baca `tasks.yaml`, lewati `done`, lanjut `pending` berikut.
+- **Atomik (konkret):** set `in_progress` **sebelum** dispatch; set `done` **hanya** setelah lulus verifikasi (commit+test, lihat SKILL step 4) + DUA review. Tulis **satu task per operasi** (Edit satu field / temp-file lalu rename) — jangan batch banyak task dalam satu tulis, biar interupsi nggak ninggalin YAML korup. `tasks.yaml` ikut ke-commit, jadi versi korup bisa dipulihkan dari git.
+- Buntu beneran (bug/dead-end) → `blocked` + STOP + lapor (sandar `systematic-debugging`). Jangan `done` palsu; **jangan auto-retry `blocked`** (risiko loop).
+- **Resume (sesi baru):** baca `tasks.yaml`. (1) `done` → lewati. (2) **`in_progress` → JANGAN dilewati**: sesi lalu mati di tengah; reconcile dengan working tree + `git log` (revert/bereskan WIP setengah jadi), reset ke `pending`, lalu re-dispatch. (3) `blocked` → laporkan + task yang nyangkut karena gantung ke situ; butuh reset eksplisit ke `pending` sebelum lanjut. (4) lanjut `pending` pertama yang seluruh `deps`-nya `done`.
+- **Status balikan subagent** (dari template implementer — beda dari `status` task di `tasks.yaml`):
+  - `DONE` → lanjut verifikasi + review.
+  - `DONE_WITH_CONCERNS` → JANGAN langsung anggap `done`; tampilkan concern-nya, biar review/gate yang putuskan.
+  - `NEEDS_CONTEXT` → kasih konteks yang diminta → re-dispatch (**bukan** `blocked`).
+  - `BLOCKED` → root-cause dulu: bug lokal → `systematic-debugging`; task salah → balik `breakdown`; kontrak salah → balik `plan`. Re-dispatch ke model sama tanpa perubahan = anti-pola.

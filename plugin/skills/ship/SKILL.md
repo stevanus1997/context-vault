@@ -9,11 +9,12 @@ Tujuan: pastikan fitur yang sudah diimplementasi BENAR & selaras bisnis, lalu ki
 
 ## Langkah
 
-### 1. Baca fitur
+### 1. Baca fitur & cek kesiapan
 Baca `control/features/<fitur>/feature.yaml` (harus `status: active`), `business.md`, `fanout.md`, `plans/*`. Tentukan app yang kena dari `fanout.md` + `path`/`stack` dari `control/workspace.yaml`.
+**Cek kelengkapan build:** bila `tasks.yaml` ada, verifikasi SEMUA task `done`. Ada task belum-`done` (`pending`/`in_progress`/`blocked`/status belum-selesai lain) → **BERHENTI**, arahkan balik ke `build` (jangan ship fitur setengah jadi). Bila `tasks.yaml` tidak ada, konfirmasi implementasi dilakukan manual. **Guard diff kosong:** kalau tidak ada perubahan kode terhadap base, jangan bikin PR — laporkan.
 
 ### 2. Per app yang kena
-- **Code review:** review diff app (mis. `git -C <path> diff <base-branch>...HEAD`). Cari bug & inkonsistensi konvensi (`control/conventions.md`).
+- **Code review:** **deteksi base-branch per repo** dulu — `git -C <path> symbolic-ref refs/remotes/origin/HEAD` (mis. → `origin/main`); kalau gagal/ambigu, TANYA user (jangan asal `main`). Lalu review diff app (`git -C <path> diff <base>...HEAD`). Cari bug & inkonsistensi konvensi (`control/conventions.md`).
 - **Quality gate:** jalankan test/lint/typecheck/build app (perintah sesuai `stack`).
 - **Business alignment:** bandingkan kode yang jadi vs `business.md` + `plans/<app>.md` — invoke subagent `critic` dengan fokus: scope creep? requirement kelewat? menyimpang dari maksud bisnis?
 

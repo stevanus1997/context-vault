@@ -11,17 +11,21 @@ Tujuan: jalanin `tasks.yaml` jadi kode yang lulus test, di bawah gate, lalu nyat
 
 ## Langkah
 
-### 1. Baca state & cek branch
-Baca `control/features/<fitur>/tasks.yaml` + `plans/*` + `_shared.md` + `control/conventions.md` + `control/workspace.yaml` (path/stack). **Prasyarat:** `tasks.yaml` ada (kalau belum → suruh jalankan `breakdown` dulu, sebaiknya sesi terpisah); `feature.yaml` `status: active`. **Cek branch git** — kalau di `main`/`master`, minta konfirmasi / bikin branch fitur dulu (jangan mulai di main tanpa izin).
+### 1. Baca state, cek prasyarat & recovery
+Baca `control/features/<fitur>/tasks.yaml` + `plans/*` + `_shared.md` + `control/conventions.md` + `control/workspace.yaml` (path/stack). **Prasyarat:** `tasks.yaml` ada (kalau belum → suruh jalankan `breakdown` dulu, sebaiknya sesi terpisah). **`feature.yaml` `status` HARUS `active`** — kalau `shipped`/`dropped`/`draft`, BERHENTI & jelaskan (jangan eksekusi fitur yang sudah ditutup atau belum di-plan).
+- **Staleness check:** bila `plans/*` / `_shared.md` / `business.md` lebih baru (mtime) dari `tasks.yaml`, BERHENTI & tanyakan apakah perlu `breakdown` ulang dulu — task bisa basi (lihat `breakdown` step 6 untuk merge yang mempertahankan status).
+- **Recovery resume:** scan task `in_progress` (sisa sesi yang mati di tengah). Untuk tiap `in_progress`: reconcile dengan working tree + `git log` — kalau ada WIP setengah jadi & test merah, revert/bereskan lalu set balik `pending`. **JANGAN pernah lewati `in_progress` diam-diam** (kalau dilewati, dependents-nya nyangkut selamanya). Laporkan juga task `blocked` + task yang nyangkut karena gantung ke situ.
+- **Cek branch git** — kalau di `main`/`master`, minta konfirmasi / bikin branch fitur dulu (jangan mulai di main tanpa izin).
 
 ### 2. Pilih task
 Ambil task `pending` pertama yang seluruh `deps`-nya `done`.
 
 ### 3. Dispatch implementer subagent
-Rakit prompt LENGKAP dari task (paste teks task; **jangan** suruh subagent baca `tasks.yaml`): `desc` + `files` + `approach` + kasus `test` + potongan `_shared.md` + konvensi + stack + pointer file pola. Pilih model sesuai kompleksitas. Subagent menulis kode **TDD** (test dari kasus dulu → hijau), commit, self-review → balik **ringkasan + status**. (Detail rakitan prompt: `reference.md` bagian B.)
+Rakit prompt LENGKAP dari task (paste teks task; **jangan** suruh subagent baca `tasks.yaml`): `desc` + `files` + `approach` + kasus `test` + potongan `_shared.md` + konvensi + stack + pointer file pola. **Untuk tiap `deps`: baca file dep yang sudah ada di disk & paste signature/ekspor ASLINYA** ke prompt — jangan biarkan implementer nebak dari teks `approach`. Pilih model sesuai kompleksitas. Subagent menulis kode **TDD** (test dari kasus dulu → hijau), commit, self-review → balik **ringkasan + status**. Bila subagent **balik nanya** (spec kurang) sebelum mulai: jawab → re-dispatch dengan jawaban di-paste; jangan tandai gagal. (Detail rakitan prompt + matrix status balikan: `reference.md` bagian B & E.)
 
-### 4. Review 2-tahap
-Dispatch **spec-reviewer** ("verifikasi dengan baca kode, jangan percaya report") → bila lulus, **code-quality-reviewer**. Reviewer nemu masalah → implementer (subagent sama) perbaiki → review ulang sampai lulus.
+### 4. Verifikasi + Review 2-tahap
+**Sebelum percaya report:** pastikan subagent beneran commit (HEAD repo app maju dari SHA sebelum dispatch) & **jalankan ulang test app** — jangan tandai apa pun atas dasar klaim "DONE" doang.
+Lalu dispatch **spec-reviewer** ("verifikasi dengan baca kode, jangan percaya report") → bila lulus, **code-quality-reviewer**. Reviewer nemu masalah → implementer (subagent sama; prompt re-dispatch HARUS self-contained: teks task penuh + temuan reviewer + SHA/file yang disentuh) perbaiki → review ulang. **Cap maksimal 3 ronde** — kalau belum lulus juga, set `blocked` + laporkan objeksi yang nggak kelar (jangan loop selamanya, jangan rubber-stamp).
 
 ### 5. Tandai status
 Set `status`: `in_progress` saat mulai, `done` saat lulus DUA review (atomik — tulis ke `tasks.yaml`). Buntu → `blocked`, **STOP**, laporkan (sandar `systematic-debugging`). **JANGAN** tandai `done` palsu.
@@ -30,7 +34,7 @@ Set `status`: `in_progress` saat mulai, `done` saat lulus DUA review (atomik —
 Semua task satu segmen (default **app × milestone**) `done` → **BERHENTI**: tampilkan diff segmen + hasil test + "dibangun vs task" + **challenge checklist** → minta **approve/revisi**. Adaptif: app pemegang `_shared.md`/berisiko → boleh per-task; milestone mapan → boleh gabung; fitur 1-app → 1 gate. (Detail: `reference.md` bagian D.)
 
 ### 7. Selesai
-Ulang sampai semua task `done` → laporkan **"fitur <fitur> siap di-`ship`"**. Serahkan ke `ship` — **JANGAN** jalankan `finishing-a-development-branch` (itu jatah `ship`). `feature.yaml` `status` tetap `active`.
+Ulang sampai semua task `done`. **Hard guard sebelum nyatakan selesai:** verifikasi SETIAP task di SETIAP milestone berstatus `done` — bila masih ada `pending`/`in_progress`/`blocked`, JANGAN bilang siap-ship; laporkan task mana yang belum & kenapa. Baru kalau semua `done` → laporkan **"fitur <fitur> siap di-`ship`"**. Serahkan ke `ship` — **JANGAN** jalankan `finishing-a-development-branch` (itu jatah `ship`). `feature.yaml` `status` tetap `active`.
 
 ## Catatan
 - `build` BUKAN urusannya: nentuin stack (→ `architect`), mecah task (→ `breakdown`), bikin PR / tandai `shipped` (→ `ship`).
