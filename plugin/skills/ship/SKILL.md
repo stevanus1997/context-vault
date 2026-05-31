@@ -33,7 +33,7 @@ Boot app-app terkait bareng (path/stack `workspace.yaml`), jalankan contract/smo
 
 ### 6. Kirim & tandai (GATE)
 - Susun deskripsi PR dari `business.md` + `fanout.md` + `plans` + ringkasan diff (terhubung ke ALASAN bisnis, bukan cuma "what").
-- Bikin PR: **multi-repo → satu PR per app yang kena**; **monorepo → satu PR**. Pakai `gh pr create`; bila `gh`/remote tak ada, tampilkan deskripsi PR untuk dibuat user sendiri.
+- Tentukan **repo unik** yang kena: probe `git -C <path> rev-parse --show-toplevel` tiap app NYATA, kelompokkan per toplevel. Bikin **satu PR per repo unik** (monorepo/nested → otomatis 1 PR karena toplevel sama; multi-repo → 1 PR per repo). Base = hasil deteksi `symbolic-ref` (di code-review step). Pakai `gh pr create`; bila `gh`/remote tak ada, tampilkan deskripsi PR untuk dibuat user.
 - Set `feature.yaml` → `status: shipped` + tambah `shipped_at: <YYYY-MM-DD>`.
 - Regenerate doc: invoke skill `render-docs` bila tersedia; bila belum ada (Fase 5), ingatkan user untuk regenerate nanti.
 
