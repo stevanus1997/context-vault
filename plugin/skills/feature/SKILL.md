@@ -15,6 +15,7 @@ Buat `control/features/<nama>/feature.yaml`:
 name: <nama>
 status: draft
 created: <YYYY-MM-DD>
+sensitivity: []        # [] | [payments] | [pii] | [payments, pii] — diusulkan intake, dikonfirmasi user
 ```
 (Bila sudah ada, lanjutkan dari tahap yang belum selesai — lihat artifact mana yang sudah ada.)
 
