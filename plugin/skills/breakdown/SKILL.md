@@ -23,6 +23,7 @@ Isi tiap task: `files` (path create/modify/test — WHERE), `approach` (1-2 bari
 ### 4. Coverage check + task integrasi
 - **Coverage:** tiap keputusan `_shared.md` ("env yang dibagi", mekanisme) & tiap baris Model/Schema di `plans/<app>.md` HARUS ke-map ke sebuah task/`action`/`manual` — jangan ada yang menguap. Tampilkan peta plan→task di gate.
 - **Task integrasi:** untuk tiap dependency lintas-app di `_shared.md`/`fanout.md`, munculkan satu task `app: integration` (`deps` ke KEDUA sisi, `test` = roundtrip end-to-end). Fitur 1-app tanpa `_shared.md` → skip.
+- **Invarian:** tiap task yang nyentuh skema/endpoint patuh `control/invariants.md` (mis. table baru bawa `tenant_id` bila tenancy shared-db; uang pakai representasi yang dikunci)? Tandai task yang berisiko melanggar.
 
 ### 5. Urutan & dependency
 Tentukan `deps` tiap task dari: kontrak `_shared.md` (fondasi paling dulu), Urutan `fanout.md` (lintas-app, mis. `api` sebelum `web`), dependency logis intra-app.

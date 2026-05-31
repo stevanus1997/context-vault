@@ -23,7 +23,7 @@ Bila `fanout.md` menyebut dependency lintas-app (mis. mekanisme token web↔api)
 - Buka kode app di `path`-nya (dari `workspace.yaml`). Baca pola yang ada; ikuti `conventions.md` & `stack`.
 - Q&A **teknis** seperlunya.
 - Susun plan: file yang disentuh, endpoint/komponen, model data, test.
-- **Challenge teknis** sebelum gate: konsistensi dengan konvensi? risiko? cara lebih sederhana?
+- **Challenge teknis** sebelum gate: konsistensi dengan konvensi? risiko? cara lebih sederhana? Apakah plan ini melanggar invarian yang terkunci di `control/invariants.md` (tenancy/money/idempotency/authz/PII-PCI)?
 
 ### 4. Tulis output (GATE per app)
 Tulis `control/features/<fitur>/plans/<app>.md`:
