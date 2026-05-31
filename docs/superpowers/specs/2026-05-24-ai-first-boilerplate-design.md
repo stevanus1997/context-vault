@@ -223,6 +223,8 @@ Greenfield: init → architect(setup)  →                wire → /feature → 
 Brownfield: init → architect(capture) → extract(opsi) → wire → /feature → breakdown → build → ship
 ```
 
+**Cabang dipicu — fitur butuh app baru:** bila `fanout` mendeteksi tidak ada app existing yang menampung sebuah peran, `feature` otomatis invoke **`add-app`** (declare entri ke `workspace.yaml` → `architect` → `wire`) sebelum `plan`. `add-app` juga bisa dipanggil standalone. Lihat spec `2026-05-31-add-app-skill-design.md`.
+
 Status di `feature.yaml`:
 
 | Status | Dipicu oleh | Otomatis/Manual |
@@ -264,7 +266,7 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 ## 17. Komponen (ringkas)
 
-- **Skills (14):** `discovery` · `init` · `architect` · `wire` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
+- **Skills (15):** `discovery` · `init` · `architect` · `wire` · `add-app` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
 - **Agent:** `critic`
 - **Rules:** `anti-yes-man.md`
 - **Knowledge (`control/`):** `workspace.yaml` · `business/` · `conventions.md` · `features/` · `docs/`
