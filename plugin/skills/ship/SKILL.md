@@ -18,17 +18,20 @@ Baca `control/features/<fitur>/feature.yaml` (harus `status: active`), `business
 - **Quality gate:** jalankan test/lint/typecheck/build app (perintah sesuai `stack`).
 - **Business alignment:** bandingkan kode yang jadi vs `business.md` + `plans/<app>.md` — invoke subagent `critic` dengan fokus: scope creep? requirement kelewat? menyimpang dari maksud bisnis?
 
-### 3. Challenge Checklist (WAJIB sebelum ship)
+### 3. Integrasi cross-app (bila fitur >1 app + ada `_shared.md`)
+Boot app-app terkait bareng (path/stack `workspace.yaml`), jalankan contract/smoke test terhadap flow bersama (mis. login web↔api): cookie/format token/shape JSON cocok dua sisi. Gagal → STOP, jangan ship. (Loop per-app di step 2 hanya app NYATA dari `fanout.md`; roundtrip integrasi ditangani khusus oleh step ini. Fitur 1-app → lewati.)
+
+### 4. Challenge Checklist (WAJIB sebelum ship)
 - Semua test hijau? alignment ke `business.md` OK?
 - Ada scope creep / requirement kelewat?
 - Ada risiko yang belum ke-cover?
 - Ada langkah `manual:` (`tasks.yaml`) yang belum dikonfirmasi beres? (env/secret/OAuth app prod)
 
-### 4. Putuskan
+### 5. Putuskan
 - **Semua hijau →** lanjut Step 5.
 - **Ada merah →** laporkan kegagalan/misalignment ke user, **STOP — jangan ship.** Jangan rubber-stamp.
 
-### 5. Kirim & tandai (GATE)
+### 6. Kirim & tandai (GATE)
 - Susun deskripsi PR dari `business.md` + `fanout.md` + `plans` + ringkasan diff (terhubung ke ALASAN bisnis, bukan cuma "what").
 - Bikin PR: **multi-repo → satu PR per app yang kena**; **monorepo → satu PR**. Pakai `gh pr create`; bila `gh`/remote tak ada, tampilkan deskripsi PR untuk dibuat user sendiri.
 - Set `feature.yaml` → `status: shipped` + tambah `shipped_at: <YYYY-MM-DD>`.
