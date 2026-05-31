@@ -1,6 +1,6 @@
 ---
 name: wire
-description: Use untuk bring-up fondasi teknis produk SETELAH architect — scaffold app via tool resmi + nyalain DB + wiring FE↔BE + env standar jadi skeleton KOSONG-tapi-JALAN, semua di-GATE. Generic: baca stack dari workspace.yaml (apa pun framework/db/orm-nya), bukan daftar tetap. Greenfield (scaffold penuh) & brownfield (repair, idempotent). Trigger — "wire", "bring-up", "nyalain project", "scaffold skeleton". Jalankan dari root produk yang punya control/.
+description: Use untuk bring-up fondasi teknis produk SETELAH architect — scaffold app via tool resmi + nyalain DB + wiring FE↔BE + env standar jadi skeleton KOSONG-tapi-JALAN, semua di-GATE. Generic — baca stack dari workspace.yaml (apa pun framework/db/orm-nya), bukan daftar tetap. Greenfield (scaffold penuh) & brownfield (repair, idempotent). Trigger — "wire", "bring-up", "nyalain project", "scaffold skeleton". Jalankan dari root produk yang punya control/.
 ---
 
 # wire — Bring-Up Fondasi (skeleton kosong-tapi-jalan)
