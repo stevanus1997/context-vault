@@ -17,7 +17,7 @@ Tujuan: ubah KEPUTUSAN `architect` jadi skeleton yang JALAN — app ter-scaffold
 - **Generic, tapi jujur.** Stack mainstream → tahu command resminya. Stack langka → ajukan tebakan terbaik + GATE konfirmasi (atau lookup). JANGAN diam-diam salah.
 - **Jangan mutusin arsitektur.** Engine/framework/orm = jatah architect. Keputusan LOGICAL hilang → balikin ke architect.
 
-## Langkah (per app, urut; penomoran cocok dengan reference)
+## Langkah (per app, urut; detail tiap langkah di reference)
 
 ### 0. Baca state & deteksi mode
 Baca `control/workspace.yaml` (`apps[]`: path/type/stack/topology) + `control/conventions.md`. **Prasyarat:** architect sudah set `stack` logical (min framework + db + orm) per app; kalau belum → arahkan ke `architect`. Cek kode tiap `path`: kosong → **greenfield (scaffold penuh)**; ada kode → **brownfield (repair: lengkapi yang kurang, idempotent, jangan timpa)**.
@@ -38,7 +38,7 @@ Init ORM/driver (`stack.orm`), generate migrasi **baseline** (kosong dari table 
 Fullstack → env + internal call; FE/BE kepisah → API base URL + CORS + (bila relevan) typed client. Ikut `conventions.md`. (reference A/B.)
 
 ### 5. Env standar
-Tulis `.env` app (pastikan gitignored): DB_URL, API base URL, secret. Rekam SHAPE-nya (nama var + arti, tanpa nilai) ke `conventions.md`. Secret = GATE/manual. (Pinjam action `env` build — reference H.)
+Tulis `.env` app (pastikan gitignored): DB_URL, API base URL, secret. Rekam SHAPE-nya (nama var + arti, tanpa nilai) ke `conventions.md`. Secret = GATE/manual. (detail env contract: reference D; action `env` pinjam build: reference H.)
 
 ### 6. Smoke test (GATE penutup)
 Boot? DB kebaca? FE→BE nyampe? Ijo → tutup gate, laporkan "**app <x> siap di-`feature`**". Merah → STOP + lapor akar masalah (sandar `systematic-debugging`); JANGAN klaim siap. (reference E.)

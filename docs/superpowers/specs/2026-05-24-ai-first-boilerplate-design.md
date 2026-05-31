@@ -219,8 +219,8 @@ Alasannya struktural: yes-man muncul karena helpful-bias + tidak ada cek indepen
 ## 12. Lifecycle & Status Fitur
 
 ```
-Greenfield: init → architect(setup)  →                /feature → build → ship
-Brownfield: init → architect(capture) → extract(opsi) → /feature → build → ship
+Greenfield: init → architect(setup)  →                wire → /feature → breakdown → build → ship
+Brownfield: init → architect(capture) → extract(opsi) → wire → /feature → breakdown → build → ship
 ```
 
 Status di `feature.yaml`:
@@ -264,7 +264,7 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 ## 17. Komponen (ringkas)
 
-- **Skills (10):** `init` · `architect` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `ship` · `drop` · `render-docs`
+- **Skills (14):** `discovery` · `init` · `architect` · `wire` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
 - **Agent:** `critic`
 - **Rules:** `anti-yes-man.md`
 - **Knowledge (`control/`):** `workspace.yaml` · `business/` · `conventions.md` · `features/` · `docs/`
