@@ -15,6 +15,7 @@ Bila `control/features/<fitur>/feature.yaml` belum ada (intake dipanggil langsun
 name: <fitur>
 status: draft
 created: <YYYY-MM-DD>
+sensitivity: []        # [] | [payments] | [pii] | [payments, pii] — diusulkan di step 7, dikonfirmasi user
 ```
 
 ### 2. Baca knowledge
@@ -47,7 +48,9 @@ Out of scope: <...>
 ```
 Lalu **promosikan fakta DURABLE** ke knowledge (konservatif — hanya yang benar lepas dari fitur): aturan domain → `business/domain.md`; flow → `business/flows.md`; istilah → `business/glossary.md`. **Idempotent:** sebelum nambah, cek apakah fakta serupa sudah ada di file tujuan — update yang ada, jangan duplikat (re-run intake nggak boleh numpuk aturan ganda).
 
-Tampilkan `business.md` + daftar promosi knowledge → minta **approve**. Boleh tulis draft dulu lalu konfirmasi.
+**Usulkan tag `sensitivity`** dari isi `business.md` (heuristik): `payments` kalau fitur menggerakkan/menyimpan uang (bayar, billing, payout, refund, fee); `pii` kalau mengumpulkan/menyimpan/menampilkan data pribadi (nama, email, alamat, telp, gov-id). Cross-check ringan ke `control/invariants.md` — kalau slot PII/PCI di-`N/A`, jangan ngotot tag `pii`. Tulis usulan ke `feature.yaml` `sensitivity:` (kosong boleh).
+
+Tampilkan `business.md` + daftar promosi knowledge + usulan `sensitivity` → minta **approve/koreksi**. Boleh tulis draft dulu lalu konfirmasi.
 
 ## Catatan
 - Output ini jadi input `fanout`. JANGAN melakukan pemetaan app di sini.
