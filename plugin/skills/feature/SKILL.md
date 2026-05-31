@@ -33,5 +33,6 @@ Tampilkan artifact yang dihasilkan (`business.md`, `fanout.md`, `plans/*`). Sara
 
 ## Catatan
 - `intake`/`fanout`/`plan` modular — bisa dipanggil sendiri untuk mengulang satu tahap (mis. `fanout` ulang setelah revisi `business.md`).
+- Prasyarat: app sudah di-`wire` (skeleton jalan: DB nyambung, FE↔BE ke-wire). Kalau `plan` mentok karena fondasi belum ada, jalankan `wire` dulu (setelah `architect`).
 - **Bila `tasks.yaml` sudah dibuat `breakdown` lalu kamu merevisi `plan`/`business`, jalankan `breakdown` ulang** (ia mempertahankan status task yang sudah `done`) sebelum lanjut `build` — biar task nggak basi.
 - Eksekusi implementasi ditangani `breakdown` → `build`; transisi `shipped`/`dropped` ditangani `ship`/`drop`.
