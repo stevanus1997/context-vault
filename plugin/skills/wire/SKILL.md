@@ -44,6 +44,6 @@ Tulis `.env` app (pastikan gitignored): DB_URL, API base URL, secret. Rekam SHAP
 Boot? DB kebaca? FE→BE nyampe? Ijo → tutup gate, laporkan "**app <x> siap di-`feature`**". Merah → STOP + lapor akar masalah (sandar `systematic-debugging`); JANGAN klaim siap. (reference E.)
 
 ## Catatan
-- `wire` sekali jalan (kayak `extract`), bisa di-rerun saat nambah app (kayak `architect`). Brownfield: bersifat **repair** — hanya bila wiring belum lengkap.
+- `wire` sekali jalan (kayak `extract`). Saat nambah app baru, dipanggil oleh skill `add-app` (yang chain `architect`→`wire`); bisa juga di-rerun manual. Brownfield: bersifat **repair** — hanya bila wiring belum lengkap.
 - TIDAK bikin table/skema fitur — itu jatah `build`. `wire` cuma bikin pipeline migrasi BERFUNGSI + baseline.
 - TIDAK nyentuh `control/business/*`. PR & merge = jatah pengguna/`ship`; cek branch dulu (jangan mulai di `main` tanpa izin).

@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Use untuk menetapkan (greenfield) atau merekam (brownfield) fondasi teknis produk — stack per app + capabilities + konvensi lintas-app. Dijalankan setelah init, sebelum bikin fitur; bisa di-rerun saat nambah app/package. Trigger — "architect", "setup stack", "capture arsitektur". Jalankan dari root produk yang punya control/.
+description: Use untuk menetapkan (greenfield) atau merekam (brownfield) fondasi teknis produk — stack per app + capabilities + konvensi lintas-app. Dijalankan setelah init, sebelum bikin fitur; nambah app baru lewat add-app. Trigger — "architect", "setup stack", "capture arsitektur". Jalankan dari root produk yang punya control/.
 ---
 
 # architect — Fondasi Teknis
@@ -41,5 +41,5 @@ Tampilkan `stack` & `capabilities` per app (`workspace.yaml`) + isi `conventions
 
 ## Catatan
 - `architect` = KNOWLEDGE fondasi (stack/konvensi/capabilities), BUKAN generator kode. Kode app dibuat scaffolder resmi (setup — **dijalankan `wire`**, gated) atau sudah ada (capture).
-- Bisa di-rerun saat nambah app/shared package.
+- Nambah app baru pasca-`init` = lewat skill `add-app` (yang manggil `architect` ini buat set `stack` app yang baru dideklarasi). `architect` standalone tetap buat set/recapture stack app yang **sudah terdaftar** — ia **tidak** nulis entri app baru ke `workspace.yaml`. Shared package: rerun manual.
 - Sesudah ini, skill `plan` membaca `stack` + `conventions.md` + kode yang ada — tidak menetapkan stack lagi.

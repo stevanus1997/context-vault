@@ -29,7 +29,7 @@ Minta user konfirmasi sebelum lanjut. JANGAN menulis apa pun sebelum dikonfirmas
 Tanyakan satu per satu:
 - Nama produk?
 - Satu kalimat: ngapain & buat siapa?
-- App apa saja yang sudah kebayang? (greenfield: declare; existing: konfirmasi yang terdeteksi). Boleh mulai dari satu, tambah nanti.
+- App apa saja yang sudah kebayang? (greenfield: declare; existing: konfirmasi yang terdeteksi). Boleh mulai dari satu, tambah app lain nanti lewat skill `add-app`.
 
 ### 4. Scaffold control/
 - Copy isi `${CLAUDE_PLUGIN_ROOT}/template/control/` ke `<produk>/control/` (mis. `cp -R "${CLAUDE_PLUGIN_ROOT}/template/control/." "<produk>/control/"`).
