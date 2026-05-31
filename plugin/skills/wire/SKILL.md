@@ -20,7 +20,7 @@ Tujuan: ubah KEPUTUSAN `architect` jadi skeleton yang JALAN — app ter-scaffold
 ## Langkah (per app, urut; detail tiap langkah di reference)
 
 ### 0. Baca state & deteksi mode
-Baca `control/workspace.yaml` (`apps[]`: path/type/stack/topology) + `control/conventions.md`. **Prasyarat:** architect sudah set `stack` logical (min framework + db + orm) per app; kalau belum → arahkan ke `architect`. Cek kode tiap `path`: kosong → **greenfield (scaffold penuh)**; ada kode → **brownfield (repair: lengkapi yang kurang, idempotent, jangan timpa)**.
+Baca `control/workspace.yaml` (`apps[]`: path/type/stack/topology) + `control/conventions.md` + `control/invariants.md`. **Prasyarat stack:** architect sudah set `stack` logical (min framework + db + orm) per app; kalau belum → arahkan ke `architect`. **Prasyarat invarian:** `control/invariants.md` ada DAN semua slot resolved (tak ada `<belum dikunci>`); kalau tidak → **STOP**, arahkan ke `architect` (kunci invarian dulu — ia membentuk skema baseline). Cek kode tiap `path`: kosong → **greenfield (scaffold penuh)**; ada kode → **brownfield (repair: lengkapi yang kurang, idempotent, jangan timpa)**.
 
 ### 0.5 Q&A operasional ("nutup architect")
 Per app, tanya yang OPERASIONAL (bukan pilih arsitektur): DB bare-engine → **Docker lokal / URL remote?**; DB managed → minta creds (gated); package manager/runtime; nilai env/secret. Konfirmasi `stack` logical yang dibaca; field logical hilang/ambigu → STOP, balikin ke architect.
