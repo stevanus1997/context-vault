@@ -139,7 +139,7 @@ Tambah **satu item challenge** (di langkah "Challenge"/"Challenge Checklist" mas
 - `breakdown/SKILL.md` step 6 critic / coverage (sekitar line 30-34).
 - `build/SKILL.md` step 6 "challenge checklist" gate per-segmen (line 42-43).
 
-**Sengaja dipotong:** klausa "membypass mandatory package" dari rekomendasi audit — itu butuh H2/`packages[]` yang **belum ada**. Menambahkannya sekarang = pointer ke artifact fiktif (langgar caveat koherensi audit). Masuk di Langkah 2.
+**Sengaja dipotong (Langkah 1):** klausa "membypass mandatory package" — saat itu butuh H2/`packages[]` yang belum ada. **Direalisasikan di H2** (`docs/superpowers/specs/2026-06-01-h2-shared-package-design.md` §9): field `packages[].mandatory_for` + 1 baris challenge "membypass mandatory package?" di `plan`/`breakdown`/`build`.
 
 ## 9. Permukaan Integrasi (peta edit file)
 
@@ -179,4 +179,4 @@ Eksekusi via `writing-plans` → `executing-plans`. Setelah implement:
 
 ## 12. Out of Scope → Langkah 2 (pointer)
 
-Spec berikutnya menggarap akar yang merembet & governance evolusi: **H2** (`packages[]` + skill `add-package` + fan-IN), **M5** (`control/integrations.md` + plan promote vendor + webhook-idempotency bar), **M4** (`control/schema/<app>.md` sebagai projeksi ter-generate dari migrations), **H3** (impact-analysis migrasi lintas-fitur + `migrate.kind/affects`). M2-bagian "mandatory package" menyusul bersama H2.
+Spec berikutnya menggarap akar yang merembet & governance evolusi: **H2** (`packages[]` + skill `add-package` + fan-IN) — **sudah dispec & direalisasikan** (`2026-06-01-h2-shared-package-design.md`), termasuk M2-bagian "mandatory package". Berikutnya: **M5** (`control/integrations.md` + plan promote vendor + webhook-idempotency bar), **M4** (`control/schema/<app>.md` sebagai projeksi ter-generate dari migrations), **H3** (impact-analysis migrasi lintas-fitur + `migrate.kind/affects`).
