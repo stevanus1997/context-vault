@@ -10,7 +10,7 @@ Tujuan: hasilkan SATU file HTML self-contained yang rapi & ramah orang non-tekni
 ## Langkah
 
 ### 1. Baca knowledge
-- `control/workspace.yaml` → `product`, `topology`, daftar `apps` (name, type, responsibility, capabilities, stack).
+- `control/workspace.yaml` → `product`, `topology`, daftar `apps` (name, type, responsibility, capabilities, stack) + daftar `packages` (name, responsibility, consumers, mandatory_for).
 - `control/business/domain.md`, `flows.md`, `glossary.md`.
 - `control/features/*/feature.yaml` (+ `business.md`) — kumpulkan fitur.
 
@@ -21,6 +21,7 @@ Baca `${CLAUDE_PLUGIN_ROOT}/skills/render-docs/template.html`. Pakai `<head>`/CS
 Ganti tiap penanda `<!-- SLOT:x -->` + section contohnya dengan konten nyata:
 - **overview:** isi dari `domain.md` (produk, pengguna, nilai) → paragraf ramah.
 - **apps:** satu `.card` per app: judul `name` + `type`, `responsibility`, lalu `capabilities` sebagai `.chip`.
+- **packages:** satu `.card` per shared package (bila ada): judul `name` + label "package", `responsibility`, `consumers` (app yang memakai) sebagai `.chip`, tandai `mandatory_for` bila ada. Bedakan visual dari kartu app.
 - **capabilities:** tabel kapabilitas × app (centang app mana punya kapabilitas apa).
 - **flows:** render `flows.md` (heading per flow + langkah) jadi HTML.
 - **glossary:** render `glossary.md` (istilah + definisi).
