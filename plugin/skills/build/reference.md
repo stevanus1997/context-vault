@@ -15,7 +15,7 @@ Kunci dari template implementer: *controller mem-paste teks task ke prompt; suba
 ## B. Menyusun prompt implementer dari satu task
 
 Dari satu entri `tasks.yaml`, controller (`build`) merakit prompt berisi:
-- **Task:** `desc` + `app`.
+- **Task:** `desc` + `unit` (app/package/integration).
 - **Files:** isi `files` (path create/modify/test).
 - **Approach:** `approach`.
 - **Test cases:** daftar `test` → "tulis test ini dulu (TDD), pastikan merah, baru implementasi sampai hijau".
@@ -29,7 +29,7 @@ JANGAN suruh subagent membaca `tasks.yaml` — paste teksnya.
 
 ### Contoh (task T3 `auth`)
 ```
-Task: POST /auth/register (app: api)
+Task: POST /auth/register (unit: api)
 Files: create src/routes/auth/register.ts; modify src/routes/index.ts;
        test test/auth/register.test.ts
 Approach: hash(util T1, src/lib/hash.ts) -> simpan User -> session(T2, src/lib/session.ts)
@@ -41,7 +41,7 @@ Stack: Express + Prisma + Postgres
 -> Pakai test-driven-development. Commit setelah hijau. Balik ringkasan + status.
 ```
 
-### Task integrasi (`app: integration`)
+### Task integrasi (`unit: integration`)
 Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yaml`), kontrak `_shared.md` yang diuji, kasus `test` roundtrip. Subagent menjalankan kedua app bareng (mis. start `api`, panggil dari `web`/HTTP), assert shape data cocok dua sisi. Status sama (DONE/BLOCKED/...). Konteks berat (boot+log) tetap di subagent.
 
 ## C. Pilih model (hemat biaya & cepat)
@@ -70,9 +70,9 @@ Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yam
 
 ## F. Multi-repo (probe & branch)
 
-Probe identitas repo tiap app NYATA: `git -C <path> rev-parse --show-toplevel`.
+Probe identitas repo tiap unit NYATA (app ATAU package; resolve `path` dari `apps[]`/`packages[]`): `git -C <path> rev-parse --show-toplevel`.
 - `toplevel(app) == toplevel(hub)` atau antar-app sama → **SAMA repo** (monorepo/nested) → satu branch `feature/<fitur>`, nanti 1 PR.
 - `toplevel(app) != toplevel(hub)` → **repo TERPISAH** → branch `feature/<fitur>` sendiri per repo, nanti PR sendiri.
 - probe error → belum git repo → minta user `git init`/skip.
 
-Implementer subagent commit di repo app-nya (`git -C <path>`). `build` memastikan branch ada SEBELUM dispatch task yang nulis ke repo itu. **Pseudo-app `integration` dilewati** saat probe/branch (tak punya `path`/repo sendiri); ia jalan di atas repo app-app di `deps`-nya yang branch-nya sudah dibuat. Eksekusi tetap sekuensial sesuai `deps` (tak ada dua subagent nulis tree sama serempak).
+Implementer subagent commit di repo unit-nya (`git -C <path>`). `build` memastikan branch ada SEBELUM dispatch task yang nulis ke repo itu. **Pseudo-unit `integration` dilewati** saat probe/branch (tak punya `path`/repo sendiri); ia jalan di atas repo unit di `deps`-nya yang branch-nya sudah dibuat. Package mono-repo (`path = packages/<nama>`) ciut ke toplevel hub; multi-repo (`path = ../<nama>`) dapat branch+PR sendiri — sama seperti app. Eksekusi tetap sekuensial sesuai `deps` (tak ada dua subagent nulis tree sama serempak).
