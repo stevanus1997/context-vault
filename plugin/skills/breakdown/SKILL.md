@@ -25,6 +25,7 @@ Isi tiap task: `files` (path create/modify/test — WHERE), `approach` (1-2 bari
 - **Task integrasi:** untuk tiap dependency lintas-app di `_shared.md`/`fanout.md`, munculkan satu task `unit: integration` (`deps` ke KEDUA sisi, `test` = roundtrip end-to-end). Fitur 1-app tanpa `_shared.md` → skip.
 - **Invarian:** tiap task yang nyentuh skema/endpoint patuh `control/invariants.md` (mis. table baru bawa `tenant_id` bila tenancy shared-db; uang pakai representasi yang dikunci)? Tandai task yang berisiko melanggar. **Mandatory package (M2):** task yang bikin logika yang seharusnya pakai package di `packages[].mandatory_for` → tandai melanggar (redirect ke package).
 - **Fan-IN coverage:** kalau `plans/<pkg>.md` ber-flag `BREAKING`, tiap consumer di `packages[<pkg>].consumers` WAJIB punya ≥1 task (update-task `unit: <consumer>` atau ter-cover task `unit: integration`). (Skema fan-IN: `reference.md` §D-4.)
+- **Inbound-eksternal coverage:** tiap baris "kebutuhan receiver" di `plans/<Receiver app>.md` (vendor inbound) WAJIB jadi task `unit: <Receiver app>` varian inbound-eksternal (verifikasi signature + idempotent + replay, test keamanan baku). (Skema: `reference.md` §D-5.)
 
 ### 5. Urutan & dependency
 Tentukan `deps` tiap task dari: kontrak `_shared.md` (fondasi paling dulu), Urutan `fanout.md` (lintas-app, mis. `api` sebelum `web`), dependency logis intra-app.
