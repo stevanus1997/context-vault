@@ -15,9 +15,9 @@ milestones:
         unit: <nama app/pkg>        # cocok dengan apps[].name ATAU packages[].name; atau "integration"
         desc: <satu baris — apa yang dibangun>
         files:                     # WHERE — path saja, BUKAN kode
-          - create: <path relatif app>
-          - modify: <path relatif app>   # boleh + komentar singkat
-          - test:   <path test relatif app>
+          - create: <path relatif unit>
+          - modify: <path relatif unit>   # boleh + komentar singkat
+          - test:   <path test relatif unit>
         approach: <1-2 baris HOW ringkas; boleh rujuk task lain, mis. "pakai util T1">
         actions:                   # OPSIONAL — kerja non-file; build yang EKSEKUSI + VERIFIKASI
           - install: <pkg>         #   build: `npm install <pkg>` (auto), verifikasi masuk package.json

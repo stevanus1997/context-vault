@@ -33,7 +33,7 @@ Tentukan `deps` tiap task dari: kontrak `_shared.md` (fondasi paling dulu), Urut
 Untuk fitur besar/berisiko, invoke subagent `critic` atas peta task: urutan keliru? milestone kegedean? dependency kelewat?
 
 ### 7. Tulis output (GATE)
-Tulis `control/features/<fitur>/tasks.yaml` sesuai skema reference, semua `status: pending`. **Bila `tasks.yaml` sudah ada (re-breakdown):** JANGAN timpa buta jadi semua-`pending`. Untuk task ber-`id` sama, **pertahankan `status`** (`done`/`in_progress`/`blocked`); ubah `files`/`approach`/`test` hanya bila plan-nya berubah; tambah task baru sebagai `pending`. Bila ada task `done` yang plan asalnya berubah, **tandai perlu-rebuild & BERHENTI minta konfirmasi** sebelum nulis (jangan diam-diam buang progres `build`). Tampilkan **PETA TASK** (milestone × app × task + `deps` + `files` + kasus `test`) → minta **approve/koreksi**. Di gate ini pengguna belum melihat kode — hanya menyetujui rencana kerja. Murah & cepat.
+Tulis `control/features/<fitur>/tasks.yaml` sesuai skema reference, semua `status: pending`. **Bila `tasks.yaml` sudah ada (re-breakdown):** JANGAN timpa buta jadi semua-`pending`. Untuk task ber-`id` sama, **pertahankan `status`** (`done`/`in_progress`/`blocked`); ubah `files`/`approach`/`test` hanya bila plan-nya berubah; tambah task baru sebagai `pending`. Bila ada task `done` yang plan asalnya berubah, **tandai perlu-rebuild & BERHENTI minta konfirmasi** sebelum nulis (jangan diam-diam buang progres `build`). Tampilkan **PETA TASK** (milestone × unit × task + `deps` + `files` + kasus `test`) → minta **approve/koreksi**. Di gate ini pengguna belum melihat kode — hanya menyetujui rencana kerja. Murah & cepat.
 
 ## Catatan
 - Output = input `build`. JANGAN nulis kode di sini.

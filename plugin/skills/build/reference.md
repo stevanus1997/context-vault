@@ -50,7 +50,7 @@ Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yam
 - Butuh judgment desain → model paling kuat.
 
 ## D. Cadence gate (mode A adaptif)
-- **Default:** gate per **app × milestone** — semua task satu app dalam satu milestone hijau → BERHENTI, tampilkan diff + test + "dibangun vs task" + challenge checklist → approve/revisi.
+- **Default:** gate per **app × milestone** — semua task satu unit (app/pkg) dalam satu milestone hijau → BERHENTI, tampilkan diff + test + "dibangun vs task" + challenge checklist → approve/revisi.
 - **Lebih rapat:** app pemegang kontrak `_shared.md` / ditandai berisiko (milestone fondasi) → checkpoint per-task.
 - **Lebih longgar:** milestone bermotif mapan (OAuth provider ke-2/ke-3) → gabung gate.
 - **Fitur 1-app** → ciut jadi 1 gate.
