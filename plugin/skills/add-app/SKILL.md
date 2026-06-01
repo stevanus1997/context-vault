@@ -12,7 +12,7 @@ Tujuan: numbuhin produk yang SUDAH di-`init` dengan SATU app baru. `add-app` = k
 ## Prinsip (jangan dilanggar)
 - **Bukan `init`.** `add-app` TIDAK bootstrap produk / deteksi topologi / scaffold `control/`. `control/` harus sudah ada — kalau belum, arahin ke `init`.
 - **Cuma identitas, bukan stack.** `add-app` nanya name/type/responsibility (deklarasi). Framework/db/orm = jatah `architect` di langkah 4. JANGAN tanya stack di sini.
-- **App doang (v1).** fe/be/fullstack. Shared package (ui-kit/types) BUKAN urusan `add-app` — beda cabang (nggak ada DB/wiring/smoke).
+- **App doang.** fe/be/fullstack. Shared package (ui-kit/types/utils) bukan urusan `add-app` — pakai skill **`add-package`** (cabang sendiri: tak ada DB/wiring/smoke, gate typecheck). Lihat spec H2 §5.
 - **Idempotent.** App yang sudah ada di `workspace.yaml` → STOP, jangan re-declare.
 - **Tiap aksi side-effecting = GATE.** Tulis entri = gate sendiri; architect & wire pakai gate masing-masing.
 
