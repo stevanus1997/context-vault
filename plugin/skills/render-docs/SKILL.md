@@ -11,6 +11,7 @@ Tujuan: hasilkan SATU file HTML self-contained yang rapi & ramah orang non-tekni
 
 ### 1. Baca knowledge
 - `control/workspace.yaml` → `product`, `topology`, daftar `apps` (name, type, responsibility, capabilities, stack) + daftar `packages` (name, responsibility, consumers, mandatory_for).
+- `control/integrations.md` → daftar vendor eksternal (vendor, Arah, Dipakai, Mode) — SHAPE-only, TANPA secret.
 - `control/business/domain.md`, `flows.md`, `glossary.md`.
 - `control/features/*/feature.yaml` (+ `business.md`) — kumpulkan fitur.
 
@@ -22,6 +23,7 @@ Ganti tiap penanda `<!-- SLOT:x -->` + section contohnya dengan konten nyata:
 - **overview:** isi dari `domain.md` (produk, pengguna, nilai) → paragraf ramah.
 - **apps:** satu `.card` per app: judul `name` + `type`, `responsibility`, lalu `capabilities` sebagai `.chip`.
 - **packages:** satu `.card` per shared package (bila ada): judul `name` + label "package", `responsibility`, `consumers` (app yang memakai) sebagai `.chip`, tandai `mandatory_for` bila ada. Bedakan visual dari kartu app.
+- **integrations:** satu `.card` per vendor eksternal (bila ada, dari `integrations.md`): judul `vendor` + label "integrasi", `Dipakai`, `Arah` + `Mode` sebagai `.chip`. SHAPE-only — JANGAN tampilkan nilai secret (cuma NAMA env var bila perlu). Bedakan visual dari kartu app/package.
 - **capabilities:** tabel kapabilitas × app (centang app mana punya kapabilitas apa).
 - **flows:** render `flows.md` (heading per flow + langkah) jadi HTML.
 - **glossary:** render `glossary.md` (istilah + definisi).
