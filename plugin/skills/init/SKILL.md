@@ -50,8 +50,9 @@ apps:
     responsibility: "<ringkas>"
     capabilities: []        # diisi fanout/architect
     stack: {}               # diisi architect
+packages: []                # shared package (ui-kit/types/utils) — diisi skill add-package; consumers diisi fanout
 ```
-Untuk existing, isi `stack` per app dari hasil deteksi `package.json` (framework, db bila terbaca).
+Untuk existing, isi `stack` per app dari hasil deteksi `package.json` (framework, db bila terbaca). Biarkan `packages: []` kosong — package tumbuh lewat `add-package`, bukan di-declare saat init.
 
 ### 6. Generate CLAUDE.md
 Tulis `<produk>/.claude/CLAUDE.md`:
