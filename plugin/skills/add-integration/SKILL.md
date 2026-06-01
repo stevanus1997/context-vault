@@ -48,7 +48,7 @@ Tambah/perbarui section `## <vendor>` di `control/integrations.md` (format di he
 
 ### 4. Rekam SHAPE env + (bila inbound) wire mode-integration
 - **SELALU** (outbound & inbound): rekam SHAPE env (NAMA var) ke `conventions.md` lewat pola env `wire` (`wire/reference.md` §D) — satu mekanisme yang sama.
-- **HANYA bila `Arah` memuat inbound:** invoke `wire` (MODE-INTEGRATION, `wire/reference.md` §J) buat scaffold stub webhook-receiver di `Receiver app` → GATE = app tetap boot + route ter-register + typecheck. Logika verifikasi signature/idempotent/replay = jatah `build`, BUKAN di sini.
+- **HANYA bila `Arah` memuat inbound (termasuk `both`):** invoke `wire` (mode-integration, `wire/reference.md` §J) buat scaffold stub webhook-receiver di `Receiver app` → GATE = app tetap boot + route ter-register + typecheck. Logika verifikasi signature/idempotent/replay = jatah `build`, BUKAN di sini.
 - Outbound-only berhenti setelah rekam SHAPE env (tak ada receiver untuk di-scaffold).
 
 ### 5. Tutup & balikin

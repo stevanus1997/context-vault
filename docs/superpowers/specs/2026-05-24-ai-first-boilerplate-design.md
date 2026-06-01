@@ -123,8 +123,8 @@ Promosi dilakukan **konservatif** (hanya fakta yang benar lepas dari fitur), sup
 context-vault/
 ├── plugin/
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/   init· architect· extract· intake· fanout· plan· feature· ship· drop· render-docs
-│   ├── agents/   critic.md
+│   ├── skills/   discovery· init· architect· wire· add-app· add-package· add-integration· extract· intake· fanout· plan· feature· breakdown· build· ship· drop· render-docs
+│   ├── agents/   critic.md· security-critic.md
 │   └── rules/    anti-yes-man.md         # di-merge ke CLAUDE.md produk
 ├── template/
 │   ├── control/  (workspace.yaml· business/· conventions.md· features/· docs/ theme warm)
