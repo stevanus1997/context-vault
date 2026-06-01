@@ -5,3 +5,6 @@
 
 ## Konvensi Package
 <!-- Diisi architect saat add-package: path import, build/test tool, sinyal breaking/deprecation. -->
+
+## Konvensi Integrasi
+<!-- Diisi saat add-integration/wire: SHAPE env vendor (NAMA var, tanpa nilai), konvensi webhook-receiver. -->
