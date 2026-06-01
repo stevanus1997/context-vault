@@ -31,7 +31,7 @@ Boot app-app terkait bareng (path/stack `workspace.yaml`), jalankan contract/smo
 ### 4.5 Security & Compliance Gate (STOP-on-fail, sebobot quality gate)
 Berskala ke `feature.yaml` `sensitivity` (baca di step 1):
 - **`sensitivity` kosong →** quick scan murah: grep diff fitur untuk secret hardcoded (API key/token/password/connstring di luar env) + PII di log. Temuan → angkat ke Putuskan.
-- **`sensitivity` memuat `payments`/`pii` →** invoke subagent **`security-critic`** atas diff penuh (lintas repo yang kena, path/SHA dari code-review step 2) + `control/invariants.md`. Temuan **severity high** = **RED**.
+- **`sensitivity` memuat `payments`/`pii` →** invoke subagent **`security-critic`** atas diff penuh (lintas repo yang kena, path/SHA dari code-review step 2) + `control/invariants.md` + `control/integrations.md` (baseline webhook signature/mode/idempotency per vendor). Temuan **severity high** = **RED**.
 Disisipkan di sini (desimal 4.5) supaya tak me-renumber Step 5/6 & cross-ref internal "lanjut Step 6" tetap valid.
 
 ### 5. Putuskan
@@ -40,6 +40,7 @@ Disisipkan di sini (desimal 4.5) supaya tak me-renumber Step 5/6 & cross-ref int
 
 ### 6. Kirim & tandai (GATE)
 - Susun deskripsi PR dari `business.md` + `fanout.md` + `plans` + ringkasan diff (terhubung ke ALASAN bisnis, bukan cuma "what").
+- **Runbook integrasi (bila fitur kena vendor di `integrations.md`):** agregasi per vendor ke deskripsi PR — URL webhook yang perlu didaftarkan di console vendor (dari `Endpoint`/path receiver), env secret yang perlu di-set (NAMA var dari `Secret env`), switch mode test→live. Menutup gap "hasil langkah manual tak mendarat"; melengkapi challenge step 4. (Scoped ke integrasi — full release-runbook = Langkah 3.)
 - Tentukan **repo unik** yang kena: probe `git -C <path> rev-parse --show-toplevel` tiap unit NYATA (app ATAU package; resolve `path` dari `apps[]`/`packages[]`), kelompokkan per toplevel. Bikin **satu PR per repo unik** (monorepo/nested → otomatis 1 PR karena toplevel sama; multi-repo → 1 PR per repo). Update-task consumer (fan-IN) sudah masuk `tasks.yaml` → repo consumer otomatis ikut grouping. Base = hasil deteksi `symbolic-ref` (di code-review step). Pakai `gh pr create`; bila `gh`/remote tak ada, tampilkan deskripsi PR untuk dibuat user.
 - Set `feature.yaml` → `status: shipped` + tambah `shipped_at: <YYYY-MM-DD>`.
 - Regenerate doc: invoke skill `render-docs` bila tersedia; bila belum ada (Fase 5), ingatkan user untuk regenerate nanti.
