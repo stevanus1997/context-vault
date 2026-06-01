@@ -94,9 +94,17 @@ apps:
     responsibility: "Builder landing page + dashboard"
     capabilities: [auth, workspace]   # tumbuh per fitur (fanout)
     stack: { framework: Next.js, db: Postgres }   # diisi architect
+packages:                            # shared package (H2) — diisi add-package
+  - name: money
+    path: packages/money
+    type: package
+    responsibility: "format dan hitung uang"
+    consumers: [web, api]            # diisi fanout; basis fan-IN
+    mandatory_for: []                # app yang wajib pakai package ini
 ```
 
 - `capabilities` = bahan bakar fan-out (P1). Diisi bertahap oleh `fanout` (greenfield) atau lebih awal oleh `architect` (brownfield).
+- `packages` = shared code lintas-app (H2). Entri ditulis `add-package`; `consumers` (basis fan-IN) ditulis `fanout`. Lihat spec `2026-06-01-h2-shared-package-design.md`.
 - `stack` = diisi `architect`. Untuk fitur berikutnya, `plan` membaca kode + `conventions.md`.
 
 ### 7.2 Pemisahan tulisan knowledge
@@ -229,6 +237,8 @@ Brownfield: init → architect(capture) → extract(opsi) → wire → /feature 
 
 **Cabang dipicu — fitur butuh app baru:** bila `fanout` mendeteksi tidak ada app existing yang menampung sebuah peran, `feature` otomatis invoke **`add-app`** (declare entri ke `workspace.yaml` → `architect` → `wire`) sebelum `plan`. `add-app` juga bisa dipanggil standalone. Lihat spec `2026-05-31-add-app-skill-design.md`.
 
+**Cabang dipicu — fitur butuh shared package baru:** bila `fanout` menandai kode-bareng >1 app sebagai `PACKAGE NEW`, `feature` otomatis invoke **`add-package`** (declare entri ke `packages[]` → `architect` → `wire` mode-package, gate typecheck) sebelum `plan`. Saat API shared package berubah, `breakdown` menerbitkan update-task per consumer (fan-IN). Task hidup di `unit` (app ATAU package). Lihat spec `2026-06-01-h2-shared-package-design.md`.
+
 **Invarian platform & sensitivity:** `architect` mengunci invarian platform (`control/invariants.md`) **sekali sebelum `wire`** (gated, `critic` wajib); `intake` menandai `feature.yaml` `sensitivity` (`payments`/`pii`) yang menyetir kedalaman Security & Compliance Gate di `ship`. Lihat spec `2026-06-01-platform-invariants-security-gate-design.md`.
 
 Status di `feature.yaml`:
@@ -272,10 +282,10 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 ## 17. Komponen (ringkas)
 
-- **Skills (15):** `discovery` · `init` · `architect` · `wire` · `add-app` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
+- **Skills (16):** `discovery` · `init` · `architect` · `wire` · `add-app` · `add-package` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
 - **Agent:** `critic` · `security-critic`
 - **Rules:** `anti-yes-man.md`
-- **Knowledge (`control/`):** `workspace.yaml` · `business/` · `conventions.md` · `invariants.md` · `features/` · `docs/`
+- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `features/` · `docs/`
 
 ## 18. Open Questions (untuk dipertimbangkan saat implementasi)
 
