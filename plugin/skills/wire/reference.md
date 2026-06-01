@@ -81,3 +81,13 @@ Shared package = kode bareng tanpa runtime sendiri → bring-up dipangkas. Dipan
 - **Yang DI-SKIP:** spin DB, ORM/migrasi, wiring FE↔BE, smoke HTTP. Package tak punya `db`/route.
 - **Invarian:** package = CONSUMER invarian, bukan pengunci — prasyarat invarian (langkah 0) tetap berlaku sebagai backstop, tapi `wire` tak mengunci apa pun.
 - **Multi-repo:** sama seperti app — `git -C <packages[pkg].path> rev-parse --show-toplevel`, branch per repo unik (§G).
+
+## J. Mode-integration (vendor eksternal inbound)
+
+Vendor eksternal dengan arah **inbound** (vendor mengirim webhook ke kita) butuh endpoint penerima. Dipanggil `add-integration` (hanya bila `Arah` memuat inbound).
+
+- **Yang DIKERJAKAN:** scaffold **stub** route webhook-receiver di app penerima (`Receiver app` dari entri `integrations.md`): route ter-register di framework app, handler mengembalikan placeholder (mis. 200/501) — **BELUM** ada logika verifikasi. Plus rekam SHAPE env vendor (NAMA var, mis. `<VENDOR>_WEBHOOK_SECRET`) ke `conventions.md` (pola §D).
+- **Gate penutup mode-integration** = app tetap boot + route ter-register + typecheck/lint hijau. (Tak ada smoke HTTP penuh.)
+- **Yang DI-SKIP:** verifikasi signature, idempotent/replay, test keamanan → itu **task `build`** (varian inbound-eksternal). Secret = tetap GATE/manual (§D); JANGAN masuk `control/`/git.
+- **Outbound-only** tak menyentuh mode-integration (tak ada receiver) — `add-integration` cukup merekam SHAPE env (§D).
+- Reuse scaffolder app + mesin env `build` yang sama (§H); tak ada duplikasi.
