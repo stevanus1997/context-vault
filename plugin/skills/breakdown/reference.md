@@ -12,7 +12,7 @@ milestones:
     title: <judul milestone>
     tasks:
       - id: T1
-        app: <nama app>            # cocok dengan apps[].name di workspace.yaml
+        unit: <nama app/pkg>        # cocok dengan apps[].name ATAU packages[].name; atau "integration"
         desc: <satu baris — apa yang dibangun>
         files:                     # WHERE — path saja, BUKAN kode
           - create: <path relatif app>
@@ -33,7 +33,7 @@ milestones:
         status: pending            # pending | in_progress | done | blocked | needs_human
       # Task integrasi cross-app (lihat §D-3 & spec S2): menjalankan >1 app bareng
       - id: T_INT
-        app: integration           # pseudo-app — gate-nya membentang beberapa tree, tak punya path sendiri
+        unit: integration           # pseudo-unit — gate-nya membentang beberapa tree, tak punya path sendiri
         desc: <uji end-to-end flow lintas-app, mis. register via web → user di DB api>
         approach: boot app terkait (path/stack dari workspace.yaml) lalu jalankan flow nyata
         test:
@@ -55,7 +55,7 @@ milestones:
 - **`manual:` untuk langkah AI-nggak-bisa.** Bikin OAuth app, set secret produksi, provision DB → daftar di `manual:`; `build` pause (`needs_human`) & lapor checklist.
 - **`test:` boleh non-unit.** Untuk task non-unit-testable (config, scaffold, shared types), `test:` boleh berisi kriteria seperti "typecheck hijau"/"build sukses"/"file ada & ke-import"; size-nya "satu artifact koheren".
 
-## C. Contoh (fitur `auth`, 2 app: api + web)
+## C. Contoh (fitur `auth`, 2 app — api + web)
 
 ```yaml
 feature: auth
@@ -65,7 +65,7 @@ milestones:
     title: Fondasi + email/password
     tasks:
       - id: T1
-        app: api
+        unit: api
         desc: User model + util hashing password
         files:
           - create: src/models/user.ts
@@ -78,7 +78,7 @@ milestones:
         deps: []
         status: pending
       - id: T2
-        app: api
+        unit: api
         desc: Session (issue + verify) per _shared.md
         files:
           - create: src/lib/session.ts
@@ -90,7 +90,7 @@ milestones:
         deps: [T1]
         status: pending
       - id: T3
-        app: api
+        unit: api
         desc: POST /auth/register
         files:
           - create: src/routes/auth/register.ts
@@ -104,7 +104,7 @@ milestones:
         deps: [T1, T2]
         status: pending
       - id: T4
-        app: api
+        unit: api
         desc: POST /auth/login + POST /auth/logout
         files:
           - create: src/routes/auth/login.ts
@@ -118,7 +118,7 @@ milestones:
         deps: [T1, T2]
         status: pending
       - id: T5
-        app: web
+        unit: web
         desc: LoginPage (email+pw) wired ke /auth/login
         files:
           - create: src/app/(auth)/login/page.tsx
@@ -130,7 +130,7 @@ milestones:
         deps: [T4]
         status: pending
       - id: T6
-        app: web
+        unit: web
         desc: RegisterPage wired ke /auth/register
         files:
           - create: src/app/(auth)/register/page.tsx
@@ -140,6 +140,18 @@ milestones:
           - validasi form
           - email kepake 409 ditampilkan
         deps: [T3]
+        status: pending
+      - id: T_PKG
+        unit: money                  # shared package (packages[].name) — bukan app
+        desc: util formatMoney + parseMoney (dipakai web + api)
+        files:
+          - create: src/index.ts
+          - test:   test/money.test.ts
+        approach: format minor-unit ke string lokal; tanpa DB/route
+        test:
+          - format 100050 -> "Rp 1.000,50"
+          - typecheck hijau
+        deps: []
         status: pending
   - id: M2
     title: Password lifecycle (forgot / reset / change)
@@ -154,4 +166,5 @@ milestones:
 
 1. **`actions` (kerja AI bisa, non-file).** Jenis: `install` (auto), `cmd` (auto), `migrate` (GATE — destruktif), `env` (build tulis ke `.env`). `build` mengeksekusi + memverifikasi tiap action sebagai bagian dari `done`.
 2. **`manual` + status `needs_human` (kerja manusia).** Task ber-`manual:` yang belum beres → `build` set `status: needs_human`, **STOP SELURUH build**, lapor checklist; lanjut setelah user beresin. `needs_human` ≠ `blocked` (blocked = ada error/bug; needs_human = bener, nunggu manusia).
-3. **Task integrasi (`app: integration`).** Untuk tiap dependency lintas-app di `_shared.md`/`fanout.md`, munculkan SATU task integrasi: `deps` ke KEDUA sisi kontrak, `test` = roundtrip end-to-end nyata. Pseudo-app `integration` tak punya `path`/repo sendiri (jalan di atas repo app-app di `deps`-nya). Fitur 1-app tanpa `_shared.md` → tidak perlu.
+3. **Task integrasi (`unit: integration`).** Untuk tiap dependency lintas-app di `_shared.md`/`fanout.md`, munculkan SATU task integrasi: `deps` ke KEDUA sisi kontrak, `test` = roundtrip end-to-end nyata. Pseudo-unit `integration` tak punya `path`/repo sendiri (jalan di atas repo unit di `deps`-nya). Fitur 1-app tanpa `_shared.md` → tidak perlu.
+4. **Task package & fan-IN.** Task yang hidup di shared package → `unit: <nama-pkg>` (cocok `packages[].name`); **DILARANG** `actions: [migrate]`/`actions: [env]` (package tak punya DB/infra); `test` = typecheck/unit exports. **Fan-IN (saat `plans/<pkg>.md` ber-flag `BREAKING`):** terbitkan 1 task `unit: <pkg>` (ubah package) + **1 update-task per consumer** (`unit: <consumer-app>`, `deps: [task-pkg]`) untuk tiap nama di `packages[<pkg>].consumers` + 1 task `unit: integration` (roundtrip package↔consumer). Pseudo-unit `integration` diperluas mencakup roundtrip package↔consumer (boot consumer app, panggil exports package, assert sesuai kontrak `plans/<pkg>.md`).
