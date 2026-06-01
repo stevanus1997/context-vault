@@ -20,7 +20,8 @@ Tujuan: ubah KEPUTUSAN `architect` jadi skeleton yang JALAN — app ter-scaffold
 ## Langkah (per app, urut; detail tiap langkah di reference)
 
 ### 0. Baca state & deteksi mode
-Baca `control/workspace.yaml` (`apps[]`: path/type/stack/topology) + `control/conventions.md` + `control/invariants.md`. **Prasyarat stack:** architect sudah set `stack` logical (min framework + db + orm) per app; kalau belum → arahkan ke `architect`. **Prasyarat invarian:** `control/invariants.md` ada DAN semua slot resolved (tak ada `<belum dikunci>`); kalau tidak → **STOP**, arahkan ke `architect` (kunci invarian dulu — ia membentuk skema baseline). Cek kode tiap `path`: kosong → **greenfield (scaffold penuh)**; ada kode → **brownfield (repair: lengkapi yang kurang, idempotent, jangan timpa)**.
+Baca `control/workspace.yaml` (`apps[]` + `packages[]`: path/type/stack/topology) + `control/conventions.md` + `control/invariants.md`. **Prasyarat stack:** architect sudah set `stack` logical (min framework + db + orm) per app; kalau belum → arahkan ke `architect`. **Prasyarat invarian:** `control/invariants.md` ada DAN semua slot resolved (tak ada `<belum dikunci>`); kalau tidak → **STOP**, arahkan ke `architect` (kunci invarian dulu — ia membentuk skema baseline). Cek kode tiap `path`: kosong → **greenfield (scaffold penuh)**; ada kode → **brownfield (repair: lengkapi yang kurang, idempotent, jangan timpa)**.
+- **Unit `type: package` → MODE-PACKAGE (reference §I):** package tak punya DB/server/route. Scaffold skeleton lib + register di workspace; **gate penutup = typecheck/lint hijau**; SKIP langkah 2 (DB), 3 (ORM/migrate), 4 (FE↔BE), 6 (smoke runtime). Resolve `path` dari `packages[].path`.
 
 ### 0.5 Q&A operasional ("nutup architect")
 Per app, tanya yang OPERASIONAL (bukan pilih arsitektur): DB bare-engine → **Docker lokal / URL remote?**; DB managed → minta creds (gated); package manager/runtime; nilai env/secret. Konfirmasi `stack` logical yang dibaca; field logical hilang/ambigu → STOP, balikin ke architect.
@@ -44,6 +45,6 @@ Tulis `.env` app (pastikan gitignored): DB_URL, API base URL, secret. Rekam SHAP
 Boot? DB kebaca? FE→BE nyampe? Ijo → tutup gate, laporkan "**app <x> siap di-`feature`**". Merah → STOP + lapor akar masalah (sandar `systematic-debugging`); JANGAN klaim siap. (reference E.)
 
 ## Catatan
-- `wire` sekali jalan (kayak `extract`). Saat nambah app baru, dipanggil oleh skill `add-app` (yang chain `architect`→`wire`); bisa juga di-rerun manual. Brownfield: bersifat **repair** — hanya bila wiring belum lengkap.
+- `wire` sekali jalan (kayak `extract`). Saat nambah app baru, dipanggil oleh skill `add-app` (yang chain `architect`→`wire`); saat nambah shared package, dipanggil oleh skill `add-package` (mode-package — reference §I); bisa juga di-rerun manual. Brownfield: bersifat **repair** — hanya bila wiring belum lengkap.
 - TIDAK bikin table/skema fitur — itu jatah `build`. `wire` cuma bikin pipeline migrasi BERFUNGSI + baseline.
 - TIDAK nyentuh `control/business/*`. PR & merge = jatah pengguna/`ship`; cek branch dulu (jangan mulai di `main` tanpa izin).

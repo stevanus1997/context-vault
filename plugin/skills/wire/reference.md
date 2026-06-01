@@ -71,3 +71,13 @@ wire meminjam mesin side-effect `build` (spec breakdown-build §7.1), bukan biki
 - Pola STOP `manual:`/`needs_human` untuk langkah tangan-manusia (creds managed).
 
 **Beda dengan build:** wire = **SEKALI, fondasi** (skeleton kosong-tapi-jalan); build = **PER FITUR** (kode fitur ke skeleton). wire bikin **pipeline migrasi BERFUNGSI + baseline** (kosong table fitur); build bikin **TABLE fitur**. Dua-duanya gate `migrate`.
+
+## I. Mode-package (unit `type: package`)
+
+Shared package = kode bareng tanpa runtime sendiri → bring-up dipangkas. Dipanggil `add-package`.
+
+- **Yang DIKERJAKAN:** scaffold skeleton library via tool resmi stack (mis. `tsup`/`tsc --init`, atau minimal `package.json` + `tsconfig` + `src/index`) + **register di workspace** (pnpm-workspace.yaml / turbo / `tsconfig` paths) sesuai topology.
+- **Gate penutup = typecheck/lint hijau** (ganti smoke test runtime). Definisi "siap": package ke-build/typecheck tanpa error & ter-resolve dari workspace.
+- **Yang DI-SKIP:** spin DB, ORM/migrasi, wiring FE↔BE, smoke HTTP. Package tak punya `db`/route.
+- **Invarian:** package = CONSUMER invarian, bukan pengunci — prasyarat invarian (langkah 0) tetap berlaku sebagai backstop, tapi `wire` tak mengunci apa pun.
+- **Multi-repo:** sama seperti app — `git -C <packages[pkg].path> rev-parse --show-toplevel`, branch per repo unik (§G).
