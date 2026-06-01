@@ -22,7 +22,7 @@ Ambil task `pending` pertama yang seluruh `deps`-nya `done`.
 Bila task terpilih punya `manual:` yang belum dikonfirmasi beres → set `status: needs_human`, **STOP SELURUH build**, lapor checklist langkah manual ke user; **jangan dispatch** (hemat ronde implementer). Lanjut setelah user konfirmasi beres.
 
 ### 3. Dispatch implementer subagent
-**Bila `unit: integration`:** ini BUKAN edit satu app — dispatch subagent yang mem-boot app-app di `deps` (pakai `path`/`stack` `workspace.yaml`), jalankan `test` roundtrip nyata terhadap kontrak `_shared.md`/`plans/<pkg>.md`, balik ringkasan + status. Gate-nya (step 6) membentang tree unit terkait, bukan satu app.
+**Bila `unit: integration`:** ini BUKAN edit satu app — dispatch subagent yang mem-boot app NYATA di `deps` (pakai `path`/`stack` `workspace.yaml`; unit `package` di `deps` TIDAK di-boot — ia di-import consumer app: roundtrip package↔consumer = boot consumer lalu panggil exports package), jalankan `test` roundtrip nyata terhadap kontrak `_shared.md`/`plans/<pkg>.md`, balik ringkasan + status. Gate-nya (step 6) membentang tree unit terkait, bukan satu app.
 
 **Bila `unit` = package** (`unit ∈ packages[]`): dispatch = typecheck + test exports package (BUKAN boot/smoke app); resolve `path` dari `packages[].path`. **Fan-IN cheap-skip:** untuk update-task consumer (`deps: [task-pkg]` dari perubahan package `BREAKING`), subagent CEK dulu "consumer ini beneran memakai export yang berubah?" — kalau **tidak** → tandai no-op, pastikan typecheck hijau, selesai cepat (tak ada perubahan kode). Enumerasi tetap semua consumer (aman); biaya per-consumer murah.
 

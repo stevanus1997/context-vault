@@ -1,6 +1,6 @@
 {
   "name": "context-vault",
-  "description": "AI-first product boilerplate: lapisan AI + knowledge untuk mengelola produk multi-app (init, architect + kunci invarian platform + wire bring-up, add-app nambah app baru, feature pipeline, breakdown/build dengan actions/manual + integrasi cross-app + multi-repo aware, ship dengan security gate/drop, docs).",
+  "description": "AI-first product boilerplate: lapisan AI + knowledge untuk mengelola produk multi-app (init, architect + kunci invarian platform + wire bring-up, add-app nambah app baru, add-package nambah shared package, add-integration nambah vendor eksternal (kontrak SHAPE + webhook inbound), feature pipeline, breakdown/build dengan actions/manual + fan-IN package + integrasi cross-app + multi-repo aware, ship dengan security gate/drop, docs).",
   "version": "0.1.0",
   "author": {
     "name": "stevanus",

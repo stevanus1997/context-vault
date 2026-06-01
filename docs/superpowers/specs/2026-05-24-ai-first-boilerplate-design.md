@@ -127,7 +127,7 @@ context-vault/
 │   ├── agents/   critic.md· security-critic.md
 │   └── rules/    anti-yes-man.md         # di-merge ke CLAUDE.md produk
 ├── template/
-│   ├── control/  (workspace.yaml· business/· conventions.md· features/· docs/ theme warm)
+│   ├── control/  (workspace.yaml· business/· conventions.md· invariants.md· integrations.md· features/· docs/ theme warm)
 │   └── .claude/  settings.json· CLAUDE.md (starter)
 ├── .claude-plugin/marketplace.json
 └── README.md
