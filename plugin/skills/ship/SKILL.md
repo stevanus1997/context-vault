@@ -10,7 +10,7 @@ Tujuan: pastikan fitur yang sudah diimplementasi BENAR & selaras bisnis, lalu ki
 ## Langkah
 
 ### 1. Baca fitur & cek kesiapan
-Baca `control/features/<fitur>/feature.yaml` (harus `status: active`, + field `sensitivity`), `business.md`, `fanout.md`, `plans/*`. Tentukan app yang kena dari `fanout.md` + `path`/`stack` dari `control/workspace.yaml`.
+Baca `control/features/<fitur>/feature.yaml` (harus `status: active`, + field `sensitivity`), `business.md`, `fanout.md`, `plans/*`. Tentukan **unit** (app ATAU package) yang kena dari `fanout.md`/`tasks.yaml` + `path`/`stack` dari `control/workspace.yaml` (`apps[]` + `packages[]`).
 **Cek kelengkapan build:** bila `tasks.yaml` ada, verifikasi SEMUA task `done`. Ada task belum-`done` (`pending`/`in_progress`/`blocked`/`needs_human`/status belum-selesai lain) → **BERHENTI**, arahkan balik ke `build` (jangan ship fitur setengah jadi). Bila `tasks.yaml` tidak ada, konfirmasi implementasi dilakukan manual. **Guard diff kosong:** kalau tidak ada perubahan kode terhadap base, jangan bikin PR — laporkan.
 
 ### 2. Per app yang kena
@@ -40,7 +40,7 @@ Disisipkan di sini (desimal 4.5) supaya tak me-renumber Step 5/6 & cross-ref int
 
 ### 6. Kirim & tandai (GATE)
 - Susun deskripsi PR dari `business.md` + `fanout.md` + `plans` + ringkasan diff (terhubung ke ALASAN bisnis, bukan cuma "what").
-- Tentukan **repo unik** yang kena: probe `git -C <path> rev-parse --show-toplevel` tiap app NYATA, kelompokkan per toplevel. Bikin **satu PR per repo unik** (monorepo/nested → otomatis 1 PR karena toplevel sama; multi-repo → 1 PR per repo). Base = hasil deteksi `symbolic-ref` (di code-review step). Pakai `gh pr create`; bila `gh`/remote tak ada, tampilkan deskripsi PR untuk dibuat user.
+- Tentukan **repo unik** yang kena: probe `git -C <path> rev-parse --show-toplevel` tiap unit NYATA (app ATAU package; resolve `path` dari `apps[]`/`packages[]`), kelompokkan per toplevel. Bikin **satu PR per repo unik** (monorepo/nested → otomatis 1 PR karena toplevel sama; multi-repo → 1 PR per repo). Update-task consumer (fan-IN) sudah masuk `tasks.yaml` → repo consumer otomatis ikut grouping. Base = hasil deteksi `symbolic-ref` (di code-review step). Pakai `gh pr create`; bila `gh`/remote tak ada, tampilkan deskripsi PR untuk dibuat user.
 - Set `feature.yaml` → `status: shipped` + tambah `shipped_at: <YYYY-MM-DD>`.
 - Regenerate doc: invoke skill `render-docs` bila tersedia; bila belum ada (Fase 5), ingatkan user untuk regenerate nanti.
 
