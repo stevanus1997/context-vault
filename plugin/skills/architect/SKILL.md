@@ -35,7 +35,7 @@ Bila dijalankan untuk sebuah shared package (bukan app): Q&A **teknikal** singka
 Tetapkan/rekam kontrak bersama (auth, format API, shared package, ORM standar) → tulis ke `control/conventions.md` (ganti skeleton-nya). Untuk keputusan fondasi besar (mahal di-refactor), jalankan Challenge Checklist + invoke subagent `critic`.
 
 ### 4.5 Kunci Invarian Platform (sekali, level-produk, GATE)
-Invarian = keputusan fondasi yang membentuk SETIAP table & query, mahal di-refactor (model tenancy, representasi uang, idempotency, authz, PII/PCI, rate-limit). Dikunci di DEPAN, bukan ditunda ke fitur pertama.
+Invarian = keputusan fondasi yang membentuk SETIAP table & query, mahal di-refactor (model tenancy, representasi uang, idempotency, authz, PII/PCI, rate-limit, integrasi/webhook eksternal). Dikunci di DEPAN, bukan ditunda ke fitur pertama.
 - Baca `control/invariants.md`. **Idempotent:** kalau SEMUA slot sudah resolved (bukan lagi `<belum dikunci>`) → tampilkan ringkas + konfirmasi, **JANGAN tanya ulang**. (Penting: `architect` di-rerun & dipanggil `add-app` per app baru — penguncian invarian level-produk TIDAK boleh terjadi tiap app.)
 - Kalau ada slot `<belum dikunci>`: **ELICIT** per slot keputusannya (level fondasi, bukan stack). User boleh jawab `N/A — alasan`. Sodorkan slot saran; terima invarian tambahan spesifik-produk. Tulis hasil ke `control/invariants.md` (ganti `<belum dikunci>`).
 - **`critic` WAJIB di gate ini** (bukan kondisional): red-team `invariants.md` — invarian fondasi kelewat? keputusan berisiko/over-engineered? bentrok antar-invarian? Tanggapi tiap keberatan sebelum gate lewat.
