@@ -22,7 +22,9 @@ sensitivity: []        # [] | [payments] | [pii] | [payments, pii] — diusulkan
 ### 2. Jalankan tahap berurutan dengan gate
 1. Invoke skill **`intake`** untuk `<nama>` → tunggu gate (approve `business.md`).
 2. Invoke skill **`fanout`** untuk `<nama>` → tunggu gate (approve `fanout.md`).
-   - **Bila `fanout.md` nandain app `NEW` (belum ada):** untuk tiap app baru, invoke skill **`add-app <nama-app>`** (declare entri → `architect` → `wire`, semua gated) → tunggu beres. Baru lanjut ke `plan`. Saat `plan` jalan, app baru sudah ada di `workspace.yaml` **dan** sudah ter-wire.
+   - **Bila `fanout.md` nandain app `NEW` (belum ada):** untuk tiap app baru, invoke skill **`add-app <nama-app>`** (declare entri → `architect` → `wire`, semua gated) → tunggu beres.
+   - **Bila `fanout.md` nandain `PACKAGE NEW` (belum ada):** untuk tiap package baru, invoke skill **`add-package <nama-pkg>`** (declare entri → `architect` → `wire` mode-package, semua gated) → tunggu beres.
+   - Selesaikan SEMUA `add-app` lalu `add-package` dulu, **baru lanjut ke `plan`**. Saat `plan` jalan, app/package baru sudah ada di `workspace.yaml` (app ter-wire; package ter-typecheck).
 3. Invoke skill **`plan`** untuk `<nama>` → tunggu gate (approve semua `plans/<app>.md`).
 
 Jangan lanjut tahap berikutnya sebelum gate tahap sebelumnya di-approve user.
@@ -35,6 +37,6 @@ Tampilkan artifact yang dihasilkan (`business.md`, `fanout.md`, `plans/*`). Sara
 
 ## Catatan
 - `intake`/`fanout`/`plan` modular — bisa dipanggil sendiri untuk mengulang satu tahap (mis. `fanout` ulang setelah revisi `business.md`).
-- Prasyarat: app sudah di-`wire` (skeleton jalan: DB nyambung, FE↔BE ke-wire). Kalau `plan` mentok karena fondasi belum ada, jalankan `wire` dulu (setelah `architect`). Kalau fitur butuh app yang **BELUM ADA** sama sekali, itu ditangani `add-app` (dipicu otomatis dari `fanout` — lihat langkah 2).
+- Prasyarat: app sudah di-`wire` (skeleton jalan: DB nyambung, FE↔BE ke-wire). Kalau `plan` mentok karena fondasi belum ada, jalankan `wire` dulu (setelah `architect`). Kalau fitur butuh app yang **BELUM ADA** sama sekali, itu ditangani `add-app`; kalau butuh shared package yang **BELUM ADA**, ditangani `add-package` (keduanya dipicu otomatis dari `fanout` — lihat langkah 2).
 - **Bila `tasks.yaml` sudah dibuat `breakdown` lalu kamu merevisi `plan`/`business`, jalankan `breakdown` ulang** (ia mempertahankan status task yang sudah `done`) sebelum lanjut `build` — biar task nggak basi.
 - Eksekusi implementasi ditangani `breakdown` → `build`; transisi `shipped`/`dropped` ditangani `ship`/`drop`.
