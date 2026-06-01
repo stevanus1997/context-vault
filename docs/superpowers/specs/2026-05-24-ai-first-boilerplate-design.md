@@ -69,6 +69,7 @@ control/
 │   └── glossary.md       # istilah
 ├── conventions.md        # konvensi & kontrak teknis lintas-app
 ├── invariants.md         # invarian platform (tenancy/money/idempotency/authz/PII-PCI/rate-limit; dikunci architect)
+├── integrations.md       # kontrak SHAPE vendor eksternal (M5; diisi add-integration)
 ├── features/
 │   └── <nama-fitur>/
 │       ├── feature.yaml  # status + metadata
@@ -181,14 +182,14 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 
 #### `fanout` (P1)
 - **Input:** `business.md` + `workspace.yaml` (capabilities).
-- **Perilaku:** cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentukan app yang kena & perannya; **adaptif**: bila hanya 1 app → konfirmasi cepat; bila banyak → breakdown penuh. Boleh menerima hint `--app`, tetapi **tetap memverifikasi** (bisa mengoreksi bila ternyata menyentuh app lain). Challenge: "ada app kelewat? dependency lintas-app?".
-- **Output:** `features/<nama>/fanout.md` + update `capabilities` di `workspace.yaml`.
+- **Perilaku:** cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentukan app yang kena & perannya; **adaptif**: bila hanya 1 app → konfirmasi cepat; bila banyak → breakdown penuh. Boleh menerima hint `--app`, tetapi **tetap memverifikasi** (bisa mengoreksi bila ternyata menyentuh app lain). Challenge: "ada app kelewat? dependency lintas-app? butuh vendor eksternal?". Baca `integrations.md` → tandai `VENDOR NEW`/`VENDOR TOUCHED`/`VENDOR TOUCHED — perlu UPDATE` (diwujudkan `add-integration`).
+- **Output:** `features/<nama>/fanout.md` (+ penanda `VENDOR …`) + update `capabilities` di `workspace.yaml`.
 - **Gate:** approve/koreksi (user paling tahu peta produk).
 - **Prinsip:** "cuma 1 app" adalah **kesimpulan** fanout, bukan input — karena itu fanout tidak pernah di-skip.
 
 #### `plan` (P2 fase 2)
-- **Input:** `business.md` + `fanout.md` + **kode app** yang kena + `conventions.md`.
-- **Perilaku:** selesaikan **kontrak lintas-app** dulu (mis. mekanisme token) → untuk tiap app: baca kode/konvensi, Q&A **teknis**, susun plan (file, endpoint, model data, test); challenge teknis. (Karena `architect` sudah jalan, `plan` selalu membaca stack yang ada — tidak menetapkan stack.)
+- **Input:** `business.md` + `fanout.md` + **kode app** yang kena + `conventions.md` + `integrations.md` (kontrak vendor, read-only).
+- **Perilaku:** selesaikan **kontrak lintas-app** dulu (mis. mekanisme token) + **promote kontrak vendor** dari `integrations.md` ke `_shared.md` (O(1), idempotent) → untuk tiap app: baca kode/konvensi, Q&A **teknis**, susun plan (file, endpoint, model data, test; baris kebutuhan receiver untuk webhook vendor inbound); challenge teknis. (Karena `architect` sudah jalan, `plan` selalu membaca stack yang ada — tidak menetapkan stack.)
 - **Output:** `features/<nama>/plans/_shared.md` + `plans/<app>.md`.
 - **Gate:** approve per app → siap dieksekusi.
 
@@ -197,18 +198,18 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 - **Perilaku:** dijalankan setelah implementasi (manual/pakai pola existing). Langkah:
   1. **Code review** atas diff fitur.
   2. **Quality gate** — test, lint, typecheck, build.
-  2.5. **Security & Compliance gate** — berskala ke `sensitivity` fitur; `payments`/`pii` → subagent `security-critic` red-team diff (secret/PII/PCI/authz/webhook); temuan high → STOP.
+  2.5. **Security & Compliance gate** — berskala ke `sensitivity` fitur; `payments`/`pii` → subagent `security-critic` red-team diff (secret/PII/PCI/authz/webhook) terhadap `invariants.md` + `integrations.md` (baseline webhook); temuan high → STOP. PR menyertakan runbook integrasi (webhook-URL + secret-NAMA + test→live).
   3. **Business alignment** — bandingkan kode yang jadi vs `business.md` + `plan` (pakai `critic`): apakah yang dibangun sesuai maksud bisnis? ada scope creep / requirement kelewat? *(Cek ini hanya mungkin karena ada `business.md` — payoff sistem knowledge, sekaligus jawaban P3.)*
   - Jika **semua hijau:** buat **PR** dengan deskripsi auto dari `business.md`+`fanout.md`+`plans`+diff (multi-repo → PR per app yang kena) → set status `shipped` → trigger `render-docs`.
   - Jika **ada merah:** laporkan kegagalan/misalignment, **stop — tidak ship** (anti-yes-man, tidak rubber-stamp).
 
 ### `drop`
 - **Tujuan:** membatalkan fitur (`draft`/`active`).
-- **Perilaku:** tanya alasan → set status `dropped` + reason + tanggal; review promosi knowledge fitur ini ("keep atau revert?" — `critic` membantu flag); folder **dikeep** sebagai memori keputusan; branch git diingatkan (urusan git user).
+- **Perilaku:** tanya alasan → set status `dropped` + reason + tanggal; review promosi knowledge fitur ini ("keep atau revert?" — `critic` membantu flag; bila fitur memperkenalkan vendor → pengingat tinjau entri `integrations.md`); folder **dikeep** sebagai memori keputusan; branch git diingatkan (urusan git user).
 
 ### `render-docs`
 - **Tujuan:** knowledge → dokumen human-readable.
-- **Input:** `workspace.yaml` + `business/` + `features/`.
+- **Input:** `workspace.yaml` + `business/` + `integrations.md` + `features/`.
 - **Perilaku:** render ke single HTML (layout sidebar B1, tema Warm/Friendly), **filter by status** (fitur `dropped` tidak tampil / masuk section terpisah).
 - **Output:** `control/docs/site/index.html`.
 - **Trigger:** otomatis saat `shipped`; bisa dipanggil manual kapan saja untuk preview.
@@ -238,6 +239,8 @@ Brownfield: init → architect(capture) → extract(opsi) → wire → /feature 
 **Cabang dipicu — fitur butuh app baru:** bila `fanout` mendeteksi tidak ada app existing yang menampung sebuah peran, `feature` otomatis invoke **`add-app`** (declare entri ke `workspace.yaml` → `architect` → `wire`) sebelum `plan`. `add-app` juga bisa dipanggil standalone. Lihat spec `2026-05-31-add-app-skill-design.md`.
 
 **Cabang dipicu — fitur butuh shared package baru:** bila `fanout` menandai kode-bareng >1 app sebagai `PACKAGE NEW`, `feature` otomatis invoke **`add-package`** (declare entri ke `packages[]` → `architect` → `wire` mode-package, gate typecheck) sebelum `plan`. Saat API shared package berubah, `breakdown` menerbitkan update-task per consumer (fan-IN). Task hidup di `unit` (app ATAU package). Lihat spec `2026-06-01-h2-shared-package-design.md`.
+
+**Cabang dipicu — fitur butuh vendor eksternal:** bila `fanout` menandai kebutuhan layanan pihak-ketiga sebagai `VENDOR NEW` (atau `VENDOR TOUCHED — perlu UPDATE`), `feature` otomatis invoke **`add-integration`** (declare kontrak SHAPE ke `control/integrations.md` → `wire` mode-integration buat stub webhook-receiver bila inbound) sebelum `plan`. `add-integration` TAK chain `architect` (vendor tak punya stack). Webhook inbound jadi task `unit:<app>` varian inbound-eksternal (verifikasi signature/idempotent/replay). Lihat spec `2026-06-01-m5-integrations-design.md`.
 
 **Invarian platform & sensitivity:** `architect` mengunci invarian platform (`control/invariants.md`) **sekali sebelum `wire`** (gated, `critic` wajib); `intake` menandai `feature.yaml` `sensitivity` (`payments`/`pii`) yang menyetir kedalaman Security & Compliance Gate di `ship`. Lihat spec `2026-06-01-platform-invariants-security-gate-design.md`.
 
@@ -282,10 +285,10 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 ## 17. Komponen (ringkas)
 
-- **Skills (16):** `discovery` · `init` · `architect` · `wire` · `add-app` · `add-package` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
+- **Skills (17):** `discovery` · `init` · `architect` · `wire` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
 - **Agent:** `critic` · `security-critic`
 - **Rules:** `anti-yes-man.md`
-- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `features/` · `docs/`
+- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `features/` · `docs/`
 
 ## 18. Open Questions (untuk dipertimbangkan saat implementasi)
 
