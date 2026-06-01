@@ -18,6 +18,7 @@ Tanya kenapa di-drop (singkat). WAJIB — ini jadi memori keputusan.
 ### 3. Review promosi knowledge
 Identifikasi knowledge durable yang sempat disumbang fitur ini: aturan di `control/business/`, `capabilities` di `control/workspace.yaml`. Invoke subagent `critic` untuk bantu pilah: mana yang **feature-specific** (kandidat revert) vs **benar lepas dari fitur** (keep). Tanyakan ke user keep/revert per item, lalu terapkan.
 - **Bila fitur ini bikin app/package baru yang ikut di-drop:** kalau sebuah **app** dihapus, bersihkan namanya dari semua `packages[].consumers` + `mandatory_for` (jangan tinggalkan consumer hantu yang bikin fan-IN salah-target).
+- **Bila fitur ini memperkenalkan vendor eksternal** (cek `fanout.md` fitur): **pengingat lunak** ke user — "fitur ini memperkenalkan `<vendor>`; tinjau apakah entri `control/integrations.md` masih dipakai fitur lain sebelum dibersihkan." Tanpa mesin keras (v1 tak melacak vendor-consumers presisi); drop entri `integrations.md` = aksi manual user.
 
 ### 4. Tandai dropped (GATE)
 Set `control/features/<fitur>/feature.yaml`:
