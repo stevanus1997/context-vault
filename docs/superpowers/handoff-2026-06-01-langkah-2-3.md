@@ -1,5 +1,7 @@
 # HANDOFF — context-vault pipeline hardening (audit ecommerce-builder)
 
+> ⛔ **SUPERSEDED (2026-06-01):** H2 di dokumen ini SUDAH selesai & LIVE di `main` @ `fa62982`. Buat sesi baru, baca **`docs/superpowers/handoff-2026-06-01-langkah-2-sisa-3.md`** (Langkah 2 sisa M5/M4/H3 + Langkah 3). Dokumen ini disimpan sebagai riwayat.
+
 > **Buat sesi baru: BACA INI DULU.** Dokumen ini self-contained — kamu tak perlu konteks chat sesi sebelumnya. Sumber kebenaran tetap spec + plan di repo (di-link di bawah). Tanggal handoff: **2026-06-01**. Repo: `~/Developer/ai-boilerplate` (github.com/stevanus1997/context-vault), branch kerja: `main`.
 
 ---
