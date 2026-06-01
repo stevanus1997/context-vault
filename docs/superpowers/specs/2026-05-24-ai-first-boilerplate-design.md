@@ -168,8 +168,8 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 #### `intake` (P2 fase 1)
 - **Input:** ide fitur + `business/*.md` + `workspace.yaml`.
 - **Perilaku:** Q&A **level bisnis** (bukan teknis); cek feasibility kasar dari `capabilities`; jalankan **challenge checklist**; panggil `critic` di gate penting.
-- **Output:** `features/<nama>/business.md` + promosi knowledge durable ke `business/`.
-- **Gate:** approve `business.md` + promosi knowledge.
+- **Output:** `features/<nama>/business.md` + promosi knowledge durable ke `business/` + usulan tag `sensitivity` (`payments`/`pii`, cross-check `invariants.md`) di `feature.yaml`.
+- **Gate:** approve `business.md` + promosi knowledge + tag `sensitivity`.
 
 #### `fanout` (P1)
 - **Input:** `business.md` + `workspace.yaml` (capabilities).
@@ -205,7 +205,7 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 - **Output:** `control/docs/site/index.html`.
 - **Trigger:** otomatis saat `shipped`; bisa dipanggil manual kapan saja untuk preview.
 
-## 10. Agent: `critic`
+## 10. Agent: `critic` & `security-critic`
 
 Agent terpisah (konteks sendiri) yang tugasnya **mencari celah/bentrok/blind-spot**. Dipanggil di gate penting (`intake` untuk keputusan fondasi, `architect` untuk kunci invarian, `ship` untuk business alignment). Mengembalikan daftar keberatan; agent utama wajib menanggapi sebelum gate lewat. Pemisahan ini menghilangkan bias "yang mengusulkan = yang menilai".
 
@@ -228,6 +228,8 @@ Brownfield: init → architect(capture) → extract(opsi) → wire → /feature 
 ```
 
 **Cabang dipicu — fitur butuh app baru:** bila `fanout` mendeteksi tidak ada app existing yang menampung sebuah peran, `feature` otomatis invoke **`add-app`** (declare entri ke `workspace.yaml` → `architect` → `wire`) sebelum `plan`. `add-app` juga bisa dipanggil standalone. Lihat spec `2026-05-31-add-app-skill-design.md`.
+
+**Invarian platform & sensitivity:** `architect` mengunci invarian platform (`control/invariants.md`) **sekali sebelum `wire`** (gated, `critic` wajib); `intake` menandai `feature.yaml` `sensitivity` (`payments`/`pii`) yang menyetir kedalaman Security & Compliance Gate di `ship`. Lihat spec `2026-06-01-platform-invariants-security-gate-design.md`.
 
 Status di `feature.yaml`:
 

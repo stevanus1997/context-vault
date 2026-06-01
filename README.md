@@ -62,4 +62,4 @@ Otomatis dipanggil `ship`; bisa juga manual untuk preview.
 Lihat `docs/superpowers/specs/2026-05-24-ai-first-boilerplate-design.md`.
 
 ## Status
-Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end. **Tambahan:** `discovery` — business consultant pra-`init` (validasi ide mentah → seed `business/` + HTML strategis).
+Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end. **Tambahan (live di main):** `discovery` (business consultant pra-`init`), `wire` (bring-up skeleton kosong-tapi-jalan), `add-app` (nambah app baru pasca-init), `breakdown`+`build` (fase eksekusi plan→kode). **Hardening (Langkah 1 — audit ecommerce-builder):** invarian platform dikunci `architect` sebelum `wire` (di `control/invariants.md`) + **Security & Compliance Gate** di `ship` (berskala `sensitivity`, agent `security-critic`).
