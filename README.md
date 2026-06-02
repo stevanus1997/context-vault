@@ -50,7 +50,9 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 ```
 /ship <fitur>       # finishing: review + quality + security gate (sensitivity-scaled) + cek alignment ke business -> PR -> tandai shipped
 /drop <fitur>       # batalkan fitur (tandai dropped + alasan, simpan sebagai memori keputusan)
+/fix <apa-yang-rusak>   # lane bugfix: auto-deteksi in-flight (fitur active) / post-ship (fixes/<id>/); berhenti di ijo, ship terpisah
 ```
+> `/fix` = koreksi perilaku yang **sudah ada** (bukan `/feature` yang buat kapabilitas baru). in-flight → corrective task di `tasks.yaml` fitur; post-ship → `control/fixes/<id>/` first-class. `build`/`ship` work-item-aware (fitur ATAU fix).
 
 ## Dokumentasi
 ```
@@ -62,4 +64,4 @@ Otomatis dipanggil `ship`; bisa juga manual untuk preview.
 Lihat `docs/superpowers/specs/2026-05-24-ai-first-boilerplate-design.md`.
 
 ## Status
-Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end. **Tambahan (live di main):** `discovery` (business consultant pra-`init`), `wire` (bring-up skeleton kosong-tapi-jalan), `add-app` (nambah app baru pasca-init), `breakdown`+`build` (fase eksekusi plan→kode). **Hardening (Langkah 1 — audit ecommerce-builder):** invarian platform dikunci `architect` sebelum `wire` (di `control/invariants.md`) + **Security & Compliance Gate** di `ship` (berskala `sensitivity`, agent `security-critic`). **Langkah 2:** shared package end-to-end + fan-IN (`add-package`, `packages[]` — H2) + vendor eksternal durable (`add-integration`, `control/integrations.md`, webhook inbound + baseline `security-critic` — M5).
+Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end. **Tambahan (live di main):** `discovery` (business consultant pra-`init`), `wire` (bring-up skeleton kosong-tapi-jalan), `add-app` (nambah app baru pasca-init), `breakdown`+`build` (fase eksekusi plan→kode). **Hardening (Langkah 1 — audit ecommerce-builder):** invarian platform dikunci `architect` sebelum `wire` (di `control/invariants.md`) + **Security & Compliance Gate** di `ship` (berskala `sensitivity`, agent `security-critic`). **Langkah 2:** shared package end-to-end + fan-IN (`add-package`, `packages[]` — H2) + vendor eksternal durable (`add-integration`, `control/integrations.md`, webhook inbound + baseline `security-critic` — M5). **Lane bugfix:** `fix` (dua-mode in-flight/post-ship, `control/fixes/` first-class, work-item generalization `build`/`ship`).
