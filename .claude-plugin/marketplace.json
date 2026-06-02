@@ -12,7 +12,7 @@
     {
       "name": "context-vault",
       "source": "./plugin",
-      "description": "Skills, agent, dan rules untuk mengelola produk multi-app secara AI-first.",
+      "description": "Skills (init→ship + lane bugfix fix), agent, dan rules untuk mengelola produk multi-app secara AI-first.",
       "version": "0.1.0"
     }
   ]
