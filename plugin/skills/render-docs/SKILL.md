@@ -14,6 +14,7 @@ Tujuan: hasilkan SATU file HTML self-contained yang rapi & ramah orang non-tekni
 - `control/integrations.md` → daftar vendor eksternal (vendor, Arah, Dipakai, Mode) — SHAPE-only, TANPA secret.
 - `control/business/domain.md`, `flows.md`, `glossary.md`.
 - `control/features/*/feature.yaml` (+ `business.md`) — kumpulkan fitur.
+- `control/fixes/*/fix.yaml` — kumpulkan defect (id, status, severity, reported, relates_to, flow). SHAPE-only, TANPA isi sensitif.
 
 ### 2. Baca template desain
 Baca `${CLAUDE_PLUGIN_ROOT}/skills/render-docs/template.html`. Pakai `<head>`/CSS dan struktur B1-nya APA ADANYA (jangan redesign) supaya konsisten antar-generate.
@@ -24,6 +25,7 @@ Ganti tiap penanda `<!-- SLOT:x -->` + section contohnya dengan konten nyata:
 - **apps:** satu `.card` per app: judul `name` + `type`, `responsibility`, lalu `capabilities` sebagai `.chip`.
 - **packages:** satu `.card` per shared package (bila ada): judul `name` + label "package", `responsibility`, `consumers` (app yang memakai) sebagai `.chip`, tandai `mandatory_for` bila ada. Bedakan visual dari kartu app.
 - **integrations:** satu `.card` per vendor eksternal (bila ada, dari `integrations.md`): judul `vendor` + label "integrasi", `Dipakai`, `Arah` + `Mode` sebagai `.chip`. SHAPE-only — JANGAN tampilkan nilai secret (cuma NAMA env var bila perlu). Bedakan visual dari kartu app/package.
+- **fixes:** isi `<!-- SLOT:fixes -->`. Satu `.card` per fix dari `control/fixes/`: judul `id` + `.sev` (`severity`) + `.status` (`status`), `reported`, lalu `.meta` link `relates_to` (fitur) + `flow`. Urut: **Known Issues** (`open`/`diagnosed`) dulu, severity `urgent` di atas; lalu **Riwayat** (`shipped`). `dropped` JANGAN ditampilkan.
 - **capabilities:** tabel kapabilitas × app (centang app mana punya kapabilitas apa).
 - **flows:** render `flows.md` (heading per flow + langkah) jadi HTML.
 - **glossary:** render `glossary.md` (istilah + definisi).
@@ -31,7 +33,7 @@ Ganti tiap penanda `<!-- SLOT:x -->` + section contohnya dengan konten nyata:
 - Render markdown sederhana (heading, list, bold, inline code) jadi HTML yang sesuai.
 
 ### 4. FILTER status fitur
-Fitur ber-status `dropped` JANGAN ditampilkan di bagian utama. (Opsional: bagian kecil "Diarsipkan" di akhir, tapi default sembunyikan.) Fitur `active`/`shipped` boleh tampil (mis. badge `.status`).
+Fitur ber-status `dropped` JANGAN ditampilkan di bagian utama. (Opsional: bagian kecil "Diarsipkan" di akhir, tapi default sembunyikan.) Fitur `active`/`shipped` boleh tampil (mis. badge `.status`). Untuk fix: `dropped` JANGAN ditampilkan; `open`/`diagnosed` = "Known Issues"; `shipped` = "Riwayat". `render-docs` dipicu `ship` (fix shipped) **dan** oleh `fix` saat status fix berubah jadi `open`/`diagnosed` (biar Known Issues muncul tanpa nunggu ship lain).
 
 ### 5. Tulis output
 Tulis hasil ke `control/docs/site/index.html` (buat folder bila belum ada). Pastikan self-contained (CSS inline dari template, tanpa file eksternal).

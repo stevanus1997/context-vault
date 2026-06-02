@@ -26,6 +26,9 @@
   .meta{color:var(--muted);font-size:13px}
   .status{font-size:12px;padding:2px 8px;border-radius:6px}
   .status.active{background:#e6efe1;color:#4a7a3f} .status.shipped{background:#dfeaf6;color:#3a6ea5}
+  .status.open{background:#f6ecdf;color:#a5703a} .status.diagnosed{background:#f6f0df;color:#9a8a3a}
+  .sev{font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px}
+  .sev.urgent{background:#f6dfe0;color:#a53a45} .sev.normal{background:#eee;color:#777}
   table{border-collapse:collapse;width:100%} td,th{border:1px solid var(--line);padding:8px 10px;text-align:left;font-size:14px}
   code{background:var(--panel);padding:1px 5px;border-radius:4px;font-size:13px}
 </style>
@@ -40,6 +43,7 @@
     <a href="#capabilities">🔌 Kapabilitas</a>
     <a href="#flows">🔀 Flows</a>
     <a href="#glossary">📖 Glossary</a>
+    <a href="#fixes">🛠️ Riwayat Fix</a>
   </nav>
 </aside>
 <main>
@@ -57,6 +61,13 @@
   <section id="flows"><h2>Flows</h2><p class="meta">Business flows dari flows.md.</p></section>
   <!-- SLOT:glossary -->
   <section id="glossary"><h2>Glossary</h2><p class="meta">Istilah dari glossary.md.</p></section>
+  <!-- SLOT:fixes -->
+  <section id="fixes"><h2>Riwayat Fix / Known Issues</h2>
+    <p class="meta">Defect dari control/fixes/. Known Issues (open/diagnosed) di atas, Riwayat (shipped) di bawah.</p>
+    <div class="card"><h3>kupon-expired <span class="sev urgent">urgent</span> <span class="status open">open</span></h3>
+      <p>kupon SUMMER expired masih kepake di checkout.</p>
+      <div class="meta">fitur: checkout-kupon · flow: checkout</div></div>
+  </section>
 </main>
 </body>
 </html>
