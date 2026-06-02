@@ -78,6 +78,11 @@ control/
 │       └── plans/
 │           ├── _shared.md   # kontrak lintas-app (mis. mekanisme token)
 │           └── <app>.md     # plan teknis per app
+├── fixes/                # lane bugfix (post-ship) — entitas first-class
+│   └── <id>/
+│       ├── fix.yaml      # status + severity + relates_to + root_cause
+│       ├── notes.md      # repro + log root-cause
+│       └── tasks.yaml    # mini (milestone-wrapped)
 └── docs/
     └── site/index.html   # doc human-readable (generated)
 ```
@@ -242,6 +247,8 @@ Brownfield: init → architect(capture) → extract(opsi) → wire → /feature 
 
 **Cabang dipicu — fitur butuh vendor eksternal:** bila `fanout` menandai kebutuhan layanan pihak-ketiga sebagai `VENDOR NEW` (atau `VENDOR TOUCHED — perlu UPDATE`), `feature` otomatis invoke **`add-integration`** (declare kontrak SHAPE ke `control/integrations.md` → `wire` mode-integration buat stub webhook-receiver bila inbound) sebelum `plan`. `add-integration` TAK chain `architect` (vendor tak punya stack). Webhook inbound jadi task `unit:<app>` varian inbound-eksternal (verifikasi signature/idempotent/replay). Lihat spec `2026-06-01-m5-integrations-design.md`.
 
+**Lane korektif — defect (bug):** untuk perilaku yang **sudah ada** & salah, **`/fix`** (auto-deteksi mode). **in-flight** (fitur `active`): corrective task `kind: fix` di `tasks.yaml` fitur, eksekusi lewat `build`, berhenti di ijo (ship nanti sekalian fitur). **post-ship** (fitur `shipped`/tanpa-fitur): `control/fixes/<id>/` first-class, berhenti di "siap ship" → `/ship <fix>` TERPISAH. `build`/`ship` di-generalisasi (work-item = fitur ATAU fix). Lihat spec `2026-06-02-fix-bugfix-lane-design.md`.
+
 **Invarian platform & sensitivity:** `architect` mengunci invarian platform (`control/invariants.md`) **sekali sebelum `wire`** (gated, `critic` wajib); `intake` menandai `feature.yaml` `sensitivity` (`payments`/`pii`) yang menyetir kedalaman Security & Compliance Gate di `ship`. Lihat spec `2026-06-01-platform-invariants-security-gate-design.md`.
 
 Status di `feature.yaml`:
@@ -252,6 +259,8 @@ Status di `feature.yaml`:
 | `active` | gate `plan` terakhir lulus | otomatis |
 | `shipped` | `/ship` semua-hijau | hasil menjalankan skill |
 | `dropped` | `/drop` | hasil menjalankan skill |
+
+Status `fix.yaml` (post-ship): `open` (`/fix` mulai) → `diagnosed` (root_cause terisi) → `shipped` (`/ship` hijau) (+ `dropped` bila bukan-bug). Progress halus `fixing`/`done` dibaca dari `fixes/<id>/tasks.yaml`.
 
 Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang sudah ada (`business.md`/`fanout.md`/`plans/`).
 
@@ -285,7 +294,7 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 ## 17. Komponen (ringkas)
 
-- **Skills (17):** `discovery` · `init` · `architect` · `wire` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs`
+- **Skills (18):** `discovery` · `init` · `architect` · `wire` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs` · `fix`
 - **Agent:** `critic` · `security-critic`
 - **Rules:** `anti-yes-man.md`
 - **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `features/` · `docs/`
