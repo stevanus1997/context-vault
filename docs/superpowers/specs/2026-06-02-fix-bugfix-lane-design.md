@@ -222,12 +222,14 @@ Sumbu reuse. `build`/`ship` saat ini hardcode `control/features/<fitur>/`. Gener
   - line 46 (gate) → saat gate merah karena **penyimpangan** (bukan error), jalankan **disiplin fix yang di-EMBED** (tulis corrective task, lanjut loop) — **bukan** invoke `/fix` (anti-rekursi #6).
   - terima metadata task `kind`/`corrects`/`observed` (traceability; tak mengubah eksekusi).
   - `plans/*`/`_shared.md` **opsional untuk fix 1-unit**; **`_shared.md` mini WAJIB untuk fix lintas-unit** (pembawa kontrak — #3). Konteks implementer untuk fix diambil dari `conventions.md` + pointer file pola + `root_cause` + kutipan `business.md` `relates_to` (eksplisit, bukan asumsi).
+  - line 18 (branch) + step 7 (line 50/55) → derive prefix & pesan-selesai per work-item: `feature/<fitur>` (fitur) vs `fix/<id>` (fix); `build` tak mengubah status manifest. (Gap koreksi pasca-implementasi: spec draft awal lupa menyebut langkah branch/selesai.)
 - **`ship`:**
   - line 12–13 → baca `feature.yaml` **ATAU** `fix.yaml`; **sumber `unit` = `fix.yaml.units`** (bukan `fanout.md`, yang tak ada untuk fix). [#4]
   - step 2/3 → fix lintas-unit (`units` >1) **tetap** menjalankan contract/smoke test (step 3) terhadap `_shared.md` mini fix. Fix 1-unit lewati (seperti fitur 1-app). [#4]
   - step 4.5 (Security Gate) → baca `sensitivity` dari `fix.yaml` (**hasil re-evaluasi**, #5) + cross-check `invariants.md`/`integrations.md`.
   - step 6 → desc PR fix dari `root_cause` + diff; set `fix.yaml` `status: shipped` + `shipped_at` + `fix_pr`.
   - line 50 (guard) → terima `fix.yaml` `open`/`diagnosed`.
+  - step 2 (business-alignment) → untuk fix, `critic` bandingkan vs `root_cause` + kutipan `business.md` `relates_to` (`plans/<app>.md` tak ada); `relates_to: []` → `root_cause`/`invariants.md` saja. step 6 (runbook integrasi) → gate "bila **work-item** kena vendor" (fix yang menyentuh vendor existing tetap perlu runbook).
 - **`breakdown` (BERUBAH — draft pertama keliru bilang "tak ada perubahan wajib"):** step 7 (merge yang mempertahankan status) **wajib mempertahankan task `kind: fix`** yang tak punya asal-`plan` — kalau tidak, re-`breakdown` membuang corrective task in-flight diam-diam → bug ter-regress (#2). Penulis sah `tasks.yaml` fitur tetap `breakdown`, tapi `fix`/`build` boleh **append** task `kind: fix`; `breakdown` mengenalinya sebagai task yang dipertahankan, bukan di-regenerate.
 - **`drop`:** **TIDAK** diberi fix-id (hindari setengah-generalisasi skill kedua — #8). `fix` self-handle `dropped`.
 - **`render-docs` (perubahan SUBSTANSIAL, bukan opsional — #10):** baca direktori baru `control/fixes/`, render section **"Riwayat Fix / Known Issues"** (kartu severity, link `relates_to`+`flow`). **Trigger:** selain saat `ship` (untuk fix `shipped`), `fix` **memicu/mengingatkan** regenerate saat `fix.yaml` jadi `open`/`diagnosed` — kalau tidak, "Known Issues" tak muncul ke stakeholder sampai ada `ship` lain tak-berhubungan.
@@ -244,9 +246,9 @@ Sumbu reuse. `build`/`ship` saat ini hardcode `control/features/<fitur>/`. Gener
 ## 13. Dampak ke Komponen Existing
 
 - **Skill baru:** `plugin/skills/fix/SKILL.md` (+ kemungkinan `reference.md` delta khas-fix: reproduce-first, root-cause-subagent; sebagian besar sandar `build/reference.md`).
-- **`build/SKILL.md`:** generalisasi manifest (line 15) + staleness baseline (16) + embed disiplin fix di gate merah (46, bukan invoke `/fix`) + terima metadata `kind`/`corrects`/`observed` + aturan konteks/`_shared.md` untuk fix.
+- **`build/SKILL.md`:** generalisasi manifest (line 15) + staleness baseline (16) + embed disiplin fix di gate merah (46, bukan invoke `/fix`) + terima metadata `kind`/`corrects`/`observed` + aturan konteks/`_shared.md` untuk fix + branch & pesan-selesai per work-item (18, 50, 55).
 - **`breakdown/SKILL.md`:** step 7 pertahankan task `kind: fix` tanpa asal-plan (BERUBAH).
-- **`ship/SKILL.md`:** baca `feature.yaml`/`fix.yaml`; unit dari `fix.yaml.units`; step 3 contract test fix lintas-unit; Security Gate baca sensitivity fix; set status di manifest tepat.
+- **`ship/SKILL.md`:** baca `feature.yaml`/`fix.yaml`; unit dari `fix.yaml.units`; step 3 contract test fix lintas-unit; Security Gate baca sensitivity fix; set status di manifest tepat; business-alignment & runbook integrasi per work-item.
 - **`render-docs/SKILL.md`:** baca `control/fixes/`; section "Riwayat Fix/Known Issues" (severity-sorted, link feature/flow); trigger saat status fix berubah (SUBSTANSIAL).
 - **`control/` template:** `control/fixes/.gitkeep`.
 - **`invariants.md`:** dibaca di triage fix (re-evaluasi sensitivity) + Security Gate — bukan komponen baru, tapi titik-baca baru.

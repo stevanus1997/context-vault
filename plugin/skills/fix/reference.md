@@ -65,4 +65,4 @@ reason: ""                   # diisi saat dropped
 
 ## E. Drop (self-handle)
 
-Triage/investigasi = bukan-bug / wontfix / duplikat → `fix` **self-set** `fix.yaml` `status: dropped` + isi `reason`, folder dikeep (memori). **JANGAN** panggil skill `drop` (itu khusus fitur — asумsi `feature.yaml`/promosi capability yang tak relevan untuk fix).
+Triage/investigasi = bukan-bug / wontfix / duplikat → `fix` **self-set** `fix.yaml` `status: dropped` + isi `reason`, folder dikeep (memori). **JANGAN** panggil skill `drop` (itu khusus fitur — asumsi `feature.yaml`/promosi capability yang tak relevan untuk fix).

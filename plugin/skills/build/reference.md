@@ -71,8 +71,8 @@ Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yam
 ## F. Multi-repo (probe & branch)
 
 Probe identitas repo tiap unit NYATA (app ATAU package; resolve `path` dari `apps[]`/`packages[]`): `git -C <path> rev-parse --show-toplevel`.
-- `toplevel(app) == toplevel(hub)` atau antar-app sama → **SAMA repo** (monorepo/nested) → satu branch `feature/<fitur>`, nanti 1 PR.
-- `toplevel(app) != toplevel(hub)` → **repo TERPISAH** → branch `feature/<fitur>` sendiri per repo, nanti PR sendiri.
+- `toplevel(app) == toplevel(hub)` atau antar-app sama → **SAMA repo** (monorepo/nested) → satu branch work-item (`feature/<fitur>` atau `fix/<id>`), nanti 1 PR.
+- `toplevel(app) != toplevel(hub)` → **repo TERPISAH** → branch work-item (`feature/<fitur>` atau `fix/<id>`) sendiri per repo, nanti PR sendiri.
 - probe error → belum git repo → minta user `git init`/skip.
 
 Implementer subagent commit di repo unit-nya (`git -C <path>`). `build` memastikan branch ada SEBELUM dispatch task yang nulis ke repo itu. **Pseudo-unit `integration` dilewati** saat probe/branch (tak punya `path`/repo sendiri); ia jalan di atas repo unit di `deps`-nya yang branch-nya sudah dibuat. Package mono-repo (`path = packages/<nama>`) ciut ke toplevel hub; multi-repo (`path = ../<nama>`) dapat branch+PR sendiri — sama seperti app. Eksekusi tetap sekuensial sesuai `deps` (tak ada dua subagent nulis tree sama serempak).

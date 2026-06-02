@@ -42,7 +42,7 @@ Konteks: bug produksi; tak ada branch hidup; fitur `shipped` (atau tanpa-fitur).
 4. **Root-cause (subagent, `systematic-debugging`)** — isi `root_cause` → `status: diagnosed` (reference §C.2). Bila ungkap doc salah → cabang koreksi knowledge (reference §D.3).
 5. **Tulis fix-task** — `control/fixes/<id>/tasks.yaml` (milestone-wrapped, 1–3 task; reference §B). Lintas-unit → `_shared.md` mini **wajib**.
 6. **Eksekusi** — pinjam `build` (work-item `fixes/<id>/`; branch `fix/<id>` per repo): implementer (TDD) + review 2-tahap + gate per unit.
-7. **Verify lokal + STOP** — quality (test/lint/typecheck/build) ijo → **STOP, "siap di-`ship`"**. `/ship <fix>` dijalankan TERPISAH (boleh nawarin "lanjut ship?", default STOP). Picu `render-docs` saat status berubah (`open`→ Known Issues tampil).
+7. **Verify lokal + STOP** — quality (test/lint/typecheck/build) ijo → **STOP, "siap di-`ship`"**. `/ship <fix>` dijalankan TERPISAH (boleh nawarin "lanjut ship?", default STOP). Picu `render-docs` saat status berubah (`open`/`diagnosed`→ Known Issues tampil/ter-update).
 8. **Drop path** — bukan-bug/wontfix/dup → self-set `status: dropped` + `reason`, folder dikeep (reference §E).
 
 **Unit-inference (bukan fanout penuh):** infer `units` dari `fanout.md` fitur `relates_to` lalu **konfirmasi user**. Ini versi-lemah `fanout` (tak deteksi vendor/unit-kelewat penuh) — bila ternyata nyentuh unit di luar footprint / vendor baru → itu tripwire → `/feature` (reference §D).
