@@ -54,6 +54,12 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 ```
 > `/fix` = koreksi perilaku yang **sudah ada** (bukan `/feature` yang buat kapabilitas baru). in-flight → corrective task di `tasks.yaml` fitur; post-ship → `control/fixes/<id>/` first-class. `build`/`ship` work-item-aware (fitur ATAU fix).
 
+## Tanya produk (read-only)
+```
+/ask <pertanyaan>   # tanya APA PUN soal produk (greenfield/brownfield): knowledge-first, code-fallback
+```
+`ask` baca `control/` dulu (sumber kebenaran), turun ke kode cuma saat level-implementasi / knowledge tipis. Tiap jawaban sebut sumbernya; pas nemu catatan basi vs kode (drift) di-flag lalu di-route ke skill pemilik (`/architect`, `/intake`|`/feature`, `/add-integration`). **Tidak pernah nulis** — cuma jawab + (opsional) saran skill. Pelengkap read-side dari `render-docs`.
+
 ## Dokumentasi
 ```
 /render-docs        # generate doc HTML human-readable dari knowledge -> control/docs/site/index.html
@@ -64,4 +70,4 @@ Otomatis dipanggil `ship`; bisa juga manual untuk preview.
 Lihat `docs/superpowers/specs/2026-05-24-ai-first-boilerplate-design.md`.
 
 ## Status
-Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end. **Tambahan (live di main):** `discovery` (business consultant pra-`init`), `wire` (bring-up skeleton kosong-tapi-jalan), `add-app` (nambah app baru pasca-init), `breakdown`+`build` (fase eksekusi plan→kode). **Hardening (Langkah 1 — audit ecommerce-builder):** invarian platform dikunci `architect` sebelum `wire` (di `control/invariants.md`) + **Security & Compliance Gate** di `ship` (berskala `sensitivity`, agent `security-critic`). **Langkah 2:** shared package end-to-end + fan-IN (`add-package`, `packages[]` — H2) + vendor eksternal durable (`add-integration`, `control/integrations.md`, webhook inbound + baseline `security-critic` — M5). **Lane bugfix:** `fix` (dua-mode in-flight/post-ship, `control/fixes/` first-class, work-item generalization `build`/`ship`).
+Selesai (Fase 1–5): init, pipeline fitur (feature/intake/fanout/plan + critic), architect/extract, lifecycle (ship/drop), render-docs. Boilerplate context-vault lengkap end-to-end. **Tambahan (live di main):** `discovery` (business consultant pra-`init`), `wire` (bring-up skeleton kosong-tapi-jalan), `add-app` (nambah app baru pasca-init), `breakdown`+`build` (fase eksekusi plan→kode). **Hardening (Langkah 1 — audit ecommerce-builder):** invarian platform dikunci `architect` sebelum `wire` (di `control/invariants.md`) + **Security & Compliance Gate** di `ship` (berskala `sensitivity`, agent `security-critic`). **Langkah 2:** shared package end-to-end + fan-IN (`add-package`, `packages[]` — H2) + vendor eksternal durable (`add-integration`, `control/integrations.md`, webhook inbound + baseline `security-critic` — M5). **Lane bugfix:** `fix` (dua-mode in-flight/post-ship, `control/fixes/` first-class, work-item generalization `build`/`ship`). **Sisi-baca:** `ask` (AMA produk read-only — knowledge-first + code-fallback, grounding wajib, flag drift→route ke skill pemilik, tidak pernah nulis).
