@@ -38,6 +38,7 @@ Untuk tiap vendor yang kena fitur (`VENDOR NEW`/`VENDOR TOUCHED`/`…perlu UPDAT
 - Q&A **teknis** seperlunya.
 - Susun plan: file yang disentuh, endpoint/komponen, model data, test. **Bila app mengonsumsi package** → catat dependency-nya (package apa, dipakai untuk apa) di plan app.
 - **Challenge teknis** sebelum gate: konsistensi dengan konvensi? risiko? cara lebih sederhana? Apakah plan ini melanggar invarian yang terkunci di `control/invariants.md` (tenancy/money/idempotency/authz/PII-PCI)? **Apakah app ini membuat logika yang seharusnya pakai mandatory package** (mis. format uang sendiri padahal `money` ada di `packages[].mandatory_for` app ini)? **Apakah fitur menyentuh vendor eksternal tapi kontraknya tak ada di `control/integrations.md`** (seam `fanout` terlewat)? → arahkan jalankan `add-integration`.
+- **Debt-aware (utang teknis di area ini).** Ikuti `${CLAUDE_PLUGIN_ROOT}/rules/debt-aware.md`: baca `control/debt.yaml`, saring utang `open` (`owner: feature`) yang `area`-nya ∈ app ini. Ini **rider** pada baca-kode app yang sudah dilakukan di atas, bukan langkah baru. Utang yang ketemu disodorkan di gate (langkah 4).
 
 ### 4. Tulis output (GATE per app/package)
 Tulis `control/features/<fitur>/plans/<pkg>.md` (kontrak, langkah 2b) lalu `control/features/<fitur>/plans/<app>.md`:
@@ -48,7 +49,7 @@ API/Komponen : <...>
 Lokasi       : <path konkret di app>
 Test         : <...>
 ```
-Tampilkan tiap plan → minta **approve per app**.
+Tampilkan tiap plan → minta **approve per app**. **Bila ada utang `open` di area app ini** (langkah 3 debt-aware): sodorkan di gate — *"area ini punya N utang open: `<ringkas>`. Lipat ke fitur ini? (+N task)"*. Untuk tiap utang yang di-ACC, tulis baris **`Utang dilunasi: <id>`** di `plans/<app>.md` (ini yang dibaca `breakdown` §4 untuk membuat task `kind: debt, pays_debt: <id>`). Yang ditolak biarkan `open` — tetap muncul di render-docs "Known Issues". `plan` **tidak** menulis `control/debt.yaml` (status diturunkan; pemiliknya `/debt`).
 
 ## Catatan
 - JANGAN menetapkan stack/framework di sini — itu sudah ditetapkan `architect`. `plan` membaca yang ADA. Bila app belum punya fondasi (skeleton belum jalan), hentikan & arahkan user menjalankan `wire` dulu (bring-up; `wire` jalan setelah `architect`).
