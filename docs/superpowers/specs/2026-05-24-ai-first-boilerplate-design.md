@@ -128,7 +128,7 @@ Promosi dilakukan **konservatif** (hanya fakta yang benar lepas dari fitur), sup
 context-vault/
 ├── plugin/
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/   discovery· init· architect· wire· add-app· add-package· add-integration· extract· intake· fanout· plan· feature· breakdown· build· ship· drop· render-docs· fix
+│   ├── skills/   discovery· init· architect· wire· add-app· add-package· add-integration· extract· intake· fanout· plan· feature· breakdown· build· ship· drop· render-docs· fix· ask· debt
 │   ├── agents/   critic.md· security-critic.md
 │   └── rules/    anti-yes-man.md         # di-merge ke CLAUDE.md produk
 ├── template/
@@ -294,7 +294,7 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 ## 17. Komponen (ringkas)
 
-- **Skills (19):** `discovery` · `init` · `architect` · `wire` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs` · `fix` · `ask`
+- **Skills (20):** `discovery` · `init` · `architect` · `wire` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs` · `fix` · `ask` · `debt`
 - **Agent:** `critic` · `security-critic`
 - **Rules:** `anti-yes-man.md`
 - **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `features/` · `docs/`
