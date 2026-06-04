@@ -12,7 +12,7 @@
     {
       "name": "context-vault",
       "source": "./plugin",
-      "description": "Skills (init→ship + lane bugfix fix + ask read-only), agent, dan rules untuk mengelola produk multi-app secara AI-first.",
+      "description": "Skills (init→ship + lane bugfix fix + ask read-only + lane utang teknis debt), agent, dan rules untuk mengelola produk multi-app secara AI-first.",
       "version": "0.1.0"
     }
   ]
