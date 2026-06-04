@@ -75,9 +75,10 @@ control/
 │       ├── feature.yaml  # status + metadata
 │       ├── business.md   # output intake
 │       ├── fanout.md     # output fanout
-│       └── plans/
-│           ├── _shared.md   # kontrak lintas-app (mis. mekanisme token)
-│           └── <app>.md     # plan teknis per app
+│       ├── plans/
+│       │   ├── _shared.md   # kontrak lintas-app (mis. mekanisme token)
+│       │   └── <app>.md     # plan teknis per app
+│       └── mockups/        # mockup UI diserahkan user (byte opaque; ditulis plan, dibaca build), bila ada
 ├── fixes/                # lane bugfix (post-ship) — entitas first-class
 │   └── <id>/
 │       ├── fix.yaml      # status + severity + relates_to + root_cause
