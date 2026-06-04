@@ -22,6 +22,7 @@ Dari satu entri `tasks.yaml`, controller (`build`) merakit prompt berisi:
 - **Kontrak:** potongan `_shared.md` yang relevan.
 - **Konvensi & stack:** dari `conventions.md` + `workspace.yaml` `stack` app.
 - **Pointer pola:** tunjuk 1-2 file existing sebagai contoh gaya (mis. route sejenis).
+- **Mockup (bila task ber-`mockup:`):** baca file di path → **teks** (HTML/CSS) di-**paste VERBATIM** ke prompt; **gambar** (PNG/JPG) → sertakan path & minta subagent **membuka/melihat**-nya; **URL Figma** → fetch via Figma MCP bila tersedia, kalau tidak → perlakukan sebagai screenshot/gambar. Instruksi (**tech-agnostic**): *"Reproduksi HASIL VISUAL — layout, spacing, hierarki, dan animasi/transisi — memakai stack app (`workspace.yaml`) + komponen pada file 'Pointer pola'. JANGAN transplant markup mentah mockup; terjemahkan ke idiom komponen project. BAWA transisi/animasi yang ada di mockup — jangan dibuang sebagai dekoratif."* Mockup = byte opaque user; `build` tak pernah mengasumsi framework-nya.
 - **Signature dep (WAJIB bila ada `deps`):** untuk tiap task di `deps`, baca file yang dibuat/diubahnya **di disk** lalu paste signature/ekspor TERKINI-nya (mis. `hash(pw: string): Promise<string>`, `issueSession(userId): string`). Implementer membangun di atas kode NYATA, bukan tebakan dari teks `approach`.
 - **Instruksi:** pakai `test-driven-development`; commit setelah hijau; self-review; balik **ringkasan + status**. Bila spec kurang, subagent boleh **balik nanya dulu** sebelum mulai (jangan nebak).
 
@@ -47,7 +48,7 @@ Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yam
 ## C. Pilih model (hemat biaya & cepat)
 - Task mekanikal (1-2 file, spec jelas) → model murah/cepat.
 - Integrasi multi-file / pattern-matching → model standar.
-- Butuh judgment desain → model paling kuat.
+- Butuh judgment desain → model paling kuat. **Task ber-`mockup:` masuk kategori ini** — menerjemahkan mockup (yang teknologinya bisa ≠ stack project) ke komponen existing tanpa transplant markup butuh judgment desain.
 
 ## D. Cadence gate (mode A adaptif)
 - **Default:** gate per **app × milestone** — semua task satu unit (app/pkg) dalam satu milestone hijau → BERHENTI, tampilkan diff + test + "dibangun vs task" + challenge checklist → approve/revisi.
