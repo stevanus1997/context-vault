@@ -24,6 +24,8 @@ Tentukan target nyangkut apa, lalu pilih mode:
 
 Lalu **triage guard** (reference §D): **kode salah** (lanjut) / **requirement baru** (STOP → `/feature`) / **doc salah** (koreksi knowledge, gated `critic`). Cek **tripwire** (butuh capability/vendor/unit baru → STOP → `/feature`).
 
+**Debt-aware (utang teknis di area bug).** Saat sudah tahu `units` bug, ikuti `${CLAUDE_PLUGIN_ROOT}/rules/debt-aware.md`: baca `control/debt.yaml`, saring utang `open` (`owner: feature`) di area yang sama — rider pada baca-kode area yang fix sudah lakukan. Tawarkan: *"sekalian beresin N utang di area ini?"*. Yang di-ACC → tambah task `kind: debt, pays_debt: <id>` (refactor, perilaku tetap; skema metadata reference §B) ke `tasks.yaml` work-item ini. Ditolak → biarkan `open`. `fix` tak menulis `control/debt.yaml`.
+
 ### 2. Mode in-flight
 Konteks: fitur `active`, `tasks.yaml` ada, branch hidup. Bug = task `done` tapi hasil meleset / gap tak ke-cover.
 1. **Reproduce (subagent)** — test/snapshot MERAH (reference §C.1).
@@ -49,5 +51,6 @@ Konteks: bug produksi; tak ada branch hidup; fitur `shipped` (atau tanpa-fitur).
 
 ## Catatan
 - `fix` **tak pernah** auto-`ship` & tak bikin PR — jatah `/ship` (terpisah, eksplisit). `fix` cuma sampai IJO.
+- Utang teknis (benar tapi jelek) **bukan** defect → bukan jatah `fix` untuk men-*catat*; itu `control/debt.yaml` (di-capture `build` pintu ke-4, dikelola `/debt`). `fix` hanya **melunasi** utang `open` yang kebetulan satu-area lewat task `kind: debt` (§1 debt-aware) — sibling `kind: fix`.
 - BUKAN urusannya: kapabilitas/kontrak/vendor BARU (→ `/feature`); nentuin stack (→ `architect`); bikin PR/`shipped` (→ `ship`).
 - Hemat konteks: reproduce + root-cause + implementasi semua di subagent; sesi `fix` cuma nampung kesimpulan + status.
