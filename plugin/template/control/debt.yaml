@@ -1,0 +1,29 @@
+# <PRODUCT> — Registry Utang Teknis (Tech Debt)
+#
+# Rumah debt: hal yang secara arsitektur menyusahkan tapi SEKARANG masih benar
+# (bukan defect → itu control/fixes/ lewat /fix; bukan kapabilitas baru → itu /feature).
+# Pasif sampai ditarik. Pemilik schema = skill /debt. `build` APPEND entri `open`
+# saat menemukannya (pintu ke-4); `/debt drop` menulis penanda `dropped`. Tak ada penulis lain.
+# Dibaca: plan & fix (rules/debt-aware.md — by area), render-docs (Known Issues), ask.
+#
+# Status TIDAK ditulis tangan — DITURUNKAN (status-as-byproduct):
+#   open      = tak ada task `pays_debt: <id>` aktif; dan `dropped` kosong
+#   scheduled = ada task `pays_debt: <id>` pending/in_progress di host (feature/fix) aktif
+#   shipped   = task `pays_debt: <id>` ada di feature/fix yang manifest-nya sudah shipped
+#   dropped   = field `dropped` terisi (dari /debt drop)
+#
+# Belum ada utang — daftar tumbuh just-in-time lewat `build` (pintu ke-4) / `/debt`.
+#
+# Bentuk tiap entri (ditambah build/`/debt`):
+#
+#   - id: <area-slug>            # mis. api-cart-nplus1 — deterministik (area + ringkas observed); basis dedup
+#     area: <app/module>         # taksonomi sama fanout/workspace.yaml.capabilities — basis matching plan/fix
+#     owner: feature             # feature (kode app) | foundation (stack/convention/package/integration)
+#     observed: "<apa yang jelek, 1 baris>"
+#     why_drag: "<kenapa ini drag nyata, bukan selera>"   # wajib — saring preferensi
+#     severity: normal           # normal | high  (high khas fondasional; urutan render-docs)
+#     discovered_during: <feature/fix id>   # konteks asal saat build menemukannya
+#     discovered_at: <YYYY-MM-DD>
+#     dropped: null              # {at: <YYYY-MM-DD>, reason: "<...>"} — HANYA diisi /debt drop
+
+debt: []
