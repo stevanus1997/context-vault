@@ -54,6 +54,7 @@ milestones:
 - **`actions:` untuk kerja non-file.** Migrasi DB, `npm install`, wiring env/secret, perintah infra TIDAK boleh terkubur di `approach` — taruh di `actions:` biar `build` eksekusi & verifikasi eksplisit. `install`/`cmd` auto; `migrate` (destruktif) lewat GATE; `env` ditulis `build` (nilai dari `manual:`/user).
 - **`manual:` untuk langkah AI-nggak-bisa.** Bikin OAuth app, set secret produksi, provision DB → daftar di `manual:`; `build` pause (`needs_human`) & lapor checklist.
 - **`test:` boleh non-unit.** Untuk task non-unit-testable (config, scaffold, shared types), `test:` boleh berisi kriteria seperti "typecheck hijau"/"build sukses"/"file ada & ke-import"; size-nya "satu artifact koheren".
+- **Metadata `kind:` (traceability, tak ubah eksekusi).** Task tanpa `kind` = implicit `feat`. `kind: fix` (+ `corrects: <id-task>` + `observed:`) = korektif defect (lane `fix`/embed `build`). `kind: debt` (+ `pays_debt: <id-debt>` + `observed:`) = pelunasan utang teknis dari `control/debt.yaml` (refactor: perilaku TETAP sama, `test` membuktikan tak ada regresi). `build` memperlakukan `kind`/`corrects`/`observed`/`pays_debt` sebagai metadata. Task `kind: fix`/`kind: debt` yang tak ber-asal-`plan` **dipertahankan** saat re-breakdown (SKILL.md §7).
 
 ## C. Contoh (fitur `auth`, 2 app — api + web)
 
