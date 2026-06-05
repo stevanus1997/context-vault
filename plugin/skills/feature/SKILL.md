@@ -25,7 +25,8 @@ sensitivity: []        # [] | [payments] | [pii] | [payments, pii] — diusulkan
    - **Bila `fanout.md` nandain app `NEW` (belum ada):** untuk tiap app baru, invoke skill **`add-app <nama-app>`** (declare entri → `architect` → `wire`, semua gated) → tunggu beres.
    - **Bila `fanout.md` nandain `PACKAGE NEW` (belum ada):** untuk tiap package baru, invoke skill **`add-package <nama-pkg>`** (declare entri → `architect` → `wire` mode-package, semua gated) → tunggu beres.
    - **Bila `fanout.md` nandain `VENDOR NEW` atau `VENDOR TOUCHED — perlu UPDATE`:** untuk tiap vendor itu, invoke skill **`add-integration <vendor>`** (declare kontrak SHAPE → `wire` mode-integration bila inbound, gated) → tunggu beres. Plain `VENDOR TOUCHED` (tanpa perlu-UPDATE) TIDAK di-invoke — cukup `plan` promote kontrak existing.
-   - Selesaikan SEMUA `add-app` lalu `add-package` lalu `add-integration` dulu, **baru lanjut ke `plan`**. Saat `plan` jalan, app/package baru sudah ada di `workspace.yaml` (app ter-wire; package ter-typecheck) & vendor sudah ada di `integrations.md`.
+   - **Bila `fanout.md` nandain `DESIGN-SYSTEM NEEDED` (app peran-UI belum terdaftar):** untuk tiap app itu, invoke skill **`design-system`** (tentukan scope → SETUP/CAPTURE → tulis `control/design-system.md` + bangun token & komponen primitif, semua gated) → tunggu beres.
+   - Selesaikan SEMUA `add-app` lalu `add-package` lalu `add-integration` lalu `design-system` dulu, **baru lanjut ke `plan`**. Saat `plan` jalan, app/package baru sudah ada di `workspace.yaml` (app ter-wire; package ter-typecheck), vendor sudah ada di `integrations.md`, & app peran-UI sudah bergaya (token+primitif di kode, `design-system.md` terisi) — fitur tinggal konsumsi.
 3. Invoke skill **`plan`** untuk `<nama>` → tunggu gate (approve semua `plans/<app>.md`).
 
 Jangan lanjut tahap berikutnya sebelum gate tahap sebelumnya di-approve user.
