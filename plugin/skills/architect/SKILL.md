@@ -52,4 +52,5 @@ Tampilkan `stack` & `capabilities` per app (`workspace.yaml`) + isi `conventions
 - `architect` = KNOWLEDGE fondasi (stack/konvensi/capabilities), BUKAN generator kode. Kode app dibuat scaffolder resmi (setup — **dijalankan `wire`**, gated) atau sudah ada (capture).
 - Nambah app baru pasca-`init` = lewat skill `add-app`; nambah shared package = lewat skill `add-package` (keduanya manggil `architect` ini buat set `stack` unit yang baru dideklarasi — app via 3a/3b, package via 3c). `architect` standalone tetap buat set/recapture stack unit yang **sudah terdaftar** — ia **tidak** nulis entri app/package baru ke `workspace.yaml`.
 - **Invarian platform (langkah 4.5) level-PRODUK, sekali kunci.** Saat `architect` di-rerun atau dipanggil `add-app` untuk app baru, langkah 4.5 hanya mengonfirmasi `invariants.md` yang sudah resolved — TIDAK menanya/mengunci ulang.
+- **Identitas visual / design system** (palet, tipografi, motion, komponen primitif) di-handle skill `design-system` (dari mockup), BUKAN di sini — `architect` cukup pilih stack + "lib kunci".
 - Sesudah ini, skill `plan` membaca `stack` + `conventions.md` + kode yang ada — tidak menetapkan stack lagi.
