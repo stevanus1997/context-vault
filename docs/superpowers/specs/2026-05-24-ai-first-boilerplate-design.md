@@ -70,6 +70,7 @@ control/
 ├── conventions.md        # konvensi & kontrak teknis lintas-app
 ├── invariants.md         # invarian platform (tenancy/money/idempotency/authz/PII-PCI/rate-limit; dikunci architect)
 ├── integrations.md       # kontrak SHAPE vendor eksternal (M5; diisi add-integration)
+├── design-system.md      # fondasi visual: tokens+motion+komponen primitif per gaya (diisi design-system)
 ├── features/
 │   └── <nama-fitur>/
 │       ├── feature.yaml  # status + metadata
@@ -129,11 +130,11 @@ Promosi dilakukan **konservatif** (hanya fakta yang benar lepas dari fitur), sup
 context-vault/
 ├── plugin/
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/   discovery· init· architect· wire· add-app· add-package· add-integration· extract· intake· fanout· plan· feature· breakdown· build· ship· drop· render-docs· fix· ask· debt
+│   ├── skills/   discovery· init· architect· wire· design-system· add-app· add-package· add-integration· extract· intake· fanout· plan· feature· breakdown· build· ship· drop· render-docs· fix· ask· debt
 │   ├── agents/   critic.md· security-critic.md
 │   └── rules/    anti-yes-man.md         # di-merge ke CLAUDE.md produk
 ├── template/
-│   ├── control/  (workspace.yaml· business/· conventions.md· invariants.md· integrations.md· features/· docs/ theme warm)
+│   ├── control/  (workspace.yaml· business/· conventions.md· invariants.md· integrations.md· design-system.md· features/· docs/ theme warm)
 │   └── .claude/  settings.json· CLAUDE.md (starter)
 ├── .claude-plugin/marketplace.json
 └── README.md
@@ -248,6 +249,8 @@ Brownfield: init → architect(capture) → extract(opsi) → wire → /feature 
 
 **Cabang dipicu — fitur butuh vendor eksternal:** bila `fanout` menandai kebutuhan layanan pihak-ketiga sebagai `VENDOR NEW` (atau `VENDOR TOUCHED — perlu UPDATE`), `feature` otomatis invoke **`add-integration`** (declare kontrak SHAPE ke `control/integrations.md` → `wire` mode-integration buat stub webhook-receiver bila inbound) sebelum `plan`. `add-integration` TAK chain `architect` (vendor tak punya stack). Webhook inbound jadi task `unit:<app>` varian inbound-eksternal (verifikasi signature/idempotent/replay). Lihat spec `2026-06-01-m5-integrations-design.md`.
 
+**Cabang dipicu — fitur UI butuh design system:** bila `fanout` menandai app peran-UI yang **belum terdaftar** di `control/design-system.md` sebagai `DESIGN-SYSTEM NEEDED`, `feature` otomatis invoke **`design-system`** (tentukan scope gaya → SETUP greenfield dari mockup / CAPTURE brownfield dari kode → tulis `control/design-system.md` + bangun token & komponen primitif via atom dispatch Spec A) sebelum `plan`. Dua-mode simetris `architect`. Standalone `/design-system` juga tersedia. Lihat spec `2026-06-05-design-system-bring-up-design.md`.
+
 **Lane korektif — defect (bug):** untuk perilaku yang **sudah ada** & salah, **`/fix`** (auto-deteksi mode). **in-flight** (fitur `active`): corrective task `kind: fix` di `tasks.yaml` fitur, eksekusi lewat `build`, berhenti di ijo (ship nanti sekalian fitur). **post-ship** (fitur `shipped`/tanpa-fitur): `control/fixes/<id>/` first-class, berhenti di "siap ship" → `/ship <fix>` TERPISAH. `build`/`ship` di-generalisasi (work-item = fitur ATAU fix). Lihat spec `2026-06-02-fix-bugfix-lane-design.md`.
 
 **Invarian platform & sensitivity:** `architect` mengunci invarian platform (`control/invariants.md`) **sekali sebelum `wire`** (gated, `critic` wajib); `intake` menandai `feature.yaml` `sensitivity` (`payments`/`pii`) yang menyetir kedalaman Security & Compliance Gate di `ship`. Lihat spec `2026-06-01-platform-invariants-security-gate-design.md`.
@@ -295,10 +298,10 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 ## 17. Komponen (ringkas)
 
-- **Skills (20):** `discovery` · `init` · `architect` · `wire` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs` · `fix` · `ask` · `debt`
+- **Skills (21):** `discovery` · `init` · `architect` · `wire` · `design-system` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs` · `fix` · `ask` · `debt`
 - **Agent:** `critic` · `security-critic`
 - **Rules:** `anti-yes-man.md`
-- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `features/` · `docs/`
+- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `design-system.md` · `features/` · `docs/`
 
 ## 18. Open Questions (untuk dipertimbangkan saat implementasi)
 
