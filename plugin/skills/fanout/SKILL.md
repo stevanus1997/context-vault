@@ -19,6 +19,7 @@ Cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentuka
 - **Kalau ADA peran yang nggak ketampung app mana pun → mungkin butuh APP BARU.** Tantang dulu (anti-yes-man): beneran perlu app baru, atau scope-creep / bisa ditampung app existing? Lolos tantangan → tandai di output sebagai app `NEW` (langkah 4). `fanout` cuma **MENGUSULKAN**; yang nulis entri app + bring-up = skill `add-app` (dipanggil otomatis `feature`).
 - **Kalau ADA kode-bareng yang dipakai >1 app** (mis. format uang, tipe domain bersama) → mungkin **SHARED PACKAGE**. Tantang (anti-yes-man): beneran shared >1 app, atau cukup 1 app saja? Lolos → tandai `PACKAGE NEW: <nama>` (langkah 4); diwujudkan `add-package` (dipanggil otomatis `feature`). **Kalau fitur menyentuh API package yang SUDAH ADA** → tandai `PACKAGE TOUCHED: <nama>` + tarik daftar consumer dari `packages[<nama>].consumers` (basis fan-IN; `plan` yang memutuskan BREAKING).
 - **Kalau ADA kebutuhan layanan pihak-ketiga** (pembayaran/email/kurir/pajak/dst) → mungkin **VENDOR EKSTERNAL**. Tantang (anti-yes-man): beneran butuh vendor luar, atau bisa in-house / sudah ada vendor existing yang menanggung? Lolos → bandingkan arah yang dibutuhkan (kita panggil vendor? vendor panggil kita?) dengan `integrations.md`: vendor **belum ada** → tandai `VENDOR NEW: <vendor>`; vendor **sudah ada & `Arah`-nya mencakup** kebutuhan → `VENDOR TOUCHED: <vendor>` (informatif; `plan` promote kontrak existing); vendor **sudah ada TAPI `Arah`/SHAPE belum mencakup** (mis. entri outbound-only, fitur butuh webhook inbound) → `VENDOR TOUCHED — perlu UPDATE: <vendor> (butuh <arah>)`. Diwujudkan `add-integration` (dipanggil otomatis `feature` untuk `VENDOR NEW` + `perlu UPDATE`). `fanout` cuma **MENGUSULKAN** — yang nulis `integrations.md` = `add-integration`.
+- **Kalau ADA app dengan peran-UI yang BELUM terdaftar di `design-system.md`** (`Berlaku buat`) → mungkin butuh **bring-up design system**. Picu HANYA bila peran fanout app itu **memperkenalkan/mengubah permukaan UI** (app `type` fullstack yang fiturnya cuma backend → JANGAN picu). Tantang (anti-yes-man): beneran perlu gaya sendiri, atau berbagi gaya app existing / cukup lib jadi? Lolos → tandai `DESIGN-SYSTEM NEEDED` (langkah 4); diwujudkan `design-system` (dipanggil otomatis `feature`). `fanout` cuma **MENGUSULKAN**.
 - **Isi `consumers[]` (penulis tunggal):** saat app terbukti memakai sebuah package (baru ATAU existing) → tambah nama app ke `packages[<pkg>].consumers` (idempotent, add-only-if-absent). Ini SATU-SATUNYA entry point pengisian `consumers[]`; `plan`/`breakdown` cuma membaca.
 
 ### 3. Challenge Checklist (WAJIB sebelum gate)
@@ -26,6 +27,7 @@ Cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentuka
 - Ada peran yang nggak ketampung app mana pun → butuh app baru? (beneran perlu, atau scope-creep?)
 - Ada kode-bareng >1 app → butuh shared package? (beneran shared, atau cukup 1 app?) Ada API package existing yang disentuh → consumer mana yang kena?
 - Ada kebutuhan layanan pihak-ketiga → butuh vendor eksternal? (beneran perlu, atau in-house/sudah ada?) Vendor existing tapi arah/SHAPE belum cukup → perlu UPDATE?
+- Ada app peran-UI yang belum terdaftar di `design-system.md`? (beneran perlu gaya sendiri, atau berbagi gaya existing / pakai lib jadi?)
 - Ada dependency/kontrak lintas-app (mis. issuer↔validator)?
 - Tradeoff & yang bisa jebol?
 (Untuk fitur besar, boleh invoke `critic`.)
@@ -40,6 +42,7 @@ Tulis `control/features/<fitur>/fanout.md`:
 <pkg> (PACKAGE TOUCHED) : <API yang disentuh> [consumers: <app1, app2>]   # basis fan-IN
 <vendor> (VENDOR NEW — belum ada) : <peran>        # vendor eksternal baru; diwujudkan add-integration
 <vendor> (VENDOR TOUCHED — perlu UPDATE) : <butuh arah>   # vendor existing, SHAPE perlu diperluas
+<app> (DESIGN-SYSTEM NEEDED — belum terdaftar di design-system.md) : <permukaan UI>   # bring-up fondasi visual; diwujudkan design-system
 ...
 Dependency lintas-app: <... bila ada>
 Urutan: <... bila ada>
