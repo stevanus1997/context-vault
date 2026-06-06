@@ -19,7 +19,7 @@ sensitivity: []        # [] | [payments] | [pii] | [payments, pii] — diusulkan
 ```
 
 ### 2. Baca knowledge
-Baca `control/business/*.md` (domain, flows, glossary) + `control/workspace.yaml` (apps + capabilities).
+Baca `control/business/*.md` (domain, flows, glossary, **`risks.md`** — kewajiban compliance, constraint per-fitur) + `control/workspace.yaml` (apps + capabilities).
 
 ### 3. Q&A level BISNIS (bukan teknis)
 Tanya satu per satu: siapa penggunanya, aturan/kebijakan, hasil yang diharapkan, batasan. JANGAN tanya hal teknis (framework, DB, dll) — itu jatah skill `plan`.
@@ -32,6 +32,7 @@ Bandingkan kebutuhan fitur dengan `capabilities` app di `workspace.yaml`. Catat 
 - Tradeoff-nya apa?
 - Ada cara lebih sederhana?
 - Apa yang bisa jebol / risiko?
+- Menyentuh kewajiban compliance di `risks.md`? (PCI/GDPR/pajak/KYC) — kutip + pastikan tertangani (advisory).
 
 ### 6. Critic (gate penting)
 Untuk fitur fondasional/berisiko, invoke subagent `critic` atas draft `business.md` + knowledge. Tanggapi tiap keberatan bersama user sebelum lanjut.
@@ -48,7 +49,7 @@ Out of scope: <...>
 ```
 Lalu **promosikan fakta DURABLE** ke knowledge (konservatif — hanya yang benar lepas dari fitur): aturan domain → `business/domain.md`; flow → `business/flows.md`; istilah → `business/glossary.md`. **Idempotent:** sebelum nambah, cek apakah fakta serupa sudah ada di file tujuan — update yang ada, jangan duplikat (re-run intake nggak boleh numpuk aturan ganda).
 
-**Usulkan tag `sensitivity`** dari isi `business.md` (heuristik): `payments` kalau fitur menggerakkan/menyimpan uang (bayar, billing, payout, refund, fee); `pii` kalau mengumpulkan/menyimpan/menampilkan data pribadi (nama, email, alamat, telp, gov-id). Cross-check ringan ke `control/invariants.md` — kalau slot PII/PCI di-`N/A`, jangan ngotot tag `pii`. Tulis usulan ke `feature.yaml` `sensitivity:` (kosong boleh).
+**Usulkan tag `sensitivity`** dari isi `business.md` (heuristik): `payments` kalau fitur menggerakkan/menyimpan uang (bayar, billing, payout, refund, fee); `pii` kalau mengumpulkan/menyimpan/menampilkan data pribadi (nama, email, alamat, telp, gov-id). Cross-check ringan ke `control/invariants.md` — kalau slot PII/PCI di-`N/A`, jangan ngotot tag `pii`. Tulis usulan ke `feature.yaml` `sensitivity:` (kosong boleh). **Compliance (M6):** kalau fitur cocok dgn pemicu di `control/business/risks.md` → **perkuat** usulan tag + sebut kewajibannya sbg alasan (advisory; heuristik teks tetap jalan tanpa `risks.md`). Lihat `${CLAUDE_PLUGIN_ROOT}/rules/compliance-risk.md`.
 
 Tampilkan `business.md` + daftar promosi knowledge + usulan `sensitivity` → minta **approve/koreksi**. Boleh tulis draft dulu lalu konfirmasi.
 
