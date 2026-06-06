@@ -138,7 +138,7 @@ context-vault/
 │   ├── agents/   critic.md· security-critic.md
 │   └── rules/    anti-yes-man.md· debt-aware.md· schema-projection.md· migration-impact.md· compliance-risk.md   # anti-yes-man di-merge ke CLAUDE.md; sisanya dirujuk skill
 ├── template/
-│   ├── control/  (workspace.yaml· business/· conventions.md· invariants.md· integrations.md· design-system.md· features/· docs/ theme warm)
+│   ├── control/  (workspace.yaml· business/· conventions.md· invariants.md· integrations.md· design-system.md· schema/· features/· feedback/· docs/ theme warm)
 │   └── .claude/  settings.json· CLAUDE.md (starter)
 ├── .claude-plugin/marketplace.json
 └── README.md
