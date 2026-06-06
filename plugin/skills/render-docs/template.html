@@ -40,6 +40,7 @@
   <nav>
     <a href="#overview">📊 Overview</a>
     <a href="#apps">🧩 Apps</a>
+    <a href="#schema">🗄️ Model Data</a>
     <a href="#capabilities">🔌 Kapabilitas</a>
     <a href="#flows">🔀 Flows</a>
     <a href="#glossary">📖 Glossary</a>
@@ -54,6 +55,12 @@
     <div class="card"><h3>web <span class="meta">· fullstack</span></h3>
       <p>Builder + dashboard.</p>
       <div><span class="chip">auth</span><span class="chip">checkout</span></div></div>
+  </section>
+  <!-- SLOT:schema -->
+  <section id="schema"><h2>Model Data</h2>
+    <p class="meta">Skema per app dari control/schema/. Read-only; app tanpa table di-skip.</p>
+    <div class="card"><h3>api <span class="meta">· schema</span></h3>
+      <p>Order(id, tenant_id→Tenant, status, total_cents) · Product(id, tenant_id→Tenant, name, price_cents)</p></div>
   </section>
   <!-- SLOT:capabilities -->
   <section id="capabilities"><h2>Kapabilitas</h2><p class="meta">Matriks kapabilitas × app.</p></section>
