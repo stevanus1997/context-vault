@@ -34,7 +34,8 @@ Untuk tiap vendor yang kena fitur (`VENDOR NEW`/`VENDOR TOUCHED`/`…perlu UPDAT
 **Kebutuhan receiver (vendor inbound/both):** ambil `Receiver app` dari entri `integrations.md` (field durable) → tulis di `plans/<Receiver app>.md` satu baris: "Webhook masuk `<vendor>` di `<path>`: verifikasi signature (`<algo>`), idempotent (dedup), tahan replay." → basis varian task inbound-eksternal `breakdown`. (`plan` read-only ke `integrations.md`; `Receiver app` HARUS dari situ, bukan ditebak.)
 
 ### 3. Per app (untuk tiap app di fanout.md)
-- Buka kode app di `path`-nya (dari `workspace.yaml`). Baca pola yang ada; ikuti `conventions.md` & `stack`.
+- **Baca `control/schema/<app>.md` (proyeksi skema durable, M4) DULU** sebagai baseline model data existing (table/kolom/relasi/`Asal`) — **JANGAN rekonstruksi skema dari nol**. (Di-generate `wire`/`build`; read-only di sini.)
+- Buka kode app di `path`-nya (dari `workspace.yaml`). Baca pola yang ada; ikuti `conventions.md` & `stack`. Baca kode cuma untuk **delta/detail** yang tak ada di proyeksi.
 - Q&A **teknis** seperlunya.
 - Susun plan: file yang disentuh, endpoint/komponen, model data, test. **Bila app mengonsumsi package** → catat dependency-nya (package apa, dipakai untuk apa) di plan app.
 - **Mockup UI (bila app punya permukaan UI).** Bila pengguna menyerahkan mockup (HTML/CSS/gambar/URL Figma) untuk app ini → simpan **verbatim** ke `control/features/<fitur>/mockups/` (format apa pun; **JANGAN** inline ke plan, **JANGAN** diprosa-kan jadi deskripsi), catat path-nya untuk slot `Mockup:` (langkah 4). Bila `/plan` dijalankan **standalone** & app punya UI tapi belum ada mockup tersimpan → **minta** mockup dulu (jangan jalan diam-diam); pengguna sengaja tak punya → lanjut tanpa `Mockup:` (degrade ke perilaku sekarang).
