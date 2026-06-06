@@ -76,13 +76,14 @@ control/
 │   └── <app>.md
 ├── features/
 │   └── <nama-fitur>/
-│       ├── feature.yaml  # status + metadata
+│       ├── feature.yaml  # status + metadata (sensitivity; epic/depends_on M1; risk M7)
 │       ├── business.md   # output intake
 │       ├── fanout.md     # output fanout
 │       ├── plans/
 │       │   ├── _shared.md   # kontrak lintas-app (mis. mekanisme token)
 │       │   └── <app>.md     # plan teknis per app
 │       └── mockups/        # mockup UI diserahkan user (byte opaque; ditulis plan, dibaca build), bila ada
+├── feedback/             # sinyal lapangan mentah (M8; di-drop manusia, dibaca intake SOFT)
 ├── fixes/                # lane bugfix (post-ship) — entitas first-class
 │   └── <id>/
 │       ├── fix.yaml      # status + severity + relates_to + root_cause
@@ -181,12 +182,12 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 
 ### `feature` (konduktor)
 - **Tujuan:** menjalankan pipeline fitur bisnis end-to-end dengan gate.
-- **Perilaku:** buat `features/<nama>/` (`feature.yaml` status `draft`) → jalankan `intake` →(gate)→ `fanout` →(gate)→ `plan` semua app yang kena →(gate). Setelah gate `plan` terakhir lulus → status otomatis `active`.
+- **Perilaku:** buat `features/<nama>/` (`feature.yaml` status `draft`; warn bila `depends_on` belum shipped — peringatan, BUKAN block, M1) → jalankan `intake` →(gate)→ `fanout` →(gate)→ `plan` semua app yang kena →(gate). Setelah gate `plan` terakhir lulus → status otomatis `active`.
 - **Output:** mengkoordinasi output ketiga sub-skill (tidak membuat file sendiri).
 
 #### `intake` (P2 fase 1)
-- **Input:** ide fitur + `business/*.md` + `workspace.yaml`.
-- **Perilaku:** Q&A **level bisnis** (bukan teknis); cek feasibility kasar dari `capabilities`; jalankan **challenge checklist**; panggil `critic` di gate penting.
+- **Input:** ide fitur + `business/*.md` + `workspace.yaml` + `feedback/` (SOFT, opsional, M8).
+- **Perilaku:** Q&A **level bisnis** (bukan teknis); cek feasibility kasar dari `capabilities`; jalankan **challenge checklist**; panggil `critic` di gate penting; sizing-check advisory (fitur sebesar epik → usulkan pecah + isi `epic`/`depends_on`, M1); usulkan `risk` (`low`/`normal`/`high`; sensitivity non-kosong → floor `high`, M7).
 - **Output:** `features/<nama>/business.md` + promosi knowledge durable ke `business/` + usulan tag `sensitivity` (`payments`/`pii`, cross-check `invariants.md`) di `feature.yaml`.
 - **Gate:** approve `business.md` + promosi knowledge + tag `sensitivity`.
 
@@ -256,7 +257,7 @@ Brownfield: init → architect(capture) → extract(opsi) → wire → /feature 
 
 **Lane korektif — defect (bug):** untuk perilaku yang **sudah ada** & salah, **`/fix`** (auto-deteksi mode). **in-flight** (fitur `active`): corrective task `kind: fix` di `tasks.yaml` fitur, eksekusi lewat `build`, berhenti di ijo (ship nanti sekalian fitur). **post-ship** (fitur `shipped`/tanpa-fitur): `control/fixes/<id>/` first-class, berhenti di "siap ship" → `/ship <fix>` TERPISAH. `build`/`ship` di-generalisasi (work-item = fitur ATAU fix). Lihat spec `2026-06-02-fix-bugfix-lane-design.md`.
 
-**Invarian platform & sensitivity:** `architect` mengunci invarian platform (`control/invariants.md`) **sekali sebelum `wire`** (gated, `critic` wajib); `intake` menandai `feature.yaml` `sensitivity` (`payments`/`pii`) yang menyetir kedalaman Security & Compliance Gate di `ship`. Lihat spec `2026-06-01-platform-invariants-security-gate-design.md`.
+**Invarian platform & sensitivity:** `architect` mengunci invarian platform (`control/invariants.md`) **sekali sebelum `wire`** (gated, `critic` wajib); `intake` menandai `feature.yaml` `sensitivity` (`payments`/`pii`) yang menyetir kedalaman Security & Compliance Gate di `ship`. Lihat spec `2026-06-01-platform-invariants-security-gate-design.md`. `intake` juga mengusulkan `feature.yaml` `risk` (`low`/`normal`/`high`; sensitivity non-kosong → floor `high`) yang menyetir **cadence approval** `build` saat mode unattended (M7) — axis terpisah dari `sensitivity`. Lihat spec `2026-06-06-m7-graduated-autonomy-design.md`.
 
 Status di `feature.yaml`:
 
@@ -297,14 +298,14 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 ## 16. Scope v1 & Pengembangan Berikutnya
 
 - **v1 (in):** struktur knowledge, pipeline `feature` (intake→fanout→plan), `init`/`architect`/`extract`, `ship`/`drop`, `render-docs`, `critic`, anti-yes-man.
-- **Future:** eksekusi/implementasi otomatis lintas-app (orchestrator), MCP knowledge server, status `in-review` (PR dibuka vs merged), auto-detect merge untuk trigger `shipped`.
+- **Future:** eksekusi/implementasi otomatis lintas-app (orchestrator), MCP knowledge server, status `in-review` (PR dibuka vs merged), auto-detect merge untuk trigger `shipped`, **lifecycle pasca-`shipped` (iterasi-v2/deprecate/supersedes — status-machine lintas feature/ship/drop/render-docs; spec terpisah, lih. pipeline-hardening §S4.1/§10-4)**.
 
 ## 17. Komponen (ringkas)
 
 - **Skills (21):** `discovery` · `init` · `architect` · `wire` · `design-system` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs` · `fix` · `ask` · `debt`
 - **Agent:** `critic` · `security-critic`
 - **Rules:** `anti-yes-man.md` · `debt-aware.md` · `schema-projection.md` · `migration-impact.md` · `compliance-risk.md`
-- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `design-system.md` · `schema/` · `features/` · `docs/`
+- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `design-system.md` · `schema/` · `features/` · `feedback/` · `docs/`
 
 ## 18. Open Questions (untuk dipertimbangkan saat implementasi)
 
