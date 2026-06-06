@@ -43,7 +43,7 @@ Fullstack → env + internal call; FE/BE kepisah → API base URL + CORS + (bila
 Tulis `.env` app (pastikan gitignored): DB_URL, API base URL, secret. Rekam SHAPE-nya (nama var + arti, tanpa nilai) ke `conventions.md`. Secret = GATE/manual. (detail env contract: reference D; action `env` pinjam build: reference H.)
 
 ### 6. Smoke test (GATE penutup)
-Boot? DB kebaca? FE→BE nyampe? Ijo → tutup gate, laporkan "**app <x> siap di-`feature`**". Merah → STOP + lapor akar masalah (sandar `systematic-debugging`); JANGAN klaim siap. (reference E.)
+Boot? DB kebaca? FE→BE nyampe? Ijo → tutup gate, laporkan "**app <x> siap di-`feature`**". **Lepas marker blueprint bila ada** — kalau `apps[].responsibility` app ini masih memuat frasa `(blueprint — belum di-bring-up)` (sisa declare blueprint di `init`), hapus frasa itu dari `responsibility` di `workspace.yaml` sekarang; app sudah di-bring-up, jadi `ask`/pembaca tak lagi salah-lapor sebagai 'belum dibangun'. Merah → STOP + lapor akar masalah (sandar `systematic-debugging`); JANGAN klaim siap. (reference E.)
 
 ## Catatan
 - `wire` sekali jalan (kayak `extract`). Saat nambah app baru, dipanggil oleh skill `add-app` (yang chain `architect`→`wire`); saat nambah shared package, dipanggil oleh skill `add-package` (mode-package — reference §I); saat nambah vendor eksternal inbound, dipanggil oleh skill `add-integration` (mode-integration — reference §J); bisa juga di-rerun manual. Brownfield: bersifat **repair** — hanya bila wiring belum lengkap.
