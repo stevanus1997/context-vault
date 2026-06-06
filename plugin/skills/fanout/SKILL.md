@@ -30,6 +30,7 @@ Cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentuka
 - Ada kebutuhan layanan pihak-ketiga → butuh vendor eksternal? (beneran perlu, atau in-house/sudah ada?) Vendor existing tapi arah/SHAPE belum cukup → perlu UPDATE?
 - Ada app peran-UI yang belum terdaftar di `design-system.md`? (beneran perlu gaya sendiri, atau berbagi gaya existing / pakai lib jadi?)
 - Ada dependency/kontrak lintas-app (mis. issuer↔validator)?
+- Ada peran cross-cutting/platform (queue/job/audit/background) yang bukan milik satu app → butuh unit worker terpisah? (beneran perlu, atau bisa ditampung app existing / scope-creep?)
 - Tradeoff & yang bisa jebol?
 (Untuk fitur besar, boleh invoke `critic`.)
 
