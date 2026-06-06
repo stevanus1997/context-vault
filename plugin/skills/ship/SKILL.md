@@ -31,7 +31,7 @@ Boot app-app terkait bareng (path/stack `workspace.yaml`), jalankan contract/smo
 ### 4.5 Security & Compliance Gate (STOP-on-fail, sebobot quality gate)
 Berskala ke `sensitivity` manifest work-item (`feature.yaml` ATAU `fix.yaml` — baca di step 1; untuk fix ini **hasil re-evaluasi** triage vs `invariants.md`, bukan warisan pasif):
 - **`sensitivity` kosong →** quick scan murah: grep diff fitur untuk secret hardcoded (API key/token/password/connstring di luar env) + PII di log. Temuan → angkat ke Putuskan.
-- **`sensitivity` memuat `payments`/`pii` →** invoke subagent **`security-critic`** atas diff penuh (lintas repo yang kena, path/SHA dari code-review step 2) + `control/invariants.md` + `control/integrations.md` (baseline webhook signature/mode/idempotency per vendor). Temuan **severity high** = **RED**.
+- **`sensitivity` memuat `payments`/`pii` →** invoke subagent **`security-critic`** atas diff penuh (lintas repo yang kena, path/SHA dari code-review step 2) + `control/invariants.md` + `control/integrations.md` (baseline webhook signature/mode/idempotency per vendor) + `control/business/risks.md` (baseline kewajiban compliance; advisory). Temuan **severity high** = **RED**.
 Disisipkan di sini (desimal 4.5) supaya tak me-renumber Step 5/6 & cross-ref internal "lanjut Step 6" tetap valid.
 
 ### 5. Putuskan
