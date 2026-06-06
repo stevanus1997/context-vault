@@ -70,7 +70,7 @@ wire meminjam mesin side-effect `build` (spec breakdown-build §7.1), bukan biki
 - Probe multi-repo `git -C <path> rev-parse --show-toplevel` + branching per-repo.
 - Pola STOP `manual:`/`needs_human` untuk langkah tangan-manusia (creds managed).
 
-**Beda dengan build:** wire = **SEKALI, fondasi** (skeleton kosong-tapi-jalan); build = **PER FITUR** (kode fitur ke skeleton). wire bikin **pipeline migrasi BERFUNGSI + baseline** (kosong table fitur); build bikin **TABLE fitur**. Dua-duanya gate `migrate`.
+**Beda dengan build:** wire = **SEKALI, fondasi** (skeleton kosong-tapi-jalan); build = **PER FITUR** (kode fitur ke skeleton). wire bikin **pipeline migrasi BERFUNGSI + baseline** (kosong table fitur); build bikin **TABLE fitur**. Dua-duanya gate `migrate`. **Proyeksi skema (M4):** wire juga **melahirkan `control/schema/<app>.md`** (proyeksi, `label=<none>`) per `${CLAUDE_PLUGIN_ROOT}/rules/schema-projection.md`; build me-regen-nya tiap task-migrate app `done`.
 
 ## I. Mode-package (unit `type: package`)
 
