@@ -25,9 +25,11 @@ Prinsip: AI **MENYETIR**. Untuk tiap seksi, RISET dulu lalu USULKAN draft ke ope
 ## C. Label keyakinan (3 tingkat)
 
 Tiap klaim non-sepele diberi label (pakai class CSS template):
-- `terverifikasi` (`<span class="conf verified">`) — ada sumber kuat & relevan (idealnya >1).
-- `asumsi` (`<span class="conf assumed">`) — nalar wajar tapi belum tervalidasi sumber.
-- `spekulatif` (`<span class="conf spec">`) — tebakan/ekstrapolasi; perlu konfirmasi.
+- `terverifikasi` (`<span class="conf v">verif</span>`) — ada sumber kuat & relevan (idealnya >1).
+- `asumsi` (`<span class="conf a">asumsi</span>`) — nalar wajar tapi belum tervalidasi sumber.
+- `spekulatif` (`<span class="conf s">spek</span>`) — tebakan/ekstrapolasi; perlu konfirmasi.
+
+**Aturan render:** output WAJIB visual-first — tiap section punya minimal 1 elemen visual (meter, ring, funnel, line chart, matriks, atau gauge). Teks = pendukung, bukan paragraf panjang. Geometri chart: lihat `${CLAUDE_PLUGIN_ROOT}/skills/discovery/chart-cheatsheet.md`.
 
 ## D. Yang nyebrang ke business/ (saat seed, langkah 7)
 

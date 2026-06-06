@@ -7,7 +7,7 @@ description: Use saat punya ide produk MENTAH dan mau divalidasi jadi konsep pro
 
 Tujuan: ubah ide mentah jadi konsep produk yang tervalidasi (level STRATEGI, bukan fitur, NOL teknis), seed ke `control/business/` + hasilkan HTML strategis, lalu serahkan ke `init`.
 
-> Operator mungkin BUKAN orang produk/bisnis. Tugasmu MENYETIR: usulkan & riset, jangan cuma mewawancara. **Riset web WAJIB** — jangan andalkan ingatan. Baca `${CLAUDE_PLUGIN_ROOT}/skills/discovery/reference.md` (framework pertanyaan + aturan sitasi/label) dan pakai `${CLAUDE_PLUGIN_ROOT}/skills/discovery/template.html` sebagai desain HTML.
+> Operator mungkin BUKAN orang produk/bisnis. Tugasmu MENYETIR: usulkan & riset, jangan cuma mewawancara. **Riset web WAJIB** — jangan andalkan ingatan. Baca `${CLAUDE_PLUGIN_ROOT}/skills/discovery/reference.md` (framework pertanyaan + aturan sitasi/label), pakai `${CLAUDE_PLUGIN_ROOT}/skills/discovery/template.html` sebagai desain HTML, dan `${CLAUDE_PLUGIN_ROOT}/skills/discovery/chart-cheatsheet.md` untuk geometri chart-nya.
 
 ## Langkah
 
@@ -23,8 +23,8 @@ Rangkai temuan jadi draft: masalah · pengguna/segmen · value · pasar · kompe
 ### 4. critic (GATE)
 Invoke subagent `critic` atas draft. Minta khusus periksa: cherry-pick? sumber lemah/ngarang? lompatan logika di verdict? klaim berlabel `terverifikasi` tanpa sumber kuat? Tanggapi TIAP keberatan bersama operator; turunkan label klaim yang tak tahan uji. JANGAN lanjut sebelum keberatan ditanggapi.
 
-### 5. Render HTML
-Clone `${CLAUDE_PLUGIN_ROOT}/skills/discovery/template.html` APA ADANYA (CSS & struktur). Ganti tiap `<!-- SLOT:x -->` + section contohnya dengan konten nyata; pasang label keyakinan (`<span class="conf ...">`) & sitasi (superscript `<sup class="ref">` ke seksi Sumber). Ganti `__PRODUCT__` dengan nama produk. Tulis ke `./discovery-draft.html` di root folder produk (control/ belum ada). Self-contained (CSS inline dari template; sumber boleh `<a href>` eksternal, tapi TIDAK ada `<link>`/`<script src>`/gambar eksternal).
+### 5. Render HTML (visual-first)
+Clone `${CLAUDE_PLUGIN_ROOT}/skills/discovery/template.html` APA ADANYA (CSS & struktur). Template ini **visual-first** — tiap section ditandai komentar (`<!-- HERO -->`, `<!-- CONCEPT -->`, `<!-- MASALAH -->`, `<!-- PENGGUNA -->`, `<!-- VALUE -->`, `<!-- PASAR -->`, `<!-- KOMPETITOR -->`, `<!-- MONETISASI -->`, `<!-- RISIKO -->`, `<!-- VERDICT -->`, `<!-- SUMBER -->`) dan punya elemen visual (meter, ring, funnel, line chart, matriks, gauge). Ganti **isi tiap section** dengan data produk nyata, **dan hitung ulang geometri tiap chart** sesuai `${CLAUDE_PLUGIN_ROOT}/skills/discovery/chart-cheatsheet.md`. Pertahankan: label keyakinan (`<span class="conf v|a|s">`), sitasi (superscript `<sup class="ref">` ke seksi Sumber), dan daftar Sumber. Ganti `StokKu` di `<title>` + brand sidebar dengan nama produk. **Hapus** banner `.demo` (`⚑ Contoh isi …`) karena isi sudah nyata. Tulis ke `./discovery-draft.html` di root folder produk (control/ belum ada). Self-contained (CSS inline dari template; sumber boleh `<a href>` eksternal, tapi TIDAK ada `<link>`/`<script src>`/gambar eksternal).
 
 ### 6. Review loop (GATE)
 Suruh operator buka `./discovery-draft.html` & baca. Tampung feedback. Bila ada → balik ke langkah 2/3 (riset ulang / tajamkan) → regen HTML. ULANG sampai operator bilang **SEPAKAT**. JANGAN lanjut tanpa kata sepakat eksplisit.
