@@ -66,7 +66,8 @@ control/
 ├── business/
 │   ├── domain.md         # aturan domain
 │   ├── flows.md          # business process / flow
-│   └── glossary.md       # istilah
+│   ├── glossary.md       # istilah
+│   └── risks.md          # risiko compliance durable (M6; diisi discovery)
 ├── conventions.md        # konvensi & kontrak teknis lintas-app
 ├── invariants.md         # invarian platform (tenancy/money/idempotency/authz/PII-PCI/rate-limit; dikunci architect)
 ├── integrations.md       # kontrak SHAPE vendor eksternal (M5; diisi add-integration)
@@ -134,7 +135,7 @@ context-vault/
 │   ├── .claude-plugin/plugin.json
 │   ├── skills/   discovery· init· architect· wire· design-system· add-app· add-package· add-integration· extract· intake· fanout· plan· feature· breakdown· build· ship· drop· render-docs· fix· ask· debt
 │   ├── agents/   critic.md· security-critic.md
-│   └── rules/    anti-yes-man.md· debt-aware.md· schema-projection.md· migration-impact.md   # anti-yes-man di-merge ke CLAUDE.md; sisanya dirujuk skill
+│   └── rules/    anti-yes-man.md· debt-aware.md· schema-projection.md· migration-impact.md· compliance-risk.md   # anti-yes-man di-merge ke CLAUDE.md; sisanya dirujuk skill
 ├── template/
 │   ├── control/  (workspace.yaml· business/· conventions.md· invariants.md· integrations.md· design-system.md· features/· docs/ theme warm)
 │   └── .claude/  settings.json· CLAUDE.md (starter)
@@ -207,7 +208,7 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 - **Perilaku:** dijalankan setelah implementasi (manual/pakai pola existing). Langkah:
   1. **Code review** atas diff fitur.
   2. **Quality gate** — test, lint, typecheck, build.
-  2.5. **Security & Compliance gate** — berskala ke `sensitivity` fitur; `payments`/`pii` → subagent `security-critic` red-team diff (secret/PII/PCI/authz/webhook) terhadap `invariants.md` + `integrations.md` (baseline webhook); temuan high → STOP. PR menyertakan runbook integrasi (webhook-URL + secret-NAMA + test→live). Bila ada tugas `migrate`, PR juga menyertakan runbook urutan migrasi & deploy (advisory; H3).
+  2.5. **Security & Compliance gate** — berskala ke `sensitivity` fitur; `payments`/`pii` → subagent `security-critic` red-team diff (secret/PII/PCI/authz/webhook) terhadap `invariants.md` + `integrations.md` (baseline webhook) + `risks.md` (baseline compliance, M6); temuan high → STOP. PR menyertakan runbook integrasi (webhook-URL + secret-NAMA + test→live). Bila ada tugas `migrate`, PR juga menyertakan runbook urutan migrasi & deploy (advisory; H3).
   3. **Business alignment** — bandingkan kode yang jadi vs `business.md` + `plan` (pakai `critic`): apakah yang dibangun sesuai maksud bisnis? ada scope creep / requirement kelewat? *(Cek ini hanya mungkin karena ada `business.md` — payoff sistem knowledge, sekaligus jawaban P3.)*
   - Jika **semua hijau:** buat **PR** dengan deskripsi auto dari `business.md`+`fanout.md`+`plans`+diff (multi-repo → PR per app yang kena) → set status `shipped` → trigger `render-docs`.
   - Jika **ada merah:** laporkan kegagalan/misalignment, **stop — tidak ship** (anti-yes-man, tidak rubber-stamp).
@@ -302,7 +303,7 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 - **Skills (21):** `discovery` · `init` · `architect` · `wire` · `design-system` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs` · `fix` · `ask` · `debt`
 - **Agent:** `critic` · `security-critic`
-- **Rules:** `anti-yes-man.md` · `debt-aware.md` · `schema-projection.md` · `migration-impact.md`
+- **Rules:** `anti-yes-man.md` · `debt-aware.md` · `schema-projection.md` · `migration-impact.md` · `compliance-risk.md`
 - **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `design-system.md` · `schema/` · `features/` · `docs/`
 
 ## 18. Open Questions (untuk dipertimbangkan saat implementasi)
