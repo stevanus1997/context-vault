@@ -31,7 +31,7 @@ Suruh operator buka `./discovery-draft.html` & baca. Tampung feedback. Bila ada 
 
 ### 7. Sepakat → init + seed (GATE)
 1. Jalankan alur skill `init`. Kamu SUDAH punya framing (nama produk + 1 kalimat + apps yang kebayang) dari langkah 1–3, jadi `init` skip Framing Q&A-nya (lihat klausa di `init` langkah 3). `init` deteksi topologi (gate-nya sendiri) → scaffold `control/` + `workspace.yaml` + `CLAUDE.md`.
-2. SEED `business/` (KONSERVATIF, hanya `terverifikasi` & durable — `reference.md` bagian D): `domain.md` (Produk/Pengguna/Nilai + `## Aturan Domain` awal bila jelas), `glossary.md` (istilah), `flows.md` (flow kunci bila ada). Yang `asumsi`/`spekulatif` & analisis pasar JANGAN dimasukkan.
+2. SEED `business/` (KONSERVATIF, hanya `terverifikasi` & durable — `reference.md` bagian D): `domain.md` (Produk/Pengguna/Nilai + `## Aturan Domain` awal bila jelas), `glossary.md` (istilah), `flows.md` (flow kunci bila ada), **`risks.md`** (kewajiban compliance dari seksi Risiko — `terverifikasi`/`asumsi`+sumber, carve-out M6, lihat `${CLAUDE_PLUGIN_ROOT}/rules/compliance-risk.md`; slot tak relevan → `N/A — alasan`). Yang `asumsi`/`spekulatif` & analisis pasar JANGAN dimasukkan (kecuali kewajiban compliance → `risks.md`).
 3. Pindahkan HTML final: `./discovery-draft.html` → `control/docs/discovery.html`.
 4. Ringkas hasil + sarankan langkah berikut: `architect` (fondasi teknis).
 
