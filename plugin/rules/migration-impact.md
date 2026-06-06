@@ -22,7 +22,7 @@ Consumer-of-table diturunkan dari **`control/schema/` (FK) + scan kode** — **B
    - `additive` (tambah tabel/kolom nullable/index concurrently) → lock rendah; pembaca existing aman; backfill: tidak.
    - `destructive` (drop/rename/ubah-tipe kolom, NOT NULL tanpa default) → lock tinggi (tabel besar); pembaca kolom yang diubah bisa rusak; backfill: mungkin (mis. NOT NULL butuh isi default dulu).
    - `backfill` (isi-ulang/transform baris existing) → long-running; risiko lock/beban; pembaca: data berubah saat proses.
-4. **Saran expand-contract** (bila destructive pada kolom yang dibaca consumer hidup): pola **expand → migrate → contract** — (1) tambah bentuk baru tanpa hapus lama, (2) backfill + tulis-ganda, (3) alihkan pembaca, (4) hapus lama; dipecah lintas rilis. Bila `conventions.md` punya "Konvensi Migrasi" → rujuk spesialisasi project; rule bawa default generik bila kosong.
+4. **Saran expand-contract** (bila destructive pada kolom yang dibaca consumer hidup): pola **expand → migrate → contract** — (1) tambah bentuk baru tanpa hapus lama, (2) backfill + tulis-ganda, (3) alihkan pembaca, (4) hapus lama; dipecah lintas rilis. Bila `conventions.md` punya section "Konvensi Migrasi & Zero-Downtime" → rujuk spesialisasi project; rule bawa default generik bila kosong.
 5. **Susun laporan** (in-memory): `affects` (tabel + kolom + `Asal`) · `kind` · daftar consumer (app + ditandai "nyentuh kolom yang diubah" / "nyentuh tabel saja") · level risiko-lock · flag perlu-backfill · saran expand-contract · (bila ada) "tabel ini juga disentuh task lain di fitur ini" (dari `tasks.yaml`) → cegah salah-alarm di fase contract.
 
 ## Sifat
