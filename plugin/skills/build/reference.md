@@ -55,6 +55,7 @@ Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yam
 - **Lebih rapat:** app pemegang kontrak `_shared.md` / ditandai berisiko (milestone fondasi) → checkpoint per-task.
 - **Lebih longgar:** milestone bermotif mapan (OAuth provider ke-2/ke-3) → gabung gate.
 - **Fitur 1-app** → ciut jadi 1 gate.
+- **`--unattended` (opt-in, fitur saja — M7):** segmen ber-tier `risk` `low`/`normal` yang ijo + tak-menyimpang → auto-approve (lanjut tanpa stop). HARD floor tetap STOP: `risk: high` / `migrate` / `needs_human` / `blocked` / penyimpangan. Melonggarkan cadence ini, BUKAN menambah gate; tak menyentuh Security Gate `ship`. Default (tanpa flag) = stop tiap segmen.
 - Selalu hormati `deps` + Urutan `fanout` (mis. `web` dibangun setelah `api` nyata, bukan yang direncanakan).
 
 ## E. Status & resume
