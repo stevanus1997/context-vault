@@ -16,6 +16,7 @@ Tujuan: hasilkan SATU file HTML self-contained yang rapi & ramah orang non-tekni
 - `control/features/*/feature.yaml` (+ `business.md`) — kumpulkan fitur.
 - `control/fixes/*/fix.yaml` — kumpulkan defect (id, status, severity, reported, relates_to, flow). SHAPE-only, TANPA isi sensitif.
 - `control/debt.yaml` — kumpulkan utang teknis (id, area, owner, severity, observed). **Status diturunkan** (bukan field): silang `pays_debt: <id>` di `control/features/*/tasks.yaml` + `control/fixes/*/tasks.yaml` & status host → `open`/`scheduled`/`shipped`; `dropped` dari field `dropped`. SHAPE-only.
+- `control/schema/*.md` → proyeksi skema per app (table, kolom, relasi, `Asal`/provenance) — read-only; di-generate `wire`/`build`, **JANGAN** regenerate di sini.
 
 ### 2. Baca template desain
 Baca `${CLAUDE_PLUGIN_ROOT}/skills/render-docs/template.html`. Pakai `<head>`/CSS dan struktur B1-nya APA ADANYA (jangan redesign) supaya konsisten antar-generate.
@@ -24,6 +25,7 @@ Baca `${CLAUDE_PLUGIN_ROOT}/skills/render-docs/template.html`. Pakai `<head>`/CS
 Ganti tiap penanda `<!-- SLOT:x -->` + section contohnya dengan konten nyata:
 - **overview:** isi dari `domain.md` (produk, pengguna, nilai) → paragraf ramah.
 - **apps:** satu `.card` per app: judul `name` + `type`, `responsibility`, lalu `capabilities` sebagai `.chip`.
+- **schema (Model Data):** isi `<!-- SLOT:schema -->`. Satu `.card` per app yang PUNYA table (dari `control/schema/<app>.md`): judul app + daftar table (nama + kolom ringkas + relasi) + `Asal` (fitur/fix). **Read-only, TANPA filter ship-status** (skema ter-migrasi tampil walau fitur belum ship — by design M4). **Empty-handling:** app yang `control/schema/<app>.md`-nya stub/nol-table → **skip** (jangan render kartu kosong; ikut konvensi debt/integrations).
 - **packages:** satu `.card` per shared package (bila ada): judul `name` + label "package", `responsibility`, `consumers` (app yang memakai) sebagai `.chip`, tandai `mandatory_for` bila ada. Bedakan visual dari kartu app.
 - **integrations:** satu `.card` per vendor eksternal (bila ada, dari `integrations.md`): judul `vendor` + label "integrasi", `Dipakai`, `Arah` + `Mode` sebagai `.chip`. SHAPE-only — JANGAN tampilkan nilai secret (cuma NAMA env var bila perlu). Bedakan visual dari kartu app/package.
 - **fixes:** isi `<!-- SLOT:fixes -->`. Satu `.card` per fix dari `control/fixes/`: judul `id` + `.sev` (`severity`) + `.status` (`status`), `reported`, lalu `.meta` link `relates_to` (fitur) + `flow`. Urut: **Known Issues** (`open`/`diagnosed`) dulu, severity `urgent` di atas; lalu **Riwayat** (`shipped`). `dropped` JANGAN ditampilkan.
