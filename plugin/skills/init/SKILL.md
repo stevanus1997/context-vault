@@ -30,6 +30,7 @@ Tanyakan satu per satu:
 - Nama produk?
 - Satu kalimat: ngapain & buat siapa?
 - App apa saja yang sudah kebayang? (greenfield: declare; existing: konfirmasi yang terdeteksi). Boleh mulai dari satu, tambah app lain nanti lewat skill `add-app`.
+  - **(Opsional — blueprint app)** Kalau produk terdengar besar & app target sudah jelas sejak sekarang, boleh declare SEMUA app target sekaligus (semua masuk `apps[]` dengan `stack: {}` — lihat langkah 5). Tandai tiap app blueprint dengan menambah frasa `(blueprint — belum di-bring-up)` di akhir `responsibility`-nya + komentar `# blueprint, belum di-bring-up` pada entri-nya (lihat langkah 5), supaya pembaca seperti `ask`/`design-system`/`fanout` tahu app itu baru niat, belum dibangun. Ini cuma men-declare niat/topologi; bring-up (architect lalu wire) tetap per app saat app itu digarap — saat itu marker `(blueprint — belum di-bring-up)` dilepas. Produk kecil/belum jelas → cukup mulai satu, sisanya belakangan lewat `add-app`. (Nambah app sesudah init pertama tetap lewat `add-app`, bukan re-run init.)
 
 ### 4. Scaffold control/
 - Copy isi `${CLAUDE_PLUGIN_ROOT}/template/control/` ke `<produk>/control/` (mis. `cp -R "${CLAUDE_PLUGIN_ROOT}/template/control/." "<produk>/control/"`).
@@ -53,6 +54,7 @@ apps:
 packages: []                # shared package (ui-kit/types/utils) — diisi skill add-package; consumers diisi fanout
 ```
 Untuk existing, isi `stack` per app dari hasil deteksi `package.json` (framework, db bila terbaca). Biarkan `packages: []` kosong — package tumbuh lewat `add-package`, bukan di-declare saat init.
+Untuk app yang di-declare sebagai blueprint (opsi blueprint langkah 3 — di-declare tapi belum di-bring-up) → tambahkan frasa `(blueprint — belum di-bring-up)` di akhir `responsibility`-nya DAN komentar inline `# blueprint, belum di-bring-up` pada baris entri (mis. baris `- name:`), supaya pembaca `apps[]` (`ask`/`design-system`/`fanout`) tahu app itu baru niat. `architect`/`wire` melepas frasa marker dari `responsibility` saat app betul-betul di-bring-up.
 
 ### 6. Generate CLAUDE.md
 Tulis `<produk>/.claude/CLAUDE.md`:
