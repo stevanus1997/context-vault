@@ -71,6 +71,8 @@ control/
 ├── invariants.md         # invarian platform (tenancy/money/idempotency/authz/PII-PCI/rate-limit; dikunci architect)
 ├── integrations.md       # kontrak SHAPE vendor eksternal (M5; diisi add-integration)
 ├── design-system.md      # fondasi visual: tokens+motion+komponen primitif per gaya (diisi design-system)
+├── schema/               # proyeksi skema per app (generated wire/build dari skema/migrasi; M4; tak di-scaffold init)
+│   └── <app>.md
 ├── features/
 │   └── <nama-fitur>/
 │       ├── feature.yaml  # status + metadata
@@ -132,7 +134,7 @@ context-vault/
 │   ├── .claude-plugin/plugin.json
 │   ├── skills/   discovery· init· architect· wire· design-system· add-app· add-package· add-integration· extract· intake· fanout· plan· feature· breakdown· build· ship· drop· render-docs· fix· ask· debt
 │   ├── agents/   critic.md· security-critic.md
-│   └── rules/    anti-yes-man.md         # di-merge ke CLAUDE.md produk
+│   └── rules/    anti-yes-man.md· debt-aware.md· schema-projection.md   # anti-yes-man di-merge ke CLAUDE.md; sisanya dirujuk skill
 ├── template/
 │   ├── control/  (workspace.yaml· business/· conventions.md· invariants.md· integrations.md· design-system.md· features/· docs/ theme warm)
 │   └── .claude/  settings.json· CLAUDE.md (starter)
@@ -300,8 +302,8 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 
 - **Skills (21):** `discovery` · `init` · `architect` · `wire` · `design-system` · `add-app` · `add-package` · `add-integration` · `extract` · `feature` (→ `intake` · `fanout` · `plan`) · `breakdown` · `build` · `ship` · `drop` · `render-docs` · `fix` · `ask` · `debt`
 - **Agent:** `critic` · `security-critic`
-- **Rules:** `anti-yes-man.md`
-- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `design-system.md` · `features/` · `docs/`
+- **Rules:** `anti-yes-man.md` · `debt-aware.md` · `schema-projection.md`
+- **Knowledge (`control/`):** `workspace.yaml` (apps[] + packages[]) · `business/` · `conventions.md` · `invariants.md` · `integrations.md` · `design-system.md` · `schema/` · `features/` · `docs/`
 
 ## 18. Open Questions (untuk dipertimbangkan saat implementasi)
 
