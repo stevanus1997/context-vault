@@ -228,7 +228,7 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 
 Agent terpisah (konteks sendiri) yang tugasnya **mencari celah/bentrok/blind-spot**. Dipanggil di gate penting (`intake` untuk keputusan fondasi, `architect` untuk kunci invarian, `ship` untuk business alignment). Mengembalikan daftar keberatan; agent utama wajib menanggapi sebelum gate lewat. Pemisahan ini menghilangkan bias "yang mengusulkan = yang menilai".
 
-Agent kedua **`security-critic`** (read-only, konteks sendiri): dipanggil `ship` di Security & Compliance Gate untuk fitur ber-`sensitivity` — red-team DIFF mencari kerentanan (secret/PII/PCI/authz-tenant/webhook-signature/input). Sama prinsipnya: penilai ≠ pengusul.
+Agent kedua **`security-critic`** (read-only, konteks sendiri): dipanggil `ship` di Security & Compliance Gate untuk fitur ber-`sensitivity` — red-team DIFF mencari kerentanan (secret/PII/PCI/compliance/authz-tenant/webhook-signature/input) terhadap baseline `invariants.md`/`integrations.md`/`risks.md` (M6). Sama prinsipnya: penilai ≠ pengusul.
 
 ## 11. Anti-Yes-Man (P3)
 
