@@ -34,7 +34,7 @@ Jalankan **tool resmi** framework (GATE sebelum eksekusi). Brownfield: lewati bi
 Sesuai hasil 0.5: bare-engine → spin Docker lokal (generate `docker-compose.yml`) / URL remote; managed → connect pakai creds (GATE). (reference C.)
 
 ### 3. Konek BE↔DB
-Init ORM/driver (`stack.orm`), generate migrasi **baseline** (kosong dari table fitur), **apply** (GATE — migrate jangan auto), smoke query buktikan koneksi.
+Init ORM/driver (`stack.orm`), generate migrasi **baseline** (kosong dari table fitur), **apply** (GATE — migrate jangan auto), smoke query buktikan koneksi. **Proyeksi skema (M4):** lalu generate `control/schema/<app>.md` awal per `${CLAUDE_PLUGIN_ROOT}/rules/schema-projection.md` (`label=<none>`) — file lahir (header proyeksi; nol/baseline table) supaya `plan` tak pernah kena file-absen.
 
 ### 4. Wire FE↔BE
 Fullstack → env + internal call; FE/BE kepisah → API base URL + CORS + (bila relevan) typed client. Ikut `conventions.md`. (reference A/B.)
