@@ -25,10 +25,13 @@ Tentukan domain pertanyaan, buka **hanya** file yang relevan (bukan semua `contr
 | Vendor eksternal (arah/mode/dipakai-di) | `integrations.md` |
 | Status: fitur apa saja, draft/active/shipped, perilaku 1 fitur | `features/*/feature.yaml` (+ `business.md`) |
 | Bug / known-issues / riwayat fix | `fixes/*/fix.yaml` (+ `notes.md`) |
+| Feedback / sinyal lapangan (keluhan/incident/request) | `feedback/*.md` |
 | Utang teknis (yang ditunda sadar — "ada utang apa", "kenapa belum dibenerin") | `control/debt.yaml` (status diturunkan: silang `pays_debt` di `tasks.yaml`) |
 | Implementasi: "fungsi X jalan gimana", "endpoint Y di mana" | → code-fallback (langkah 3) |
 
 Pertanyaan lintas-domain → buka >1 sumber.
+
+> App ber-`responsibility` bertanda `(blueprint — belum di-bring-up)` (atau komentar `# blueprint, belum di-bring-up`) = baru di-declare, **belum dibangun**. Laporkan apa adanya ("declared, belum di-bring-up"), jangan sajikan sebagai app riil.
 
 ### 2. Baca knowledge
 Buka file relevan. Hemat konteks — baca yang nyambung saja, bukan seluruh `control/`.
