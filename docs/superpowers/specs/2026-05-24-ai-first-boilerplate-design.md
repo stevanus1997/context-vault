@@ -273,7 +273,7 @@ Status sengaja kasar (4); progress halus dalam `draft` dibaca dari artifact yang
 ## 13. Dokumen Human-Readable
 
 - **Single HTML**, di-generate dari knowledge yang sama (no hand-edit → no drift).
-- **Layout B1:** sidebar topik (Overview · Apps · Kapabilitas · Flows · Glossary); menu "Apps" → daftar app → detail app (fungsi, kapabilitas, flow terkait, repo).
+- **Layout B1:** sidebar topik (Overview · Apps · Model Data · Kapabilitas · Flows · Glossary · Fix/Known Issues); menu "Apps" → daftar app → detail app (fungsi, kapabilitas, flow terkait, repo). (Section Model Data & Fix/Known Issues di-skip kalau kosong, per spec masing-masing.)
 - **Gaya Warm/Friendly** (Notion-ish) — ramah pembaca non-teknis (PM, stakeholder).
 - Karena manusia & AI membaca kebenaran yang sama, dokumen ini tidak mungkin bohong relatif terhadap yang AI tahu.
 
