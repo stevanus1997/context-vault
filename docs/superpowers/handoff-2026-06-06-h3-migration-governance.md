@@ -1,8 +1,15 @@
 # HANDOFF — Langkah-2 H3 (migration-governance) — gap TERAKHIR
 
-> Fresh session: baca ini, langsung act. Tanggal: **2026-06-06**. Repo `~/Developer/ai-boilerplate`, branch `main` @ `92c0ed6` (clean). H3 = gap **terakhir** Langkah-2 (M4 sudah LIVE → dependency H3 ada). Spec+plan sendiri; eksekusi + verify di sesi TERPISAH.
+> Fresh session: baca ini, langsung act. Tanggal: **2026-06-06**. Repo `~/Developer/ai-boilerplate`. H3 = gap **terakhir** Langkah-2 (M4 sudah LIVE → dependency H3 ada). Spec+plan sendiri; eksekusi + verify di sesi TERPISAH.
 
-## Next (urut)
+## ✅ STATUS (update 2026-06-06): spec+plan DONE — NEXT = EKSEKUSI
+Steps 1-4 SELESAI di branch **`h3-migration-governance`** (dari `main` @ `92c0ed6`):
+- Spec `docs/superpowers/specs/2026-06-06-h3-migration-governance-design.md` @ `28d8865` (7 AskUserQuestion locked; 6-dim adversarial self-review workflow → 0 must-fix, 11 should-fix/nit applied inline; semua anchor `grep -Fc =1`).
+- Plan `docs/superpowers/plans/2026-06-06-h3-migration-governance.md` @ `8c026c9` (9-task one-file-per-task; semua FIND-anchor verified =1 verbatim).
+- **NEXT (sesi ini / fresh): JANGAN re-brainstorm.** `git checkout h3-migration-governance` → **executing-plans** atas plan di atas (9 task) → post-exec fresh-eyes verify (sesi LAIN, 5-6 lens workflow: faithful-exec/seam/mis-aimed-pointer/parent-doc-staleness/anti-fiksi-generik-advisory/stress-test) → FF-merge + push `origin/main` + hapus branch + update memory.
+- **Keputusan terkunci:** consumer dari scan-kode (FK-seed intra-DB, scan lintas-service); ketelitian campuran tabel+kolom; nempel ke skill (tetap **21**); `migrate.kind`+`affects` tegas di breakdown (action-scoped, BEDA dari task-level `kind`); deploy-order + expand-contract = **advisory**; warning di plan(dini, OFF pra-M4)+build(gate). Otak = rule baru `rules/migration-impact.md` (read-only). Anchor M4 `control/schema/` — BUKAN `packages[].consumers`/`data-model.md`.
+
+## Next asli (urut) — RIWAYAT, sudah dilewati step 1-4
 1. **brainstorming** (WAJIB — eksplor Open questions via AskUserQuestion, JANGAN pre-decide) → tulis spec ke `docs/superpowers/specs/2026-06-XX-h3-migration-governance-design.md`.
 2. **6-dim adversarial spec self-review (workflow, verified-vs-disk)** — di M4 nangkep must-fix struktural di tahap-spec (murah). Fix inline.
 3. **writing-plans** (one-file-per-task; tiap FIND-anchor `grep -Fc -e`-verified =1 verbatim dari disk SEBELUM commit).
