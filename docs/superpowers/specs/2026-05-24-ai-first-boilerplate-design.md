@@ -192,7 +192,7 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 
 #### `fanout` (P1)
 - **Input:** `business.md` + `workspace.yaml` (capabilities).
-- **Perilaku:** cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentukan app yang kena & perannya; **adaptif**: bila hanya 1 app → konfirmasi cepat; bila banyak → breakdown penuh. Boleh menerima hint `--app`, tetapi **tetap memverifikasi** (bisa mengoreksi bila ternyata menyentuh app lain). Challenge: "ada app kelewat? dependency lintas-app? butuh vendor eksternal?". Baca `integrations.md` → tandai `VENDOR NEW`/`VENDOR TOUCHED`/`VENDOR TOUCHED — perlu UPDATE` (diwujudkan `add-integration`).
+- **Perilaku:** cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentukan app yang kena & perannya; **adaptif**: bila hanya 1 app → konfirmasi cepat; bila banyak → breakdown penuh. Boleh menerima hint `--app`, tetapi **tetap memverifikasi** (bisa mengoreksi bila ternyata menyentuh app lain). Challenge: "ada app kelewat? dependency lintas-app? peran cross-cutting (queue/job/audit) → unit worker? butuh vendor eksternal?". Baca `integrations.md` → tandai `VENDOR NEW`/`VENDOR TOUCHED`/`VENDOR TOUCHED — perlu UPDATE` (diwujudkan `add-integration`).
 - **Output:** `features/<nama>/fanout.md` (+ penanda `VENDOR …`) + update `capabilities` di `workspace.yaml`.
 - **Gate:** approve/koreksi (user paling tahu peta produk).
 - **Prinsip:** "cuma 1 app" adalah **kesimpulan** fanout, bukan input — karena itu fanout tidak pernah di-skip.
@@ -220,7 +220,7 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 ### `render-docs`
 - **Tujuan:** knowledge → dokumen human-readable.
 - **Input:** `workspace.yaml` + `business/` + `integrations.md` + `features/`.
-- **Perilaku:** render ke single HTML (layout sidebar B1, tema Warm/Friendly), **filter by status** (fitur `dropped` tidak tampil / masuk section terpisah).
+- **Perilaku:** render ke single HTML (layout sidebar B1, tema Warm/Friendly), **filter by status** (fitur `dropped` tidak tampil / masuk section terpisah); badge status diberi keterangan makna (`shipped` = siap-kirim, bukan live/deploy — L3).
 - **Output:** `control/docs/site/index.html`.
 - **Trigger:** otomatis saat `shipped`; bisa dipanggil manual kapan saja untuk preview.
 
