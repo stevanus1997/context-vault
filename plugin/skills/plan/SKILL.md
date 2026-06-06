@@ -35,6 +35,7 @@ Untuk tiap vendor yang kena fitur (`VENDOR NEW`/`VENDOR TOUCHED`/`…perlu UPDAT
 
 ### 3. Per app (untuk tiap app di fanout.md)
 - **Baca `control/schema/<app>.md` (proyeksi skema durable, M4) DULU** sebagai baseline model data existing (table/kolom/relasi/`Asal`) — **JANGAN rekonstruksi skema dari nol**. (Di-generate `wire`/`build`; read-only di sini.)
+- **Dampak Skema Lintas-Fitur (H3).** Bila rencana mengubah tabel ber-`Asal` fitur lain (alter-existing, bukan tabel baru fitur ini): `plan` men-supply `affects`=tabel-yang-diubah (delta vs baseline) + `kind`=taksiran sifat-perubahan, lalu panggil `${CLAUDE_PLUGIN_ROOT}/rules/migration-impact.md` → tulis blok prosa **Dampak Skema** (consumer + risiko-lock + perlu-backfill + saran expand-contract) ke `_shared.md` (consumer lintas-app) / `plans/<app>.md` (1 app), **SETELAH** fenced-template langkah 4 (bukan field di dalam fence) → sodorkan di gate. Tabel baru fitur ini / **pra-M4** (tak ada `Asal`) → skip (peringatan dini OFF; jaring pindah ke gate `build`).
 - Buka kode app di `path`-nya (dari `workspace.yaml`). Baca pola yang ada; ikuti `conventions.md` & `stack`. Baca kode cuma untuk **delta/detail** yang tak ada di proyeksi.
 - Q&A **teknis** seperlunya.
 - Susun plan: file yang disentuh, endpoint/komponen, model data, test. **Bila app mengonsumsi package** → catat dependency-nya (package apa, dipakai untuk apa) di plan app.
