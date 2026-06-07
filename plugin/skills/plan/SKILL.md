@@ -52,6 +52,7 @@ Tulis `control/features/<fitur>/plans/<pkg>.md` (kontrak, langkah 2b) lalu `cont
 # <app>
 Model/Schema : <...>
 API/Komponen : <...>
+UI-Contract  : <field/actions/states per layar — app UI saja (reference.md §A); ATAU kosong non-UI>
 Lokasi       : <path konkret di app>
 Mockup       : <path… ke control/features/<fitur>/mockups/ ATAU kosong>
 Test         : <...>
