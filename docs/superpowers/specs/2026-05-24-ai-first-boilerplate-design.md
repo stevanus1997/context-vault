@@ -200,8 +200,8 @@ Format tiap skill: **Tujuan · Input · Perilaku · Output · Gate.**
 
 #### `plan` (P2 fase 2)
 - **Input:** `business.md` + `fanout.md` + **kode app** yang kena + `conventions.md` + `integrations.md` (kontrak vendor, read-only).
-- **Perilaku:** selesaikan **kontrak lintas-app** dulu (mis. mekanisme token) + **promote kontrak vendor** dari `integrations.md` ke `_shared.md` (O(1), idempotent) → untuk tiap app: baca kode/konvensi, Q&A **teknis**, susun plan (file, endpoint, model data, test; baris kebutuhan receiver untuk webhook vendor inbound); challenge teknis. (Karena `architect` sudah jalan, `plan` selalu membaca stack yang ada — tidak menetapkan stack.)
-- **Output:** `features/<nama>/plans/_shared.md` + `plans/<app>.md`.
+- **Perilaku:** selesaikan **kontrak lintas-app** dulu (mis. mekanisme token) + **promote kontrak vendor** dari `integrations.md` ke `_shared.md` (O(1), idempotent) → untuk tiap app: baca kode/konvensi, Q&A **teknis**, susun plan (file, endpoint, model data, test; baris kebutuhan receiver untuk webhook vendor inbound); challenge teknis. (Karena `architect` sudah jalan, `plan` selalu membaca stack yang ada — tidak menetapkan stack.) **(App UI)** turunkan **UI-Contract** (field/provider/state) lalu slot `Mockup:` **3-jalur**: bawa(+cross-check)/generate(via `frontend-design`)/degrade — detail `plan/reference.md`.
+- **Output:** `features/<nama>/plans/_shared.md` + `plans/<app>.md` (+ section `UI-Contract` & pointer `Mockup:` untuk app UI).
 - **Gate:** approve per app → siap dieksekusi.
 
 ### `ship` (finishing dev)
