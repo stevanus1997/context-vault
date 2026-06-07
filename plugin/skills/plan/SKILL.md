@@ -7,10 +7,12 @@ description: Use untuk fase teknis per-app sebuah fitur (P2 fase 2) — baca kod
 
 Tujuan: untuk tiap app yang kena fitur, susun plan implementasi konkret berbasis kode & konvensi yang ADA.
 
+> Detail **UI-Contract**, slot `Mockup:` 3-jalur, cross-check, dispatch generate, & round-trip ada di `${CLAUDE_PLUGIN_ROOT}/skills/plan/reference.md` — baca itu saat app menyentuh permukaan UI.
+
 ## Langkah
 
 ### 1. Baca input
-Baca `control/features/<fitur>/business.md` + `fanout.md` + `control/conventions.md` + `control/workspace.yaml` (untuk `path` & `stack` tiap app, **plus `packages[]` + `consumers[]` — read-only; `plan` tak pernah menulis `consumers[]`, itu jatah `fanout`**) + `control/integrations.md` (kontrak vendor eksternal — read-only) + `control/features/<fitur>/mockups/` (mockup UI yang diserahkan pengguna, **bila ada** — cek keberadaan saja; isi TIDAK di-parse di sini, diserahkan ke `build`).
+Baca `control/features/<fitur>/business.md` + `fanout.md` + `control/conventions.md` + `control/workspace.yaml` (untuk `path` & `stack` tiap app, **plus `packages[]` + `consumers[]` — read-only; `plan` tak pernah menulis `consumers[]`, itu jatah `fanout`**) + `control/integrations.md` (kontrak vendor eksternal — read-only) + `control/features/<fitur>/mockups/` (mockup UI yang diserahkan pengguna, **bila ada** — cek keberadaan saja; isi TIDAK di-parse di sini, diserahkan ke `build`) + `control/design-system.md` (fondasi visual — untuk jalur generate & konteks komponen app UI, read-only).
 
 ### 2. Selesaikan kontrak lintas-app dulu
 Bila `fanout.md` menyebut dependency lintas-app (mis. mekanisme token web↔api), putuskan kontraknya lebih dulu dan tulis `control/features/<fitur>/plans/_shared.md`:
