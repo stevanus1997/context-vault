@@ -56,6 +56,8 @@ Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yam
 - **Lebih longgar:** milestone bermotif mapan (OAuth provider ke-2/ke-3) → gabung gate.
 - **Fitur 1-app** → ciut jadi 1 gate.
 - **`--unattended` (opt-in, fitur saja — M7):** segmen ber-tier `risk` `low`/`normal` yang ijo + tak-menyimpang → auto-approve (lanjut tanpa stop). HARD floor tetap STOP: `risk: high` / `migrate` / `needs_human` / `blocked` / penyimpangan. Melonggarkan cadence ini, BUKAN menambah gate; tak menyentuh Security Gate `ship`. Default (tanpa flag) = stop tiap segmen.
+  - **Prasyarat harness (cek di awal run, step 1):** `permissions.allow` di `<produk>/.claude/settings.json` memuat perintah verifikasi stack unit yang kena (diisi `wire` 5.5). Kosong/kurang → WARN sebelum mulai: run bakal nyangkut di permission prompt harness (satpam yang tak dirancang), bukan di gate plugin — tawarkan jalan attended atau lengkapi allowlist dulu (`wire` repair).
+  - **Rem run-level (wajib saat unattended):** (a) **circuit breaker** — 2 task berturut-turut berakhir `blocked`/gagal dengan akar serupa → STOP SELURUH run + lapor "dugaan masalah sistemik" (1 penyebab ≠ N bug; jangan giling task berikutnya, bakar token percuma); (b) **cap volume** — default max **10 task** per run; tercapai → STOP + ringkasan run + sisa antrian (user boleh set angka lain saat memanggil). Rem ini level-RUN — melengkapi cap 3-ronde review yang levelnya per-task (SKILL step 4), bukan menggantikannya.
 - Selalu hormati `deps` + Urutan `fanout` (mis. `web` dibangun setelah `api` nyata, bukan yang direncanakan).
 
 ## E. Status & resume

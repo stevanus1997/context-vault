@@ -42,6 +42,9 @@ Fullstack → env + internal call; FE/BE kepisah → API base URL + CORS + (bila
 ### 5. Env standar
 Tulis `.env` app (pastikan gitignored): DB_URL, API base URL, secret. Rekam SHAPE-nya (nama var + arti, tanpa nilai) ke `conventions.md`. Secret = GATE/manual. (detail env contract: reference D; action `env` pinjam build: reference H.)
 
+### 5.5 Permission harness (unattended-ready)
+Turunkan perintah **VERIFIKASI** unit ini dari `stack` + package manager (hasil 0.5): test runner, lint, typecheck, build — sesuai stack-nya (mis. `npm test` / `pnpm lint` / `npx tsc` / `cargo test` / `pytest`), bukan daftar tetap. **APPEND** sebagai rule harness (`Bash(<prefix>:*)`) ke `permissions.allow` di `<produk>/.claude/settings.json` root produk (file warisan `init`; absen → copy dari `${CLAUDE_PLUGIN_ROOT}/template/.claude/settings.json` dulu; dedup — jangan dobel). **GATE:** tampilkan rule yang mau ditambah + approve dulu (nulis settings = side-effecting). HANYA perintah yang sifatnya baca/verifikasi — JANGAN pernah masukkan: push/deploy/apply-migrate/`rm`/perintah jaringan-tulis (biar tetap nyangkut di prompt — itu memang fungsinya). Kenapa: tanpa allowlist ini `build --unattended` (M7) macet di permission prompt **harness** — berhenti di satpam yang tak dirancang, bukan di gate plugin. Brownfield: repair — lengkapi yang kurang. Mode-package/mode-integration: tetap jalan (typecheck/test-nya juga butuh izin).
+
 ### 6. Smoke test (GATE penutup)
 Boot? DB kebaca? FE→BE nyampe? Ijo → tutup gate, laporkan "**app <x> siap di-`feature`**". **Lepas marker blueprint bila ada** — kalau `apps[].responsibility` app ini masih memuat frasa `(blueprint — belum di-bring-up)` (sisa declare blueprint di `init`), hapus frasa itu dari `responsibility` di `workspace.yaml` sekarang; app sudah di-bring-up, jadi `ask`/pembaca tak lagi salah-lapor sebagai 'belum dibangun'. Merah → STOP + lapor akar masalah (sandar `systematic-debugging`); JANGAN klaim siap. (reference E.)
 
