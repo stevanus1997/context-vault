@@ -12,7 +12,10 @@
 # mesin di control/features/<fitur>/last-run.md (lihat build reference §G & §H).
 #
 # Prasyarat: plugin context-vault ter-install + `claude` CLI di PATH + allowlist harness
-# sudah diisi (wire 5.5) supaya proses tak beku di permission prompt.
+# sudah diisi (wire 5.5 + bentuk multi-repo `git -C *`) supaya Bash tak beku di prompt.
+# Flag --permission-mode acceptEdits = auto-terima Edit/Write file (tasks.yaml+kode) tanpa
+# prompt, TAPI Bash tetap tunduk allowlist (push/rm tetap diblok deny). Tanpa flag ini,
+# headless beku di tool Edit.
 set -uo pipefail
 
 FITUR="${1:?usage: bash .claude/drive.sh <fitur> [maks-jam]}"
@@ -26,7 +29,7 @@ ronde=0
 while :; do
   ronde=$(( ronde + 1 ))
   echo "[drive] putaran $ronde — build $FITUR (proses fresh)…"
-  ( cd "$ROOT" && claude -p "build $FITUR --unattended" ) || true   # proses BARU; resume dari tasks.yaml
+  ( cd "$ROOT" && claude -p "build $FITUR --unattended" --permission-mode acceptEdits ) || true   # proses BARU; auto file-edit, Bash tetap allowlist; resume dari tasks.yaml
 
   if [ ! -f "$REPORT" ]; then
     echo "[drive] last-run.md tak ada — build tak lapor; STOP (cek manual)"; break

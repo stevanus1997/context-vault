@@ -101,7 +101,9 @@ Tujuan: run hands-off TAK berhenti DIAM — manusia dikabari saat dibutuhkan, bu
 **Nilai `outcome` (dipetakan dari alasan stop):**
 - `done` — SEMUA task `done` (step 7, siap-ship). Driver berhenti (sukses).
 - `continue` — berhenti karena **cap-volume** (§D) tercapai, masih ada `pending`, TAK ada floor. Aman di-restart proses fresh → driver lanjut.
-- `halt` — kena **FLOOR**: `needs_human` (step 2) / `blocked` (step 5) / circuit-breaker (§D) / gate `migrate` / Security Gate. Butuh manusia → driver berhenti, JANGAN restart.
+- `halt` — kena **FLOOR atau BLOCKER**: `needs_human` (step 2) / `blocked` (step 5) / circuit-breaker (§D) / gate `migrate` / Security Gate / **blocker lingkungan** (permission denial tak teratasi, tak bisa tulis `tasks.yaml`/commit) / **`risk: high` saat unattended** (auto-approve tak pernah nyala → tiap gate stop; emit `halt` DINI di ronde-1, reason "risk:high butuh attended"). Butuh manusia → driver berhenti, JANGAN restart.
+
+**WAJIB di mode unattended (headless `claude -p`):** JANGAN PERNAH akhiri turn dengan pertanyaan interaktif / pesan ngobrol — tak ada yang baca/jawab, dan driver cuma dapat "last-run.md tak ada". Tiap berhenti (termasuk blocker tak terduga) **emit `outcome` + `last-run.md` DULU, baru stop**. Pertanyaan run-mode/approval di unattended = otomatis `halt` (bukan ditanyakan).
 
 **Pengiriman notif = HARNESS via hook (deterministik — jalan walau build beku/crash), BUKAN model:**
 - `on-stop.sh` (hook `Stop`, ter-ship di template): tiap turn berakhir → ADA penanda stop? → panggil `notify.sh` + hapus penanda stop + matikan penanda mode. Tak ada penanda → diam (sesi biasa tak ke-spam).
@@ -124,7 +126,7 @@ Tujuan: ubah "user ngetik `build` lagi tiap sesi" jadi mesin yang muter sendiri 
 **Fresh context: cuma dari PROSES BARU.** `claude -p` (proses baru tiap putaran) & `/schedule` (sesi cloud fresh tiap run) memberi context kosong + resume dari `tasks.yaml` (disk) — pola Ralph asli. `/loop` TIDAK (akumulatif, sesi sama) → bukan engkol untuk ini.
 
 ### Engkol 1 — bash (`drive.sh`, ter-ship di template) — grind kontinu
-`bash <root>/.claude/drive.sh <fitur> [maks-jam]`. Tiap putaran: spawn `claude -p "build <fitur> --unattended"` (PROSES BARU, context fresh) → baca header `outcome`/`done` dari `last-run.md` → putuskan. **TIGA backstop (semua deterministik, di luar model):**
+`bash <root>/.claude/drive.sh <fitur> [maks-jam]`. Tiap putaran: spawn `claude -p "build <fitur> --unattended" --permission-mode acceptEdits` (PROSES BARU, context fresh) → baca header `outcome`/`done` dari `last-run.md` → putuskan. **`acceptEdits` WAJIB** — auto-terima tool `Edit`/`Write` (mis. `tasks.yaml` + file kode) tanpa prompt, **sementara Bash TETAP tunduk allowlist** (push/`rm -rf` tetap diblok `deny`). Tanpa ini, headless beku di permission tool `Edit` (kasus nyata: reset status task ke-deny → build mati di task-1). Allowlist Bash WAJIB punya bentuk multi-repo `git -C * <subcmd>` (commit/checkout/dst) selain bentuk polos — kalau tidak, commit per-repo beku. **TIGA backstop (semua deterministik, di luar model):**
 - `outcome: done` → stop sukses; `outcome: halt` → stop, **JANGAN restart** (floor = tembok).
 - **nol-kemajuan** — `done` tak naik dari putaran sebelumnya → mandek → stop (auto-scale: 10 atau 1000 task tak masalah, yang dijaga "ada kemajuan", bukan "berapa kali").
 - **deadline waktu** (`maks-jam`, default 6) → stop.

@@ -8,14 +8,30 @@
       "Bash(git rev-parse:*)",
       "Bash(git branch:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git -C * status:*)",
+      "Bash(git -C * diff:*)",
+      "Bash(git -C * log:*)",
+      "Bash(git -C * show:*)",
+      "Bash(git -C * rev-parse:*)",
+      "Bash(git -C * branch:*)",
+      "Bash(git -C * add:*)",
+      "Bash(git -C * commit:*)",
+      "Bash(git -C * checkout:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
       "Bash(git reset --hard:*)",
       "Bash(git clean:*)",
-      "Bash(rm -rf:*)"
+      "Bash(git checkout -- :*)",
+      "Bash(rm -rf:*)",
+      "Bash(git -C * push --force:*)",
+      "Bash(git -C * push -f:*)",
+      "Bash(git -C * reset --hard:*)",
+      "Bash(git -C * clean:*)",
+      "Bash(git -C * checkout -- :*)"
     ]
   },
   "hooks": {
