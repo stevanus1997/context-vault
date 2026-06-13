@@ -67,6 +67,12 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 ```
 Otomatis dipanggil `ship`; bisa juga manual untuk preview.
 
+## Maintenance / migrasi
+```
+/upgrade            # susulin produk LAMA (di-init versi plugin sebelumnya) ke template terbaru
+```
+`upgrade` menyamakan file scaffolding kubu-plugin ke template terkini — `.claude/` (hooks/ + drive.sh + merge settings.json + .gitignore) + file `control/` skeleton yang HILANG — **tanpa menyentuh knowledge** (control/ yang sudah ada, CLAUDE.md, notify.sh, kode). Idempoten + presence-based + GATE tiap tulis; **bukan** re-init/re-wire. Produk baru tak perlu (`init` terkini sudah lengkap).
+
 ## Desain
 Lihat `docs/superpowers/specs/2026-05-24-ai-first-boilerplate-design.md`.
 
