@@ -61,7 +61,8 @@ Tulis `<produk>/.claude/CLAUDE.md`:
 - Baris konteks produk (nama + satu kalimat dari Q&A).
 - Baris: "Knowledge sistem ada di `control/` (workspace.yaml + business/ + conventions.md). Selalu mulai dari bisnis, bukan kode."
 - **Merge** isi `${CLAUDE_PLUGIN_ROOT}/rules/anti-yes-man.md` ke bagian bawah CLAUDE.md.
-Copy juga `${CLAUDE_PLUGIN_ROOT}/template/.claude/settings.json` ke `<produk>/.claude/settings.json`.
+Copy juga seluruh isi `${CLAUDE_PLUGIN_ROOT}/template/.claude/` ke `<produk>/.claude/` (mis. `cp -R "${CLAUDE_PLUGIN_ROOT}/template/.claude/." "<produk>/.claude/"`) — termasuk `settings.json` (permissions allowlist/deny + hooks) **dan** folder `hooks/` (skrip notifikasi unattended `on-stop.sh`/`on-permission.sh`). Pastikan skrip hook executable: `chmod +x "<produk>/.claude/hooks/"*.sh`. (Tak menimpa `CLAUDE.md` yang baru ditulis di atas — template tak memuatnya.)
+Lalu **tulis** (bukan sekadar "pastikan" — ini aksi APPEND deterministik, idempoten) baris `.claude/notify.sh` dan `.claude/.unattended*` ke `<produk>/.gitignore`: untuk tiap baris, `grep -qxF` dulu → kalau belum ada baru `printf '%s\n' >> .gitignore` (buat file bila absen). Lakukan di langkah ini, JANGAN ditunda — `notify.sh` (ditulis `build` nanti) bisa memuat token/topik notif pribadi (jangan ke-commit, seperti `.env`); penanda `.unattended*` = state runtime build, bukan knowledge. (Proteksi dipasang `init` SEBELUM `build` pernah membuat `notify.sh`.)
 
 ### 7. Ringkas hasil (GATE)
 Tampilkan struktur `control/` yang dibuat + isi `workspace.yaml`. Konfirmasi ke user. Sarankan langkah berikutnya: `architect` (setup/capture fondasi teknis).

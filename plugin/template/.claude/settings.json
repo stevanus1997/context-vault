@@ -17,5 +17,23 @@
       "Bash(git clean:*)",
       "Bash(rm -rf:*)"
     ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/on-stop.sh" }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/on-permission.sh" }
+        ]
+      }
+    ]
   }
 }
