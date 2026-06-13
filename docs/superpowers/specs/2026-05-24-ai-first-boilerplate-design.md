@@ -139,7 +139,7 @@ context-vault/
 │   └── rules/    anti-yes-man.md· debt-aware.md· schema-projection.md· migration-impact.md· compliance-risk.md   # anti-yes-man di-merge ke CLAUDE.md; sisanya dirujuk skill
 ├── template/
 │   ├── control/  (workspace.yaml· business/· conventions.md· invariants.md· integrations.md· design-system.md· schema/· features/· feedback/· docs/ theme warm)
-│   └── .claude/  settings.json (permissions+hooks)· CLAUDE.md (starter)· hooks/ (on-stop.sh· on-permission.sh — notif unattended M7)
+│   └── .claude/  settings.json (permissions+hooks)· CLAUDE.md (starter)· hooks/ (on-stop.sh· on-permission.sh — notif unattended M7)· drive.sh (outer-loop driver M7)
 ├── .claude-plugin/marketplace.json
 └── README.md
 ```

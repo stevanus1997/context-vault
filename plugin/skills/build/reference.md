@@ -89,7 +89,19 @@ Tujuan: run hands-off TAK berhenti DIAM — manusia dikabari saat dibutuhkan, bu
 **Tiga artefak (ditulis `build`):**
 1. **Penanda mode** `<root>/.claude/.unattended` — ditulis di AWAL run unattended (step 1); berarti "ada run hands-off berjalan, kabari kalau beku". Di-clear saat run ATTENDED (self-heal penanda basi dari run yang ke-abort) & dihapus hook `on-stop` saat run berhenti.
 2. **Penanda stop** `<root>/.claude/.unattended-stop` — ditulis TEPAT sebelum mengakhiri turn di SETIAP titik STOP (`needs_human` step 2 / `blocked` step 5 / circuit-breaker & cap-volume & gate step 6 / selesai step 7), isi = SATU baris alasan. Hanya ditulis bila run mode unattended.
-3. **Laporan** `<work-item>/last-run.md` — ditulis di tiap stop: alasan berhenti, task/segmen terakhir, hitung status (done/pending/blocked/needs_human), ringkas diff, "butuh apa dari manusia". Ini juga bahan resume + (kelak) input driver outer-loop.
+3. **Laporan** `<work-item>/last-run.md` — ditulis di tiap stop. **Baris pertama WAJIB header mesin** (kebaca driver outer-loop §H), lalu prosa human-readable:
+   ```
+   outcome: continue|done|halt
+   done: <jumlah task done total>
+   pending: <jumlah task belum done>
+   reason: <satu baris alasan berhenti>
+   ```
+   Lalu prosa: task/segmen terakhir, ringkas diff, "butuh apa dari manusia". Ini bahan resume + input driver outer-loop (§H). (Driver baca `outcome`+`done`; `pending`/`reason` buat notif + laporan manusia.)
+
+**Nilai `outcome` (dipetakan dari alasan stop):**
+- `done` — SEMUA task `done` (step 7, siap-ship). Driver berhenti (sukses).
+- `continue` — berhenti karena **cap-volume** (§D) tercapai, masih ada `pending`, TAK ada floor. Aman di-restart proses fresh → driver lanjut.
+- `halt` — kena **FLOOR**: `needs_human` (step 2) / `blocked` (step 5) / circuit-breaker (§D) / gate `migrate` / Security Gate. Butuh manusia → driver berhenti, JANGAN restart.
 
 **Pengiriman notif = HARNESS via hook (deterministik — jalan walau build beku/crash), BUKAN model:**
 - `on-stop.sh` (hook `Stop`, ter-ship di template): tiap turn berakhir → ADA penanda stop? → panggil `notify.sh` + hapus penanda stop + matikan penanda mode. Tak ada penanda → diam (sesi biasa tak ke-spam).
@@ -104,3 +116,23 @@ Tujuan: run hands-off TAK berhenti DIAM — manusia dikabari saat dibutuhkan, bu
 Absen / pilihan 4 → hook jadi no-op otomatis (guard `[ -x notify.sh ]`); laporan disk tetap jalan. Generik: plugin tak mengunci satu kanal — menyediakan mekanisme + slot, user yang colok.
 
 **Higiene kanal (ingatkan user saat Q&A):** pakai topik/channel **privat & tak-ketebak** (mis. ntfy topik dengan akhiran acak `stevanus-build-9f3a`, bukan kata umum) — pesan notif memuat ringkas alasan/tool yang beku, jadi topik publik = bocor info. Pesan sengaja ringkas (alasan + nama tool), bukan dump perintah penuh, untuk perkecil paparan.
+
+## H. Outer-loop driver (unattended berkelanjutan lintas-sesi — M7)
+
+Tujuan: ubah "user ngetik `build` lagi tiap sesi" jadi mesin yang muter sendiri sampai fitur kelar / butuh manusia. **Inti = sinyal `outcome` (§G); driver tinggal baca lalu putuskan lanjut/stop.** Plugin TAK bikin mesin loop sendiri — pakai yang harness/OS sudah sediakan (selaras prinsip `wire`: delegasi ke tool resmi). Dua engkol, sinyal sama:
+
+**Fresh context: cuma dari PROSES BARU.** `claude -p` (proses baru tiap putaran) & `/schedule` (sesi cloud fresh tiap run) memberi context kosong + resume dari `tasks.yaml` (disk) — pola Ralph asli. `/loop` TIDAK (akumulatif, sesi sama) → bukan engkol untuk ini.
+
+### Engkol 1 — bash (`drive.sh`, ter-ship di template) — grind kontinu
+`bash <root>/.claude/drive.sh <fitur> [maks-jam]`. Tiap putaran: spawn `claude -p "build <fitur> --unattended"` (PROSES BARU, context fresh) → baca header `outcome`/`done` dari `last-run.md` → putuskan. **TIGA backstop (semua deterministik, di luar model):**
+- `outcome: done` → stop sukses; `outcome: halt` → stop, **JANGAN restart** (floor = tembok).
+- **nol-kemajuan** — `done` tak naik dari putaran sebelumnya → mandek → stop (auto-scale: 10 atau 1000 task tak masalah, yang dijaga "ada kemajuan", bukan "berapa kali").
+- **deadline waktu** (`maks-jam`, default 6) → stop.
+
+Build self-cap per putaran (cap-volume §D, default 10 task) supaya tiap proses kecil & mati sebelum context membengkak. "10" = aturan tertulis yang model hitung-sendiri-lalu-patuhi; `drive.sh` = rem keras di luar model.
+
+### Engkol 2 — `/schedule` — batch terjadwal (overnight / lepas-laptop)
+`/schedule` sebuah routine: tiap <interval> jalankan `build <fitur> --unattended`. Tiap run = sesi cloud FRESH → build self-resume dari `tasks.yaml`, kerjakan 1 batch (≤cap), tulis `outcome` + notif. Routine berulang sampai `outcome: done` (run berikutnya jadi no-op: manifest closed / tak ada `pending`) — lalu **hapus routine**. **Bedanya dari bash:** `/schedule` tak baca `outcome` untuk auto-stop (tiap run independen) → saat `outcome: halt`, run terjadwal berikutnya akan halt lagi (notif berulang "masih nunggu kamu") → **pause/hapus routine sampai manusia beresin**. Cocok bila tak mau grind kontinu / laptop mati.
+
+### Aturan aman (dua-duanya)
+Driver menumpang floor (langkah-1 §D) + notif (§G); ia **tak pernah** melonggarkan gate. `halt` → selalu berhenti & panggil manusia, tak pernah auto-lewati `needs_human`/`migrate`/Security. Tak ada auto-merge/auto-ship — `outcome: done` berarti "siap di-`ship`", `ship` tetap attended (jatah manusia).
