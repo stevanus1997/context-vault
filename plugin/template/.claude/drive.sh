@@ -4,8 +4,9 @@
 #
 # Tiap putaran = PROSES `claude` BARU → context window FRESH; memori hidup di
 # tasks.yaml (disk), bukan di kepala model. Build self-cap per putaran (cap-volume
-# build reference §D, default 10 task) supaya tiap proses kecil & mati sebelum
-# context membengkak; driver ini = rem KERAS di luar model.
+# build reference §D = budget BOBOT, default 10 poin — task berat ber-mockup/integration
+# makan jatah lebih cepat, bukan sekadar hitung jumlah task) supaya tiap proses kecil &
+# mati sebelum context membengkak; driver ini = rem KERAS di luar model.
 #
 # Berhenti saat: outcome=done (selesai) / outcome=halt (butuh manusia — TAK di-restart) /
 # satu putaran nol-kemajuan (mandek) / lewat batas waktu. Sinyal dibaca dari header
