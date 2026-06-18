@@ -170,3 +170,17 @@ fix selalu attended. Build step 6 unattended-clause cek "work-item fitur" → fi
 - [ ] **honesty (§8):** "melonggarkan cadence, bukan gate baru" ditulis di build step 6 + reference §D (tempat logika jalan); tak klaim ship/security berubah.
 - [ ] **generik:** tier & unattended tak ecommerce-specific; degrade tiap titik.
 - [ ] **scope-flags (lihat handoff):** per-milestone risk (M7-FLAG-A) ditolak demi fix-light (D6); batch/sticky cross-app (M7-FLAG-B) DILARANG; risk di fix.yaml (M7-FLAG-C) ditolak (D7). Tak diam-diam balloon.
+
+---
+
+## Amendemen 2026-06-18 — D4 dipersempit (decouple risk/sensitivity)
+
+D4 (floor borongan `sensitivity non-kosong → risk:high`) **dipersempit** ke
+`payments-movement → risk:high`; `pii` read-only **tidak lagi** memaksa floor —
+mengembalikan ke niat **D1** (risk = blast-radius build; sensitivity = kedalaman
+ship). Ditambah floor-scan diff deterministik di build + setup prasyarat
+unattended (notify/allowlist) via wire/upgrade + backstop `drive.sh`.
+
+Spec lengkap: `docs/superpowers/specs/2026-06-18-unattended-risk-floor-decouple-design.md`.
+Plan: `docs/superpowers/plans/2026-06-18-unattended-risk-floor-decouple.md`.
+(Sejarah D4 di atas DIPERTAHANKAN — ini catatan menyusul, bukan tulis-ulang.)
