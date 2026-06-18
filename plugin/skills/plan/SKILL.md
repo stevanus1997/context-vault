@@ -36,7 +36,7 @@ Untuk tiap vendor yang kena fitur (`VENDOR NEW`/`VENDOR TOUCHED`/`…perlu UPDAT
 **Kebutuhan receiver (vendor inbound/both):** ambil `Receiver app` dari entri `integrations.md` (field durable) → tulis di `plans/<Receiver app>.md` satu baris: "Webhook masuk `<vendor>` di `<path>`: verifikasi signature (`<algo>`), idempotent (dedup), tahan replay." → basis varian task inbound-eksternal `breakdown`. (`plan` read-only ke `integrations.md`; `Receiver app` HARUS dari situ, bukan ditebak.)
 
 ### 3. Per app (untuk tiap app di fanout.md)
-- **Baca `control/schema/<app>.md` (proyeksi skema durable, M4) DULU** sebagai baseline model data existing (table/kolom/relasi/`Asal`) — **JANGAN rekonstruksi skema dari nol**. (Di-generate `wire`/`build`; read-only di sini.)
+- **Baca `control/schema/<app>.md` (proyeksi skema durable, M4) DULU** sebagai baseline model data existing (table/kolom/relasi/`Asal`) — **JANGAN rekonstruksi skema dari nol**. (Di-generate `wire`/`build`; read-only di sini.) **Keputusan reuse-vs-NEW (sumber tunggal):** untuk tiap kebutuhan data fitur ini, putuskan eksplisit **reuse tabel existing** (extend) **vs NEW** (tabel baru — justify kenapa tak bisa extend) dengan membandingkan ke baseline; tulis verdict di slot `Model/Schema` (langkah 4). Verdict ini otoritatif — `breakdown` (`reuse:`) cuma mentranskripsi, tak memutuskan ulang. **Fallback:** `control/schema/<app>.md` absen/stub padahal app jelas ber-DB → JANGAN anggap kosong = otoritatif; lakukan inventory ORM/migrasi nyata (atau arahkan jalankan `wire` yang me-regen proyeksi) sebelum mutusin NEW.
 - **Dampak Skema Lintas-Fitur (H3).** Bila rencana mengubah tabel ber-`Asal` fitur lain (alter-existing, bukan tabel baru fitur ini): `plan` men-supply `affects`=tabel-yang-diubah (delta vs baseline) + `kind`=taksiran sifat-perubahan, lalu panggil `${CLAUDE_PLUGIN_ROOT}/rules/migration-impact.md` → tulis blok prosa **Dampak Skema** (consumer + risiko-lock + perlu-backfill + saran expand-contract) ke `_shared.md` (consumer lintas-app) / `plans/<app>.md` (1 app), **SETELAH** fenced-template langkah 4 (bukan field di dalam fence) → sodorkan di gate. Tabel baru fitur ini / **pra-M4** (tak ada `Asal`) → skip (peringatan dini OFF; jaring pindah ke gate `build`).
 - Buka kode app di `path`-nya (dari `workspace.yaml`). Baca pola yang ada; ikuti `conventions.md` & `stack`. Baca kode cuma untuk **delta/detail** yang tak ada di proyeksi.
 - Q&A **teknis** seperlunya.
@@ -50,7 +50,7 @@ Untuk tiap vendor yang kena fitur (`VENDOR NEW`/`VENDOR TOUCHED`/`…perlu UPDAT
 Tulis `control/features/<fitur>/plans/<pkg>.md` (kontrak, langkah 2b) lalu `control/features/<fitur>/plans/<app>.md`:
 ```
 # <app>
-Model/Schema : <...>
+Model/Schema : <per kebutuhan data: "reuse <Tabel>" (extend existing) ATAU "NEW <Tabel> (justify) + actions:migrate"; dibanding baseline control/schema/<app>.md>
 API/Komponen : <...>
 UI-Contract  : <field/actions/states per layar — app UI saja (reference.md §A); ATAU kosong non-UI>
 Lokasi       : <path konkret di app>
