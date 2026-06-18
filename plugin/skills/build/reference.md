@@ -96,7 +96,7 @@ Tujuan: run hands-off TAK berhenti DIAM — manusia dikabari saat dibutuhkan, bu
    pending: <jumlah task belum done>
    reason: <satu baris alasan berhenti>
    ```
-   Lalu prosa: task/segmen terakhir, ringkas diff, "butuh apa dari manusia". Ini bahan resume + input driver outer-loop (§H). (Driver baca `outcome`+`done`; `pending`/`reason` buat notif + laporan manusia.)
+   Lalu prosa: task/segmen terakhir, ringkas diff, "butuh apa dari manusia". Ini bahan resume + input driver outer-loop (§H). (Driver baca `outcome`+`done`; `pending`/`reason` buat notif + laporan manusia.) (Bila run unattended menyentuh area sensitif, prosa memuat banner *"DIBANGUN UNATTENDED — review security-critic wajib sebelum merge"*.)
 
 **Nilai `outcome` (dipetakan dari alasan stop):**
 - `done` — SEMUA task `done` (step 7, siap-ship). Driver berhenti (sukses).
