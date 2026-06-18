@@ -25,6 +25,26 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"          # root produk (.claude/ ada di
 REPORT="$ROOT/control/features/$FITUR/last-run.md"
 DEADLINE=$(( $(date +%s) + MAX_JAM * 3600 ))
 
+# --- Precheck prasyarat unattended (backstop "Y") — dijalankan saat MANUSIA masih di
+#     terminal, supaya tak freeze headless di tengah loop. Kurang → instruksi + EXIT. ---
+SETTINGS="$ROOT/.claude/settings.json"
+NOTIFY="$ROOT/.claude/notify.sh"
+if [ ! -x "$NOTIFY" ]; then
+  echo "[drive] STOP — notify.sh belum diset; loop unattended butuh kanal notif." >&2
+  echo "        Setup: jalankan 'wire'/'upgrade', ATAU 'build $FITUR --unattended' sekali interaktif." >&2
+  exit 1
+fi
+if command -v jq >/dev/null 2>&1; then
+  nongit="$(jq -r '[.permissions.allow[]? | select(test("^Bash\\(git")|not)] | length' "$SETTINGS" 2>/dev/null || echo 0)"
+else
+  nongit=1   # tanpa jq: jangan false-block, lewati cek allowlist
+fi
+if [ ! -f "$SETTINGS" ] || [ "${nongit:-0}" -eq 0 ]; then
+  echo "[drive] STOP — allowlist verifikasi stack belum keisi di .claude/settings.json." >&2
+  echo "        Tanpa ini build beku di permission prompt headless. Jalankan 'wire' step 5.5 dulu." >&2
+  exit 1
+fi
+
 prev_done=-1
 ronde=0
 while :; do
