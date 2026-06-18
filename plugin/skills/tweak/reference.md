@@ -21,3 +21,10 @@ Triage **by framing user**:
 - "salah / harusnya / bug / nggak jalan" → **`/fix`** (route bawa konteks; fix punya disiplin reproduce→root-cause).
 - "naikin / ganti / ubah jadi / set" → **`tweak`** (ngubah keputusan; perilaku lama nggak salah).
 - **Ambigu → tanya SATU pertanyaan:** "ini perilaku lama yang *salah* (bug), atau keputusan baru?" Jangan tebak diam-diam.
+
+## D. Capture — ownership, format, idempotensi
+- **Tulis langsung HANYA ke `business/domain.md · flows.md · glossary.md`** (ketiganya multi-writer: `intake` step 7 + `extract` + `tweak` = penulis sah). `conventions.md`/`integrations.md`/`invariants.md` = single-owner-gated → **route ke pemilik / eskalasi**, NGGAK ditulis (pola `ask`).
+- **Format alasan inline:** marker `<!-- tweak: <YYYY-MM-DD> — <kenapa> -->` di sebelah fakta. (Aturan BARU tweak; `intake` cuma idempotent tanpa alasan-inline.)
+- **Idempotensi:** sebelum nambah, banding **FAKTA saja** (abaikan blok marker) → kalau fakta serupa ada, update; jangan duplikat. Aman di-re-run & nggak duplikat entri `intake`/`extract`.
+- **Rule-change vs konstanta:** ngubah **ANGKA pada aturan yang SUDAH ADA** di `domain.md` = konstanta → Challenge Checklist. **Bikin aturan BARU / restruktur** = rule-change → **critic independen** (`context-vault:critic`) nilai usulan SEBELUM ditulis (anti-circular).
+- **No-home fallback:** kandidat by jenis fakta (aturan→`domain`, langkah→`flows`, istilah→`glossary`); nggak jelas → default `domain.md` TAPI tampil di gate step 5 ("capture ke domain.md — pindahin?"). Jangan diam-diam drop.

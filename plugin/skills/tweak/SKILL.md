@@ -31,10 +31,10 @@ SEBELUM nyentuh kode. **Cek mekanis pakai daftar verba di `reference.md` §A-C, 
 **Garis angka-kebijakan vs plumbing** (biar perubahan angka kebijakan kayak diskon-cap nggak ketabrak cabang-B): `reference.md` §B.
 
 ### 3. Bikin perubahan — TDD otomatis, inline
-<!-- diisi Task 4 -->
+Skill yang **nulis test sendiri** dari perilaku yang diubah (merah → implement → ijo), ikut `conventions.md` + pola yang ada. Edit **inline** (TANPA orkestrasi subagent per-task — itu sumber berat `build`). **Pengecualian sempit:** murni nggak-berperilaku (copy/teks/format/rename) → nggak ada yang dites (≠ "boleh logika tanpa test"). **TDD = jaminan KOREKTIFITAS, BUKAN keamanan** (keamanan = cabang-B + floor-scan step 5).
 
 ### 4. Capture keputusan (kalau ada)
-<!-- diisi Task 4 -->
+Kalau perubahan bawa fakta durable → APPEND ke file knowledge **pemilik** sesuai `reference.md` §D. Ringkas: tulis langsung **HANYA** ke `business/domain.md · flows.md · glossary.md` (idempotent, + alasan inline); `conventions.md`/`integrations.md`/`invariants.md` → **route/eskalasi, JANGAN tulis**. **Rule-change** (bikin/restruktur aturan) → **critic independen** nilai dulu; **konstanta** (ganti angka aturan existing) → cukup Challenge Checklist. Murni kosmetik → skip.
 
 ### 5. Gate (floor-scan + anti-yes-man)
 <!-- diisi Task 5 -->
