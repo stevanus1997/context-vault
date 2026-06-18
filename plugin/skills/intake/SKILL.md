@@ -60,3 +60,4 @@ Tampilkan `business.md` + daftar promosi knowledge + usulan `sensitivity` → mi
 
 ## Catatan
 - Output ini jadi input `fanout`. JANGAN melakukan pemetaan app di sini.
+- `tweak` bisa eskalasi ke sini (invoke `/feature`→`intake`) bawa seed konteks saat perubahan kecil ternyata gede/fondasional.

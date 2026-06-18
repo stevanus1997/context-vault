@@ -55,6 +55,16 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 ```
 > `/fix` = koreksi perilaku yang **sudah ada** (bukan `/feature` yang buat kapabilitas baru). in-flight → corrective task di `tasks.yaml` fitur; post-ship → `control/fixes/<id>/` first-class. `build`/`ship` work-item-aware (fitur ATAU fix).
 
+## Perubahan kecil (jalur ringan)
+```
+/tweak <apa>        # perubahan KECIL berjejak: keputusan/kebijakan kecil → capture ke control/ tanpa pipeline berat; tripwire auto naik-kelas
+```
+| Skill | Kapan |
+|---|---|
+| `/tweak` | perubahan kecil, bukan bug, nggak fondasional — raih duluan |
+| `/fix` | perilaku lama yang *salah* (defect) |
+| `/feature` | kapabilitas baru / gede / lintas-app / fondasional |
+
 ## Tanya produk (read-only)
 ```
 /ask <pertanyaan>   # tanya APA PUN soal produk (greenfield/brownfield): knowledge-first, code-fallback

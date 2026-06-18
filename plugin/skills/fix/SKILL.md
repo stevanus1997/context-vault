@@ -54,3 +54,4 @@ Konteks: bug produksi; tak ada branch hidup; fitur `shipped` (atau tanpa-fitur).
 - Utang teknis (benar tapi jelek) **bukan** defect → bukan jatah `fix` untuk men-*catat*; itu `control/debt.yaml` (di-capture `build` pintu ke-4, dikelola `/debt`). `fix` hanya **melunasi** utang `open` yang kebetulan satu-area lewat task `kind: debt` (§1 debt-aware) — sibling `kind: fix`.
 - BUKAN urusannya: kapabilitas/kontrak/vendor BARU (→ `/feature`); nentuin stack (→ `architect`); bikin PR/`shipped` (→ `ship`).
 - Hemat konteks: reproduce + root-cause + implementasi semua di subagent; sesi `fix` cuma nampung kesimpulan + status.
+- Perubahan kecil yang BUKAN defect (ganti kebijakan/konstanta) → `/tweak`, bukan `fix`.
