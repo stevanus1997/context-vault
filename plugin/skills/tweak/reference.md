@@ -28,3 +28,11 @@ Triage **by framing user**:
 - **Idempotensi:** sebelum nambah, banding **FAKTA saja** (abaikan blok marker) → kalau fakta serupa ada, update; jangan duplikat. Aman di-re-run & nggak duplikat entri `intake`/`extract`.
 - **Rule-change vs konstanta:** ngubah **ANGKA pada aturan yang SUDAH ADA** di `domain.md` = konstanta → Challenge Checklist. **Bikin aturan BARU / restruktur** = rule-change → **critic independen** (`context-vault:critic`) nilai usulan SEBELUM ditulis (anti-circular).
 - **No-home fallback:** kandidat by jenis fakta (aturan→`domain`, langkah→`flows`, istilah→`glossary`); nggak jelas → default `domain.md` TAPI tampil di gate step 5 ("capture ke domain.md — pindahin?"). Jangan diam-diam drop.
+
+## E. Floor-scan + mekanik PR
+**Floor-scan (step 5, WAJIB, mekanis):** grep diff final — (a) secret hardcoded (API key/token/password/connstring di luar env) + PII di log/response (persis quick-scan `ship` sensitivity-kosong); (b) pola security-loosening: `auth`/flag → `false`, penghapusan middleware auth/validasi, TTL membesar, penghapusan signature-check. Kena → STOP, lapor.
+**Mekanik PR (step 6, reuse `ship`):**
+- Branch `tweak/<slug>` (kalau di `main`/`master` → minta izin / checkout dulu).
+- Base-branch: symbolic-ref; **tanya kalau ambigu**.
+- **Multi-repo:** karena override-sadar TIDAK berlaku buat ">1 unit", tweak paling banyak 1 unit app → commit kode di repo app + commit capture di repo hub `control/` → **PR di repo app**.
+- **NGGAK** pakai `finishing-a-development-branch` (jatah `ship`).

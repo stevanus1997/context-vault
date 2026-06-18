@@ -37,10 +37,13 @@ Skill yang **nulis test sendiri** dari perilaku yang diubah (merah → implement
 Kalau perubahan bawa fakta durable → APPEND ke file knowledge **pemilik** sesuai `reference.md` §D. Ringkas: tulis langsung **HANYA** ke `business/domain.md · flows.md · glossary.md` (idempotent, + alasan inline); `conventions.md`/`integrations.md`/`invariants.md` → **route/eskalasi, JANGAN tulis**. **Rule-change** (bikin/restruktur aturan) → **critic independen** nilai dulu; **konstanta** (ganti angka aturan existing) → cukup Challenge Checklist. Murni kosmetik → skip.
 
 ### 5. Gate (floor-scan + anti-yes-man)
-<!-- diisi Task 5 -->
+**Floor-scan WAJIB dulu** (`reference.md` §E): scan diff buat (a) **secret hardcoded** + **PII di log/response**, (b) **pola security-loosening** (toggle auth→false, hapus middleware auth/validasi, TTL membesar, hapus signature-check). Kena → STOP. Lalu tampilin: diff kode + update knowledge + alasan + hasil test + **Challenge Checklist TERISI** (`Bentrok aturan: <isi> · Tradeoff: <isi> · Alternatif simpel: <isi> · Yang bisa jebol: <isi>`) → minta **approve/revisi**. (Challenge Checklist = output terisi, BUKAN interogasi 4-ronde.)
 
 ### 6. Finish — commit + PR
-<!-- diisi Task 5 -->
+Commit (pesan muat rasionale) → buka PR (`reference.md` §E). Selesai **satu perintah**. Refresh `render-docs` opsional (default skip). **Kenapa boleh nge-PR padahal `fix` nggak:** `ship` pemilik siklus status manifest (`shipped`); `fix` punya `fix.yaml` jadi butuh ship nutup lifecycle; **`tweak` nggak punya manifest (atomik) → nggak ada lifecycle buat ditutup → finish sendiri.** Bukan nyerobot ship.
 
 ## Catatan
-<!-- diisi Task 5/6 -->
+- BUKAN urusannya: defect (→ `/fix`), kapabilitas/lintas-app/fondasional (→ `/feature`), nentuin stack (→ `architect`), nandai `shipped` (→ `ship`).
+- **NON-resumable, single-session.** Interupsi → re-run dari awal, sandar git (ter-commit kelihatan, capture idempotent, un-committed dibuang).
+- Visibility: tweak ber-capture kelihatan via `business/*.md` (dibaca `ask` live); `render-docs` HTML perlu regen (default-skip = bisa stale). Tweak kosmetik = git history aja.
+- TDD = korektifitas; keamanan = cabang-B + floor-scan (TDD-ijo BUKAN jaminan aman).
