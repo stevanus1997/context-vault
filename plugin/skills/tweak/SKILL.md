@@ -12,10 +12,23 @@ Tujuan: perubahan KECIL yang tetep ninggalin jejak keputusan di `control/`, TANP
 ## Langkah
 
 ### 1. Baca state minimal + cek branch
-<!-- diisi Task 2 -->
+Baca `control/workspace.yaml` (apps + stack + path) + cek branch sekarang (multi-repo aware; **jangan commit di `main`/`master` tanpa izin** — branch `tweak/<slug>`). `control/business/*`+`glossary` dibaca **lazy** (pas capture perlu, step 4). **`control/invariants.md` WAJIB dibaca** buat evaluasi tripwire cabang-B (step 2) — KECUALI perubahan jelas murni-kosmetik (copy/format/rename). Prasyarat: ada `control/`; kalau nggak → BERHENTI, suruh `init`.
 
 ### 2. Triage + Tripwire (3 cabang, precedence B→C→A)
-<!-- diisi Task 2 -->
+SEBELUM nyentuh kode. **Cek mekanis pakai daftar verba di `reference.md` §A-C, bukan feeling.**
+
+**Precedence (algoritmik):** evaluasi **B → C → A**.
+- **B (keamanan) & C (defect) SELALU jalan & TIDAK bisa di-override** user.
+- **Override-sadar HANYA cabang A** sub-trigger judgment "revamp gede/kapabilitas baru" — **BUKAN** ">1 unit/app", "ubah kontrak shared", "sentuh stack/conventions/integrations" (itu hard-escalate, bikin multi-repo / nyentuh single-owner).
+- Lolos B+C+A → lanjut jalur ringan (step 3).
+
+**Cabang B — keamanan → HARD-STOP** (nggak bisa di-talk-out). Kena verba-keamanan / verba-uang(plumbing) / PII-expansion / invariants (`reference.md` §A) → STOP; satu-satunya maju = **invoke `/feature`** (ujungnya `ship` Security Gate), seed konteks. Degrade pesimis: slot `invariants.md` relevan masih `<belum dikunci>` → eskalasi. Fail-safe: ragu fungsi-keamanan → treat keamanan.
+
+**Cabang C — defect → `/fix`.** Triage by framing (`reference.md` §C): "salah/harusnya/bug" → route `/fix` bawa konteks; ambigu → tanya satu pertanyaan.
+
+**Cabang A — ukuran/fondasional → `/feature`.** Definisi sejalan `build` step 6 (`>1 app`, digeneralisasi ke unit nyata) — `reference.md` §B. Kena → **invoke `/feature`** seed konteks (override sadar lihat precedence).
+
+**Garis angka-kebijakan vs plumbing** (biar perubahan angka kebijakan kayak diskon-cap nggak ketabrak cabang-B): `reference.md` §B.
 
 ### 3. Bikin perubahan — TDD otomatis, inline
 <!-- diisi Task 4 -->
