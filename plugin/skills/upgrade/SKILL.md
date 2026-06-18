@@ -43,7 +43,9 @@ Untuk tiap file/dir template `control/` yang **ABSEN** di produk: tambahkan (cop
 
 ### 4. Ringkas (GATE penutup)
 Laporkan: disusulin apa, di-merge apa, di-skip apa (+ alasan). Saran langkah lanjut:
-- Notif unattended belum diset → "jalankan `build <fitur> --unattended` sekali **interaktif** untuk set `notify.sh`" (Q&A first-unattended cuma bisa di sesi interaktif, bukan headless `drive.sh`).
+- **Notif unattended belum diset → TAWARKAN setup sekarang** (di sini ada manusia): *"Setup notif buat `build --unattended`? (skip boleh)"* → bila ya, Q&A kanal (wording kanonik `build/reference.md` §G: ntfy/macOS/Telegram/no-op) → tulis `.claude/notify.sh` + `chmod +x` (sudah gitignored). GATE: tampilkan isi → approve. (Tetap nol-sentuh knowledge: `notify.sh` = file plugin/`.claude`, bukan `control/`.)
+- **Cek allowlist verifikasi stack** sudah keisi (step 2 sudah derive per-stack dari `workspace.yaml`) — kalau belum lengkap, ingatkan `wire` step 5.5. Tanpa ini `drive.sh` precheck akan menahan.
+- **Fitur lama ter-floor `risk:high`** (floor lama, sebelum M7-amend 2026-06-18) tetap halt saat unattended — `upgrade` TIDAK menyentuh `feature.yaml` (knowledge). Pemulihan manual: edit `feature.yaml` `risk: high → normal` untuk fitur pii-only, atau re-run `intake`.
 - File `control/` baru lahir kosong (mis. `invariants.md`) → arahkan skill pemiliknya (`/architect` dll) untuk mengisinya.
 
 ## Guardrails
