@@ -51,6 +51,7 @@ Semua ijo → tandai "siap di-`feature`". Ada merah → **STOP**, lapor akar mas
 
 - Deteksi state per app: belum ter-scaffold → scaffold penuh; ter-scaffold belum ter-wire → isi **HANYA** yang kurang; sudah ter-wire → **no-op**, lapor.
 - **Idempotent:** re-run di app yang sudah jalan tidak merusak — deteksi yang ada, tambal celah. Jangan timpa kode / `.env` / migrasi existing.
+- **Proyeksi skema = presence-based, lepas dari status-wired:** "no-op pada sudah-ter-wire" berlaku untuk scaffold/DB/FE↔BE — TAPI `control/schema/<app>.md` yang **absen/stub** TETAP di-seed dari sumber existing (SKILL §0), karena proyeksi yang hilang ≠ wiring yang lengkap. Sejajar prinsip repair "lengkapi yang kurang". Single-writer dihormati: `wire` **invoke** `schema-projection.md`, tak nulis `control/schema/` langsung.
 - `wire(repair)` = pasangan operasional dari architect **CAPTURE** (existing).
 
 ## G. Multi-repo & git
