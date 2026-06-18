@@ -18,6 +18,9 @@ milestones:
           - create: <path relatif unit>
           - modify: <path relatif unit>   # boleh + komentar singkat
           - test:   <path test relatif unit>
+        reuse:                     # OPSIONAL — keputusan DURABLE reuse existing (NAMA-only, BUKAN kode)
+          - table: <nama tabel existing yang di-EXTEND, bukan bikin baru>   # ditranskripsi dari verdict plan (Model/Schema)
+          - file:  <path file existing yang di-EXTEND, bukan bikin duplikat>
         approach: <1-2 baris HOW ringkas; boleh rujuk task lain, mis. "pakai util T1">
         actions:                   # OPSIONAL — kerja non-file; build yang EKSEKUSI + VERIFIKASI
           - install: <pkg>         #   build: `npm install <pkg>` (auto), verifikasi masuk package.json
@@ -50,6 +53,7 @@ milestones:
 
 - **Satu task = unit testable terkecil.** Kalau satu task butuh > ~3 file inti atau test case-nya > 5, itu sinyal harus dipecah.
 - **`files` = path saja.** Tidak ada potongan kode implementasi di `tasks.yaml`. Kode ditulis `build` per task (just-in-time, lawan kode terkini).
+- **`reuse:` = NAMA saja (durable, bukan kode).** Isi `reuse:` HANYA nama tabel + path file existing yang di-EXTEND (verb implisit extend) — **JANGAN** kolom/signature/SQL/line-range (itu VOLATILE, dibaca LIVE oleh `build` dari `control/schema/` + disk; lihat `files = path saja` di atas). WHY-reuse tinggal di **eksistensi proyeksi**, bukan di `tasks.yaml`. `reuse:` **ditranskripsi** dari verdict `Model/Schema` `plans/<app>.md` (jatah `plan`), bukan diputuskan ulang di sini; ragu → balik `plan`.
 - **`test` = daftar kasus** yang harus lulus (mis. "dup-email 409"), bukan kode test. Kode test ditulis implementer subagent saat `build` (TDD).
 - **`approach` ringkas** (1-2 baris). Boleh menyebut dependency antar-task ("session dari T2").
 - **`deps`** topologis: fondasi (`_shared.md`) paling dulu; lintas-app ikut Urutan `fanout.md` (mis. `api` sebelum `web`); intra-app sesuai logika.
