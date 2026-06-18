@@ -18,7 +18,7 @@ created: <YYYY-MM-DD>
 sensitivity: []        # [] | [payments] | [pii] | [payments, pii] — diusulkan intake, dikonfirmasi user
 epic: ""               # (M1) nama epik pengelompok; "" = standalone — metadata, bukan kontrol eksekusi
 depends_on: []         # (M1) [<nama-fitur>] yang idealnya shipped dulu; warn-gate step 2 (BUKAN block)
-risk: normal           # (M7) low | normal | high — menyetir cadence approval build --unattended; sensitivity non-kosong → floor high (hard)
+risk: normal           # (M7) low | normal | high — blast-radius build; menyetir cadence build --unattended; payments-movement → floor high (hard), pii saja tidak
 ```
 (Bila sudah ada, lanjutkan dari tahap yang belum selesai — lihat artifact mana yang sudah ada.)
 
