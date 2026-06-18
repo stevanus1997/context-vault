@@ -15,3 +15,9 @@
      (2) backfill + tulis-ganda; (3) alihkan pembaca ke bentuk baru; (4) contract — hapus lama.
      Dipecah lintas beberapa rilis. Spesialisasi per-produk di sini; gate build/plan
      (rules/migration-impact.md) bawa default generik bila section ini kosong. -->
+
+## Konvensi Query & Data-Access
+<!-- Diisi architect: pola akses data app — reuse repository/query-layer existing vs raw SQL;
+     index/unique di kolom lookup; ekspektasi no-N+1 / batch-load; default pagination.
+     Di-paste build ke tiap prompt implementer (build/reference.md §B). Kosong = degrade no-op
+     (default generik: ikuti pola data-access file existing terdekat / "pointer pola"). -->
