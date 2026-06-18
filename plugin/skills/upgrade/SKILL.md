@@ -47,6 +47,7 @@ Laporkan: disusulin apa, di-merge apa, di-skip apa (+ alasan). Saran langkah lan
 - **Cek allowlist verifikasi stack** sudah keisi (step 2 sudah derive per-stack dari `workspace.yaml`) — kalau belum lengkap, ingatkan `wire` step 5.5. Tanpa ini `drive.sh` precheck akan menahan.
 - **Fitur lama ter-floor `risk:high`** (floor lama, sebelum M7-amend 2026-06-18) tetap halt saat unattended — `upgrade` TIDAK menyentuh `feature.yaml` (knowledge). Pemulihan manual: edit `feature.yaml` `risk: high → normal` untuk fitur yang di bawah aturan baru TIDAK lagi ter-floor (pii-only, ATAU payments yang read-only — tampil harga/invoice/saldo, tak gerak uang), atau re-run `intake` (menilai ulang `sensitivity` + floor sekaligus, bila tag-nya sendiri keliru — mis. ter-tag `payments` padahal read-only).
 - File `control/` baru lahir kosong (mis. `invariants.md`) → arahkan skill pemiliknya (`/architect` dll) untuk mengisinya.
+- **`control/schema/` absen/stub pada app ber-DB (produk lama belum punya proyeksi)** → `upgrade` **TIDAK nge-seed** (charter nol-sentuh-knowledge; proyeksi = runtime-generated, lihat step 1). Cukup **ARAHKAN** user jalankan `wire` (brownfield-repair nge-seed proyeksi dari sumber existing, presence-based) — pola arahkan-skill-pemilik yang sama dgn baris di atas.
 
 ## Guardrails
 - **Nol sentuh knowledge.** Tak pernah Edit/timpa file `control/` yang sudah ada, `CLAUDE.md`, `notify.sh`, `.env`, kode. Cuma TAMBAH file plugin yang hilang + MERGE settings/gitignore.
