@@ -563,7 +563,7 @@ Daftar gap bila ada criterion tanpa task.
 - [ ] **Step 5: Degrade & scope sanity (grep negatif)**
 
 Run: `rg -n "palang|STOP" plugin/skills/build/SKILL.md plugin/skills/breakdown/SKILL.md | rg -i "redundant|reuse|schema slice"`
-Expected: 0 hit — konfirmasi tak ada palang/STOP baru yang nyangkut di fitur ini (semua advisory). Bila ada → langgar Global Constraint, perbaiki.
+Expected: hit HANYA baris ber-negasi/pre-existing — **bukan 0** (grep mentah kena `breakdown` "Reuse-before-create" yang memuat "BUKAN palang" + "reuse", dan baris build yang punya STOP pre-existing + token reuse/redundant). Konfirmasi MANUAL tiap hit: adalah negasi ("BUKAN palang") atau STOP pre-existing — **bukan** STOP/palang BARU yang ditambah fitur ini. Ada STOP/palang baru yang nyata → langgar Global Constraint, perbaiki. (Catatan: assertion "0 hit" naif salah karena negasi "BUKAN palang" sendiri match pola — verifikasi semantik, bukan hitung-hit.)
 
 - [ ] **Step 6: Final commit (report)**
 

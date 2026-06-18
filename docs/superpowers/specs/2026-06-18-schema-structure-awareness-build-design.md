@@ -122,7 +122,7 @@ Tambah section `## Konvensi Query & Data-Access` (sibling Package/Integrasi/Migr
 
 - Slot `Model/Schema` (slot di template langkah 4, `plan/SKILL.md:53`) wajib nyatakan per kebutuhan data: **"reuse tabel X"** vs **"NEW (justify) + `actions:migrate`"**, dibanding ke baseline `control/schema/<app>.md`. (H3/`migration-impact` sekarang cuma nyala untuk ALTER tabel fitur lain, `:40` — ADD redundant tak terjaring di gate plan.)
 - **Sumber tunggal verdict tabel:** keputusan reuse-vs-NEW level tabel di sini = otoritatif; `breakdown` (D2) **mentranskripsi** ke `reuse:`, tidak memutuskan ulang. (Cegah dua sumber kebenaran yang diam-diam bentrok.)
-- **Fallback:** `control/schema/<app>.md` absen/stub padahal app jelas ber-DB → paksa inventory ORM/migrasi nyata (atau invoke `schema-projection`) alih-alih menganggap kosong = otoritatif.
+- **Fallback:** `control/schema/<app>.md` absen/stub padahal app jelas ber-DB → paksa inventory ORM/migrasi nyata (atau **arahkan jalankan `wire`** yang me-regen proyeksi — `plan` read-only, tak boleh invoke `schema-projection` sendiri: single-writer reserved ke `wire`/`build`) alih-alih menganggap kosong = otoritatif.
 
 ### D6 — Seed brownfield (krusial untuk repo lama) — MED
 

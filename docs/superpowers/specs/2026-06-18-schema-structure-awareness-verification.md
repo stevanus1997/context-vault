@@ -44,7 +44,7 @@ fitur "profil — display name + avatar". Rantai arsitek→mandor→tukang→gat
 5. **brownfield (T7)** — bila repo lama, `wire` nge-seed `control/schema/api.md` presence-based
    sebelum langkah 1-4.
 
-**Tak ada mata rantai yang teksnya gagal mendukung langkah di atas.** Nol gap.
+**Tak ada mata rantai yang teksnya gagal mendukung langkah di atas — untuk app ORM.** ⚠️ Trace ini cuma melatih path **ORM** (Go+Postgres); path **raw-SQL** (orm kosong + folder migrasi) TAK teruji di sini — lihat **Koreksi** di bawah.
 
 ## Step 4 — Spec-coverage cross-check
 
@@ -77,4 +77,22 @@ Global Constraint "Nol palang keras baru" **terjaga**. Cek `git diff` baris ber-
 
 Rantai end-to-end nyambung; `reuse:` & `control/schema/` konsisten lintas-file; single-writer
 (`wire`/`build` saja yang invoke `schema-projection.md`) terjaga; degrade no-op & nol palang baru
-sesuai invarian spec §3 + non-goals §7. Tak ada gap → tak ada task perlu re-commit.
+sesuai invarian spec §3 + non-goals §7.
+
+## Koreksi (verifikasi adversarial pasca-implementasi — 2026-06-18)
+
+Workflow verifikasi independen (5 agen) nemu **1 gap laten** yang trace Step 3 lewat karena cuma
+latih path ORM:
+- **Kontradiksi guard raw-SQL.** `wire/SKILL.md` §0 (D6, baru) pakai **AND-guard**: stub-only bila
+  "orm kosong **DAN** tak ada folder migrasi". Tapi rule yang dia invoke, `schema-projection.md:15`
+  (DI LUAR scope edit, jadi tak ke-patch), masih **OR-guard**: "`stack.orm` kosong **/** sumber tak
+  ketemu → stub lalu STOP". Akibatnya app **raw-SQL murni** (orm kosong + folder migrasi ADA) STOP di
+  step 1, tak pernah nyampe step 2 (baca folder migrasi by-understanding) — D1/D2/D5 mati buat app
+  raw-SQL brownfield yang spec §6 justru tandai paling rawan tabel-redundant. Degrade (stub, bukan
+  crash) → bukan blocker, tapi klaim **"Nol gap" di atas hanya valid untuk path ORM**.
+- **Diperbaiki:** `schema-projection.md:15` guard direvisi → STOP+stub HANYA bila "sumber tak ketemu
+  SAMA SEKALI" (orm kosong **DAN** tak ada folder migrasi); orm-kosong-tapi-ada-folder-migrasi →
+  lanjut step 2. Sekarang selaras dgn AND-guard `wire` + intent spec §6 raw-SQL. (commit terpisah)
+
+Sisanya (coverage, invariant advisory-only/single-writer/name-only, no-regression) terkonfirmasi
+bersih oleh verifikasi.
