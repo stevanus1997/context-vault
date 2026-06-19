@@ -3,6 +3,13 @@
 <!-- Diisi oleh skill architect. Contoh: mekanisme auth token web<->api,
      format API, shared package, ORM standar. -->
 
+## Konvensi Struktur & Penempatan Kode
+<!-- Diisi architect: prinsip penempatan logic ke file. Default:
+     "split by responsibility, BUKAN by technical-layer; file yang berubah bareng
+     taruh bareng; satu file satu tanggung jawab." plan baca ini buat ngisi slot
+     Lokasi (file kunci + tanggung-jawabnya); mesin reuse/anti-duplikat breakdown/build
+     menegakkan outcome-nya. Spesialisasi per-produk di sini; kosong = default generik. -->
+
 ## Konvensi Package
 <!-- Diisi architect saat add-package: path import, build/test tool, sinyal breaking/deprecation. -->
 

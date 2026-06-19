@@ -53,7 +53,7 @@ Tulis `control/features/<fitur>/plans/<pkg>.md` (kontrak, langkah 2b) lalu `cont
 Model/Schema : <per kebutuhan data: "reuse <Tabel>" (extend existing) ATAU "NEW <Tabel> (justify) + actions:migrate"; dibanding baseline control/schema/<app>.md>
 API/Komponen : <...>
 UI-Contract  : <field/actions/states per layar — app UI saja (reference.md §A); ATAU kosong non-UI>
-Lokasi       : <path konkret di app>
+Lokasi       : <file-file kunci + tanggung-jawab tunggal tiap file — split by responsibility, BUKAN by technical-layer ("file yang berubah bareng taruh bareng"); bukan satu path generik>
 Mockup       : <path… ke control/features/<fitur>/mockups/ ATAU kosong>
 Test         : <...>
 ```
@@ -65,3 +65,4 @@ Tampilkan tiap plan → minta **approve per app**. **Bila ada utang `open` di ar
 - `plan` tetap FLAT. Dekomposisi jadi task kecil (siap-eksekusi) = jatah skill `breakdown`, bukan di sini. Slot `Mockup:` adalah **pointer** ke file di `mockups/`, **bukan** deskripsi visual — `plan` tak pernah memprosa-kan isi mockup (itu byte opaque untuk `build`).
 - **UI-Contract vs Mockup (dua hal beda).** `UI-Contract` = kebutuhan data (field/provider/state) sebagai **teks otoritatif** — sumber field yang dibaca `breakdown`/`build`. `Mockup:` = tampilan sebagai **byte opaque** (di-reproduksi `build`). UI-Contract menyetir design (bahan generate / cek mockup-bawaan); generate menghasilkan **mockup-reference**, `build` tetap implement via TDD (bukan kode produksi langsung). Field otoritatif tetap UI-Contract walau mockup ada.
 - Bila `tasks.yaml` sudah ada untuk fitur ini (sudah pernah `breakdown`), revisi `plan` membuatnya **basi** — ingatkan user menjalankan `breakdown` ulang (yang mempertahankan status task `done`) sebelum `build` lanjut.
+- **Penempatan kode (slot `Lokasi`).** Terapkan prinsip `conventions.md` (section *Konvensi Struktur & Penempatan Kode*): "split by responsibility, BUKAN by technical-layer; file yang berubah bareng taruh bareng; satu file satu tanggung jawab". `Lokasi` sebut **file-file kunci + tanggung-jawabnya**, bukan satu path generik — bikin niat-penempatan auditable di plan-time. (Outcome-nya tetap ditegakkan mesin reuse/anti-duplikat `breakdown`/`build`; ini bikin INTENT-nya eksplisit.)

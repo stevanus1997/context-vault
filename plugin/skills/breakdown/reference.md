@@ -6,7 +6,14 @@ Dibaca oleh skill `breakdown`. SKILL.md tetap ramping; detail skema & aturan ada
 
 ```yaml
 feature: <nama-fitur>
-generated_from: [plans/_shared.md, plans/<app>.md, ...]
+generated_from:                  # MANIFEST read-set ter-resolve (provenance + yang DIBACA build step 1)
+  - plans/_shared.md
+  - plans/<app>.md               #   tiap app/pkg yang kena
+  - control/schema/<unit>.md     #   tiap unit ber-DB yang kena (baseline skema)
+  - control/conventions.md
+  - control/workspace.yaml
+  - control/invariants.md
+  - control/integrations.md      #   HANYA bila fitur nyentuh vendor eksternal
 milestones:
   - id: M1
     title: <judul milestone>
@@ -22,6 +29,7 @@ milestones:
           - table: <nama tabel existing yang di-EXTEND, bukan bikin baru>   # ditranskripsi dari verdict plan (Model/Schema)
           - file:  <path file existing yang di-EXTEND, bukan bikin duplikat>
         approach: <1-2 baris HOW ringkas; boleh rujuk task lain, mis. "pakai util T1">
+        produces: <OPSIONAL — 1 baris signature ekspor utama task ini (mis. "hash(pw:string):Promise<string>"); cuma untuk task yang jadi deps task lain. NAMA+signature saja, BUKAN kode/badan. build baca signature ASLI dari disk & cross-check vs ini (deteksi drift).>
         actions:                   # OPSIONAL — kerja non-file; build yang EKSEKUSI + VERIFIKASI
           - install: <pkg>         #   build: `npm install <pkg>` (auto), verifikasi masuk package.json
           - cmd: <perintah>        #   perintah lain non-destruktif (auto), mis. "npx prisma generate"
@@ -38,6 +46,7 @@ milestones:
           - <kasus 2>
         deps: []                   # id task lain yang harus done dulu
         status: pending            # pending | in_progress | done | blocked | needs_human
+        commits: [<base7>..<head7>, ...]   # OPSIONAL — DIISI build saat done (rentang commit per repo tersentuh, audit task→commit); bukan dari breakdown
       # Task integrasi cross-app (lihat §D-3 & spec S2): menjalankan >1 app bareng
       - id: T_INT
         unit: integration           # pseudo-unit — gate-nya membentang beberapa tree, tak punya path sendiri
@@ -53,9 +62,11 @@ milestones:
 
 - **Satu task = unit testable terkecil.** Kalau satu task butuh > ~3 file inti atau test case-nya > 5, itu sinyal harus dipecah.
 - **`files` = path saja.** Tidak ada potongan kode implementasi di `tasks.yaml`. Kode ditulis `build` per task (just-in-time, lawan kode terkini).
+- **Fidelitas path (dicek di gate, SKILL §7).** Tiap path `files:` di-stat vs pohon NYATA unit (`path` dari `workspace.yaml`): `modify:` → file HARUS sudah ada (kalau belum, harusnya `create:` — atau path salah); `create:`/`test:` → parent-dir ada ATAU sengaja-baru (di-flag). Cermin GATE unit (`task.unit` vs `workspace.yaml`) diturunkan ke level FILE — nutup "path hantu" yang dulu gagal-telat pas `build` baca disk. Mismatch bukan-sengaja-baru = **palang lunak** (minta koreksi/justify di gate).
 - **`reuse:` = NAMA saja (durable, bukan kode).** Isi `reuse:` HANYA nama tabel + path file existing yang di-EXTEND (verb implisit extend) — **JANGAN** kolom/signature/SQL/line-range (itu VOLATILE, dibaca LIVE oleh `build` dari `control/schema/` + disk; lihat `files = path saja` di atas). WHY-reuse tinggal di **eksistensi proyeksi**, bukan di `tasks.yaml`. `reuse:` **ditranskripsi** dari verdict `Model/Schema` `plans/<app>.md` (jatah `plan`), bukan diputuskan ulang di sini; ragu → balik `plan`.
 - **`test` = daftar kasus** yang harus lulus (mis. "dup-email 409"), bukan kode test. Kode test ditulis implementer subagent saat `build` (TDD).
 - **`approach` ringkas** (1-2 baris). Boleh menyebut dependency antar-task ("session dari T2").
+- **`produces:` (opsional — cermin Exports package, untuk level-task).** Task yang jadi `deps` task lain BOLEH bawa `produces:` = 1 baris signature ekspor utamanya (nama + tipe param/return), ditranskripsi dari `approach`/`API-Komponen` plan. Bikin kontrak cross-task **kebaca dari artefak** (auditability + resume) tanpa nunggu kode di disk — sejajar `plans/<pkg>.md` `Exports` yang sudah statis untuk package. **BUKAN sumber kebenaran:** `build` tetap baca signature ASLI dari disk (`build/reference.md` §B "Signature dep") & cross-check vs `produces:` buat nangkep drift. Detail volatile (badan/kolom) tetap live — jangan ditaruh sini.
 - **`deps`** topologis: fondasi (`_shared.md`) paling dulu; lintas-app ikut Urutan `fanout.md` (mis. `api` sebelum `web`); intra-app sesuai logika.
 - **Rasionalisasi hierarki:** varian yang flow-nya identik digabung (mis. "register by google" = "login by google" → satu milestone OAuth/provider).
 - **JANGAN panggil `writing-plans`** — `breakdown` sengaja TIDAK menghasilkan plan monolitik berisi kode (lihat spec §7.1).
@@ -68,7 +79,15 @@ milestones:
 
 ```yaml
 feature: auth
-generated_from: [plans/_shared.md, plans/api.md, plans/web.md]
+generated_from:                 # manifest read-set ter-resolve (lihat §A)
+  - plans/_shared.md
+  - plans/api.md
+  - plans/web.md
+  - control/schema/api.md        # api ber-DB; web FE tanpa proyeksi
+  - control/conventions.md
+  - control/workspace.yaml
+  - control/invariants.md
+  - control/integrations.md       # OAuth Google = vendor eksternal
 milestones:
   - id: M1
     title: Fondasi + email/password
@@ -179,3 +198,14 @@ milestones:
 4. **Task package & fan-IN.** Task yang hidup di shared package → `unit: <nama-pkg>` (cocok `packages[].name`); **DILARANG** `actions: [migrate]`/`actions: [env]` (package tak punya DB/infra); `test` = typecheck/unit exports. **Fan-IN (saat `plans/<pkg>.md` ber-flag `BREAKING`):** terbitkan 1 task `unit: <pkg>` (ubah package) + **1 update-task per consumer** (`unit: <consumer-app>`, `deps: [task-pkg]`) untuk tiap nama di `packages[<pkg>].consumers` + 1 task `unit: integration` (roundtrip package↔consumer). Pseudo-unit `integration` diperluas mencakup roundtrip package↔consumer (boot consumer app, panggil exports package, assert sesuai kontrak `plans/<pkg>.md`).
 5. **Task inbound-eksternal (webhook vendor).** Saat `plans/<Receiver app>.md` memuat baris "kebutuhan receiver" (dari `plan` §2c — vendor inbound/both di `integrations.md`), terbitkan task biasa `unit: <Receiver app>` (app NYATA — BUKAN pseudo-unit `integration`): `approach` = "terima webhook `<vendor>`: verifikasi signature per `integrations.md`, idempotent (dedup key), tahan replay"; `actions` boleh `env: [<VENDOR>_WEBHOOK_SECRET]` (NAMA var; `build` tulis ke `.env`, nilai GATE/manual); `test` (kasus keamanan baku) = "signature salah → tolak 401/403", "id/event duplikat → respons sama, tak proses 2× (idempotent/replay)". Vendor **outbound** = task biasa pada app pemanggil (panggil API vendor + idempotency-key + retry sesuai `integrations.md`) — tak butuh varian khusus.
 6. **Task UI ber-mockup (design fidelity).** Task yang `plans/<app>.md`-nya memuat baris `Mockup:` membawa key `mockup: <path>` (pointer ke file di `control/features/<fitur>/mockups/`). **Banyak task boleh berbagi satu path** (satu file mockup berisi banyak layar) — **layar mana** ditentukan dari `desc` task; tak ada mekanisme region/anchor. `mockup:` = metadata seperti `kind:`/`actions:` → **dipertahankan saat re-breakdown** bila plan tak berubah (SKILL.md §7). `build` yang mem-paste/melampirkan isinya ke implementer (`build/reference.md` §B). DILARANG pada `unit: <package>` (package tak punya UI).
+
+## E. Rubrik critic `tasks.yaml` (review buildability)
+
+Saat `breakdown` invoke subagent `critic` atas `tasks.yaml` (WAJIB bila `risk != low`; lihat SKILL §6), bekali rubrik 4-kategori ini. Critic me-review **artefak rencana-kerja, BUKAN kode** — analog `plan-document-reviewer` superpowers, dikalibrasi cuma nge-flag yang **benar-benar memblokir implementasi** (bukan selera).
+
+1. **Completeness** — tiap baris `Model/Schema` & keputusan `_shared.md` di `plans/*` ke-map ke task/`action`/`manual`? (cermin palang coverage SKILL §4). Tiap vendor inbound punya task receiver? Tiap consumer `BREAKING` punya update-task?
+2. **Spec-alignment** — task selaras `business.md` + `plans/*`? Ada task yang **melar di luar** plan (scope creep) atau plan-item yang **hilang**? Verdict `reuse:` ditranskripsi setia (tak diam-diam jadi `create`)?
+3. **Decomposition** — granularitas wajar (1 task = unit testable terkecil; >~3 file inti / >5 kasus test = sinyal pecah)? Milestone tak kegedean? Urutan milestone masuk akal (fondasi dulu)?
+4. **Buildability** — "bisa nggak implementer ngikutin task ini tanpa nyangkut?": tiap task punya `files`+`approach`+`test` yang **actionable**; tiap `dep` resolve ke task NYATA (tak ada orphan/typo id); **tak ada siklus dep**; tiap task testable independen; tugas `actions: migrate` bawa `kind`+`affects`.
+
+Output critic: **Approved** ATAU **Issues-Found** (daftar bernomor + referensi task). `breakdown` tanggapi tiap keberatan SEBELUM gate §7 (jangan rubber-stamp). Kalibrasi: jangan ngarang isu — kalau bersih, bilang "Approved" eksplisit.

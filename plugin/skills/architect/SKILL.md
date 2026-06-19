@@ -32,7 +32,7 @@ Untuk tiap app, cek kode di `path`-nya:
 Bila dijalankan untuk sebuah shared package (bukan app): Q&A **teknikal** singkat — bahasa, build-tool, test-runner. Tulis ke `stack` package di `control/workspace.yaml`. Rekam konvensi import/build package ke `conventions.md` (langkah 4). Package = CONSUMER invarian — langkah 4.5 hanya RE-KONFIRMASI `stack` package tak melanggar `invariants.md` terkunci (tak mengunci ulang).
 
 ### 4. Konvensi lintas-app
-Tetapkan/rekam kontrak bersama (auth, format API, shared package, ORM standar) → tulis ke `control/conventions.md` (ganti skeleton-nya). Untuk keputusan fondasi besar (mahal di-refactor), jalankan Challenge Checklist + invoke subagent `critic`.
+Tetapkan/rekam kontrak bersama (auth, format API, shared package, ORM standar) → tulis ke `control/conventions.md` (ganti skeleton-nya). **Termasuk prinsip penempatan kode** (section *Konvensi Struktur & Penempatan Kode*): "split by responsibility, BUKAN by technical-layer; file yang berubah bareng taruh bareng; satu file satu tanggung jawab" — `plan` baca ini buat ngisi slot `Lokasi`. Untuk keputusan fondasi besar (mahal di-refactor), jalankan Challenge Checklist + invoke subagent `critic`.
 
 ### 4.5 Kunci Invarian Platform (sekali, level-produk, GATE)
 Invarian = keputusan fondasi yang membentuk SETIAP table & query, mahal di-refactor (model tenancy, representasi uang, idempotency, authz, PII/PCI, rate-limit, integrasi/webhook eksternal). Dikunci di DEPAN, bukan ditunda ke fitur pertama.
