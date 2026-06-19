@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "AI-first product boilerplate.",
-    "version": "0.7.0"
+    "version": "0.8.0"
   },
   "plugins": [
     {
       "name": "context-vault",
       "source": "./plugin",
       "description": "Skills (init→ship + lane bugfix fix + ask read-only + lane utang teknis debt + design-system bring-up fondasi visual + graduated autonomy M7 build --unattended + outer-loop driver + upgrade migrasi produk lama ke template terbaru + tweak jalur ringan perubahan kecil berjejak), agent, dan rules untuk mengelola produk multi-app secara AI-first.",
-      "version": "0.7.0"
+      "version": "0.8.0"
     }
   ]
 }
