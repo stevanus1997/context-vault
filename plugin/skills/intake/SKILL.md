@@ -26,7 +26,7 @@ Baca `control/business/*.md` (domain, flows, glossary, **`risks.md`** — kewaji
 **Feedback (M8):** bila ada, baca `control/feedback/` (sinyal lapangan mentah dari produk live — keluhan/incident/request) sebagai **input SOFT** (advisory, **bukan** gate; tak memblokir). Sinyal yang ternyata bug → arahkan ke `/fix`, bukan diselesaikan di sini. Degrade: kosong/absen → lanjut seperti biasa. (Surfacing ke user di-paksa di step 5 — lihat Challenge Checklist.)
 
 ### 3. Q&A level BISNIS (bukan teknis)
-Tanya satu per satu: siapa penggunanya, aturan/kebijakan, hasil yang diharapkan, batasan. JANGAN tanya hal teknis (framework, DB, dll) — itu jatah skill `plan`.
+Q&A ikuti `${CLAUDE_PLUGIN_ROOT}/rules/elicitation.md` (keputusan-bercabang satu per giliran, opsi bawa konsekuensi). Tanya level bisnis: siapa penggunanya, **alur yang dilewati pengguna (happy-path) + minimal 1 skenario edge/gagal**, aturan/kebijakan, hasil yang diharapkan, batasan. JANGAN tanya hal teknis (framework, DB, dll) — itu jatah skill `plan`.
 
 ### 4. Cek feasibility kasar
 Bandingkan kebutuhan fitur dengan `capabilities` app di `workspace.yaml`. Catat mana yang sudah didukung vs baru. **Sizing-check (advisory, M1):** bila kebutuhan fitur terlihat sebesar epik (banyak app/flow/milestone independen, scope melar), **usulkan** pecah jadi beberapa fitur lebih kecil — isi `epic` (pengelompok) + `depends_on` (urutan) di tiap `feature.yaml`. Usulan saja; user putuskan. Tak memblokir.
@@ -46,13 +46,14 @@ Untuk fitur fondasional/berisiko, invoke subagent `critic` atas draft `business.
 Tulis `control/features/<fitur>/business.md` dengan format:
 ```
 # <Fitur> — Business Spec
-Tujuan      : <...>
-Pengguna    : <...>
-Aturan      : <... + referensi business/ bila relevan>
-Hasil/Reward: <...>
-Out of scope: <...>
+Tujuan       : <...>
+Pengguna     : <...>
+Flow/Skenario: <happy-path: langkah 1 → 2 → 3 …; + minimal 1 skenario edge/gagal: <kondisi> → <yang terjadi>>
+Aturan       : <... + referensi business/ bila relevan>
+Hasil/Reward : <...>
+Out of scope : <...>
 ```
-Lalu **promosikan fakta DURABLE** ke knowledge (konservatif — hanya yang benar lepas dari fitur): aturan domain → `business/domain.md`; flow → `business/flows.md`; istilah → `business/glossary.md`. **Idempotent:** sebelum nambah, cek apakah fakta serupa sudah ada di file tujuan — update yang ada, jangan duplikat (re-run intake nggak boleh numpuk aturan ganda).
+Lalu **promosikan fakta DURABLE** ke knowledge (konservatif — hanya yang benar lepas dari fitur): aturan domain → `business/domain.md`; flow (dari slot `Flow/Skenario`) → `business/flows.md`; istilah → `business/glossary.md`. **Idempotent:** sebelum nambah, cek apakah fakta serupa sudah ada di file tujuan — update yang ada, jangan duplikat (re-run intake nggak boleh numpuk aturan ganda).
 
 **Usulkan tag `sensitivity`** dari isi `business.md` (heuristik): `payments` kalau fitur menggerakkan/menyimpan uang (bayar, billing, payout, refund, fee); `pii` kalau mengumpulkan/menyimpan/menampilkan data pribadi (nama, email, alamat, telp, gov-id). Cross-check ringan ke `control/invariants.md` — kalau slot PII/PCI di-`N/A`, jangan ngotot tag `pii`. Tulis usulan ke `feature.yaml` `sensitivity:` (kosong boleh). **Compliance (M6):** kalau fitur cocok dgn pemicu di `control/business/risks.md` → **perkuat** usulan tag + sebut kewajibannya sbg alasan (advisory; heuristik teks tetap jalan tanpa `risks.md`). Lihat `${CLAUDE_PLUGIN_ROOT}/rules/compliance-risk.md`. **Usulkan `risk` (M7)** (`low|normal|high`) = **blast-radius BUILD** (seberapa bahaya kalau build keliru — BUKAN seberapa sensitif datanya; itu `sensitivity`, lihat M7 D1). `high` bila build-nya sendiri berbahaya: operasi **destruktif/irreversible**; **migrasi skema/data**; **batas auth/keamanan** (authn/authz, session/token, isolasi tenant, CORS/origin — daftar *Verba-keamanan* `tweak/reference.md` §A); **plumbing pergerakan uang** (charge/capture/refund/payout/settlement/transfer, simpan PAN/token-kartu — *Verba-uang PLUMBING* `tweak/reference.md` §A). **Floor (dipersempit — M7-amend 2026-06-18):** bila usulan `sensitivity` memuat `payments` **DAN** fitur benar-benar **menggerakkan uang** (verba-uang di atas, atau menyimpan instrumen-bayar — BUKAN sekadar menampilkan harga/invoice/saldo read-only) → `risk` minimal `high` (HARD). **`pii` saja TIDAK memaksa floor** — `pii` menyetir kedalaman Security Gate `ship`, bukan cadence build. Tulis ke `feature.yaml` `risk`. Advisory — default `normal` bila tak yakin; user konfirmasi di gate ini.
 
