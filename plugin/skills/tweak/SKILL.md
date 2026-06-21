@@ -24,7 +24,7 @@ SEBELUM nyentuh kode. **Cek mekanis pakai daftar verba di `reference.md` §A-C, 
 
 **Cabang B — keamanan → HARD-STOP** (nggak bisa di-talk-out). Kena verba-keamanan / verba-uang(plumbing) / PII-expansion / invariants (`reference.md` §A) → STOP; satu-satunya maju = **invoke `/feature`** (ujungnya `ship` Security Gate), seed konteks. Degrade pesimis: slot `invariants.md` relevan masih `<belum dikunci>` → eskalasi. Fail-safe: ragu fungsi-keamanan → treat keamanan.
 
-**Cabang C — defect → `/fix`.** Triage by framing (`reference.md` §C): "salah/harusnya/bug" → route `/fix` bawa konteks; ambigu → tanya satu pertanyaan.
+**Cabang C — defect → `/fix`.** Triage by framing (`reference.md` §C): "salah/harusnya/bug" → route `/fix` bawa konteks; ambigu → tanya satu pertanyaan (ikuti `${CLAUDE_PLUGIN_ROOT}/rules/elicitation.md` — titik tanya ke user; routing verba-list & Challenge Checklist gate step 5 tetap mekanis/output-terisi, BUKAN interogasi).
 
 **Cabang A — ukuran/fondasional → `/feature`.** Definisi sejalan `build` step 6 (`>1 app`, digeneralisasi ke unit nyata) — `reference.md` §B. Kena → **invoke `/feature`** seed konteks (override sadar lihat precedence).
 
