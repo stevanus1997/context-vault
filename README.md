@@ -2,6 +2,8 @@
 
 AI-first product boilerplate — lapisan AI + knowledge (bukan kode) untuk mengelola produk multi-app dengan Claude Code.
 
+> **Baru install / males baca?** Ketik `/guide` — panduan + tanya-jawab soal plugin ini (ada skill apa aja, flow-nya gimana, mulai dari mana).
+
 ## Install
 ```
 /plugin marketplace add <path-atau-url-repo-ini>
