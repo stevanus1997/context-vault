@@ -13,7 +13,7 @@ Tujuan: tentukan app mana saja yang terkena fitur & perannya, lalu tumbuhkan Sys
 Baca `control/features/<fitur>/business.md` + `control/workspace.yaml` (apps, capabilities, responsibility, **packages** + consumers) + `control/integrations.md` (vendor eksternal yang sudah dideklarasi).
 
 ### 2. Petakan ke app
-Cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentukan app yang kena + apa perannya.
+Cocokkan kebutuhan fitur ke `capabilities`/`responsibility` tiap app → tentukan app yang kena + apa perannya. **Q&A/konfirmasi ke user ikuti `${CLAUDE_PLUGIN_ROOT}/rules/elicitation.md`** — tiap keputusan-bercabang di bawah (app/package/vendor/design-system baru) ditanya satu per giliran dengan konsekuensinya, jangan diborong.
 - **Adaptif:** kalau hanya 1 app yang relevan → konfirmasi cepat ("cuma <app>. Yakin gak nyentuh app lain?"). Kalau banyak → breakdown penuh.
 - Bila user memberi hint app (mis. "cuma web"), tetap **VERIFIKASI** terhadap capabilities — koreksi bila ternyata menyentuh app lain. "Cuma 1 app" adalah KESIMPULAN, bukan input. JANGAN skip pengecekan.
 - **Kalau ADA peran yang nggak ketampung app mana pun → mungkin butuh APP BARU.** Tantang dulu (anti-yes-man): beneran perlu app baru, atau scope-creep / bisa ditampung app existing? Lolos tantangan → tandai di output sebagai app `NEW` (langkah 4). `fanout` cuma **MENGUSULKAN**; yang nulis entri app + bring-up = skill `add-app` (dipanggil otomatis `feature`).
