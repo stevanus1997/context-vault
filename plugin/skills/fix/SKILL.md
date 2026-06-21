@@ -22,7 +22,7 @@ Tentukan target nyangkut apa, lalu pilih mode:
 | fitur `draft` (belum `build`, belum ada kode) | **TOLAK** | bukan bug — fitur belum dikerjakan; arahkan lanjut `/feature` |
 | DUA fitur (`active` + `shipped`) | **TANYA** | bug di kode yang sedang di-build → in-flight; selain itu post-ship. Konfirmasi, jangan tebak diam-diam |
 
-Lalu **triage guard** (reference §D): **kode salah** (lanjut) / **requirement baru** (STOP → `/feature`) / **doc salah** (koreksi knowledge, gated `critic`). Cek **tripwire** (butuh capability/vendor/unit baru → STOP → `/feature`).
+Lalu **triage guard** (reference §D): **kode salah** (lanjut) / **requirement baru** (STOP → `/feature`) / **doc salah** (koreksi knowledge, gated `critic`). Cek **tripwire** (butuh capability/vendor/unit baru → STOP → `/feature`). **Tiap titik TANYA/konfirmasi ke user (pilih mode bila DUA fitur, triage ambigu, unit-inference §3) ikuti `${CLAUDE_PLUGIN_ROOT}/rules/elicitation.md`: satu keputusan-bercabang per giliran, opsi bawa konsekuensi, jangan tebak diam-diam** (routing tabel mode & triage-guard tetap mekanis — elicitation hanya di momen klarifikasi).
 
 **Debt-aware (utang teknis di area bug).** Saat sudah tahu `units` bug, ikuti `${CLAUDE_PLUGIN_ROOT}/rules/debt-aware.md`: baca `control/debt.yaml`, saring utang `open` (`owner: feature`) di area yang sama — rider pada baca-kode area yang fix sudah lakukan. Tawarkan: *"sekalian beresin N utang di area ini?"*. Yang di-ACC → tambah task `kind: debt, pays_debt: <id>` (refactor, perilaku tetap; skema metadata reference §B) ke `tasks.yaml` work-item ini. Ditolak → biarkan `open`. `fix` tak menulis `control/debt.yaml`.
 
