@@ -37,11 +37,12 @@ reason: ""                   # diisi saat dropped
   files: [ ... ]             # seperti task biasa
   approach: "reproduce dulu (<test>), baru perbaiki"
   test: ["<kasus regresi yang harus lulus>"]
+  mockup: <path ke control/fixes/<id>/mockups/ ATAU control/features/<fitur>/mockups/ — ATAU kosong>   # OPSIONAL; diisi HANYA saat visual-defect (§F)
   deps: []
   status: pending
 ```
 
-`build` memperlakukan `kind`/`corrects`/`observed` sebagai **metadata** (traceability) — tidak mengubah eksekusi.
+`build` memperlakukan `kind`/`corrects`/`observed` sebagai **metadata** (traceability) — tidak mengubah eksekusi. Field **`mockup:`** (opsional, hanya saat visual-defect — §F) **bukan** metadata pasif: `build` menelannya generik (`${CLAUDE_PLUGIN_ROOT}/skills/build/reference.md` §B) → reproduksi-visual + gate eyeball + bobot-3 + model terkuat, **tanpa** perubahan `build`.
 
 ## C. Dispatch deltas (semua kerja berat → subagent; konduktor cuma simpan kesimpulan)
 
