@@ -67,3 +67,22 @@ reason: ""                   # diisi saat dropped
 ## E. Drop (self-handle)
 
 Triage/investigasi = bukan-bug / wontfix / duplikat → `fix` **self-set** `fix.yaml` `status: dropped` + isi `reason`, folder dikeep (memori). **JANGAN** panggil skill `drop` (itu khusus fitur — asumsi `feature.yaml`/promosi capability yang tak relevan untuk fix).
+
+## F. Pintu Mockup (defect visual) — pinjam `plan` by-reference
+
+Berlaku **HANYA** saat triage menandai **`visual-defect`** (§D + `SKILL.md §1`): `units` ∈ peran-UI (`fe`/`fullstack`-UI per `control/workspace.yaml`) **DAN** gejala/root-cause bersifat visual (layout · spacing · style · animasi · state-render tak muncul). Bug logika di app UI → pintu **TUTUP** (lewati §F, `mockup:` kosong). Ambigu → tanya 1× (`${CLAUDE_PLUGIN_ROOT}/rules/elicitation.md`).
+
+**Mekanik 3-jalur DIPINJAM dari `plan`** (persis pola "mesin eksekusi dipinjam `build`", baris 3): ikuti `${CLAUDE_PLUGIN_ROOT}/skills/plan/reference.md` **§B** (bawa / generate / degrade), **§C** (cross-check advisory, opacity terjaga), **§D** (dispatch `frontend-design` untuk jalur generate), **§E** (round-trip "design sendiri"). `fix` **tak menyalin** mekanik itu — hanya menulis **delta** di bawah.
+
+**Delta-1 — UI-Contract (READ-ONLY).** Reuse dari `control/features/<fitur>/plans/<app>.md` (persist setelah ship; `fix` post-ship sudah baca artifact folder fitur). `fix` **TAK PERNAH** menulis UI-Contract — `plan` tetap pemilik tunggal (single-writer).
+- UI-Contract **absen** (fitur lama ambil degrade / bug tanpa-fitur `relates_to: []`) **dan** pilih **generate** → turunkan UI-Contract **sekali-pakai inline** (judgment konduktor dari `business.md` + Model/Schema bila ada) semata sebagai input generate; **JANGAN persist**.
+- UI-Contract **absen** **dan** pilih **bawa** → cross-check turun jadi murni konfirmasi-manusia (`plan/reference.md §C` jalur non-teks).
+
+**Delta-2 — lokasi simpan mockup.**
+- post-ship (bawa/generate) → `control/fixes/<id>/mockups/` (artifact milik fix, sejajar `fix.yaml`/`notes.md`).
+- in-flight, bawa mockup **BARU** → `control/features/<fitur>/mockups/` (in-flight memang menulis ke folder fitur).
+- in-flight, **RE-ATTACH** mockup existing → set `mockup:` menunjuk file existing di `control/features/<fitur>/mockups/<file>` (read-only, **tanpa menyalin**). Bila file sudah tak ada → **palang fidelitas path** (sejajar cek path `breakdown`): minta koreksi, jangan tulis pointer hantu yang gagal telat di `build`.
+
+**Delta-3 — output.** Isi pointer `mockup:` pada fix-task (§B). `build` menelan `mockup:` generik (`${CLAUDE_PLUGIN_ROOT}/skills/build/reference.md` §B) + memperlakukan `kind: fix` sebagai metadata → reproduksi-visual + gate eyeball + bobot-3 + model terkuat **datang dari `build`** (nol perubahan `build`).
+
+**Guard anti-backdoor.** Cross-check (`plan §C`) = early-warning: bila mockup memperkenalkan **field/action/state BARU** di luar UI-Contract → sinyal **requirement baru**, bukan defect → kena **tripwire** (§D: butuh capability/unit/vendor baru) → STOP → `/feature`. Pintu mockup **BUKAN** pintu belakang menambah scope UI.
