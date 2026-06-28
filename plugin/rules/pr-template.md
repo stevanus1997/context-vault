@@ -22,19 +22,19 @@ Prinsip: **kalau repo punya PR template, itu dipakai PERSIS** — bentuk per-ras
    4. Dir `.github/PULL_REQUEST_TEMPLATE/*.md` (multi-file)
    Tak ada → step 3 (fallback).
 2. **Ada template → pakai PERSIS sebagai body:**
-   - **Dir multi-file:** pilih file yang cocok `rasa` by nama (mis. `fix.md`/`feature.md`/`bug.md`); tak ada yang cocok → **TANYA user** pilih mana (jangan tebak).
+   - **Dir multi-file:** pilih file yang cocok `rasa` by nama (mis. `fix.md`/`feature.md`/`bug.md`); tak ada yang cocok → **TANYA user** pilih mana (ikuti `${CLAUDE_PLUGIN_ROOT}/rules/elicitation.md` — opsi bawa konsekuensi, sediakan jalan keluar; jangan tebak).
    - **Struktur persis:** jangan tambah/hapus/urut-ulang heading; jangan hapus checklist/komentar `<!-- -->`.
    - **Isi area prose** (yang jelas "tempat nulis", mis. di bawah `## Description`, menggantikan `<!-- … -->`) by-understanding: petakan section template → sumber per-rasa (`Summary`/`Description` ← headline; `Why`/`Motivation`/`Context` ← alasan bisnis / root_cause / rationale; `Testing`/`How tested` ← evidence test).
-   - **Konten tanpa rumah** (runbook, traceability, diagram) → append di akhir body di bawah `### Additional context (auto)`. JANGAN paksa ke section yang salah.
+   - **Konten tanpa rumah** (runbook, traceability) → append di akhir body di bawah `### Additional context (auto)`. JANGAN paksa ke section yang salah. (Diagram Flow TIDAK ikut di sini — lihat "Section Flow": tak disuntik saat template repo menang.)
    - **Checkbox:** centang HANYA item yang `evidence` buktikan (mis. "Tests pass" saat test gate lulus). Tak terverifikasi (mis. "Tested on staging", "Updated CHANGELOG") → biarkan kosong. JANGAN mengarang centang.
    - Lanjut step 4 (runbook) lalu step 5 (judul).
 3. **Tak ada template → bentuk fallback per-rasa.** Skeleton: `Summary → Why → Flow? → Changes → Testing → Runbook? → Traceability → Checklist` (heading English, isi Indonesia). Per rasa:
-   - **`feature`** (sumber `business.md`+`fanout.md`+`plans/*`+diff): `Summary` (headline+target bisnis) · `Why` (alasan `business.md`) · `Flow` (lihat "Section Flow") · `Changes` (per unit dari diff/plans) · `Testing` (evidence) · `Traceability` (`control/features/<fitur>/` + flow) · checklist hasil gate (centang per evidence).
+   - **`feature`** (sumber `business.md`+`fanout.md`+`plans/*`+diff): `Summary` (headline+target bisnis) · `Why` (alasan `business.md`) · `Flow` (lihat "Section Flow") · `Changes` (per unit dari diff/plans) · `Testing` (evidence) · `Traceability` (`control/features/<fitur>/` + flow) · checklist hasil gate (centang per evidence; item **relevan-tapi-belum-terverifikasi** — mis. langkah `manual:` env/secret/OAuth — tetap dicantumkan **unchecked**, JANGAN dihilangkan supaya sinyal "belum beres" tak hilang).
    - **`fix`** (sumber `root_cause`+diff+`relates_to`/`flow`): `Summary` · `Root cause` (ganti `Why`) · `Flow` (HANYA bila lintas-unit) · `Changes` · `Testing` · `Traceability` (`control/fixes/<id>/` + relates_to/flow + severity) · checklist.
    - **`tweak`** (sumber rationale+Challenge Checklist+diff): `Summary` · `Rationale` (ganti `Why`) · `Changes` · `Challenge Checklist` (Bentrok aturan/Tradeoff/Alternatif simpel/Yang bisa jebol) · `Testing` (+ floor-scan bersih) · `Capture` (file knowledge + alasan). **TANPA** section `Flow` & **TANPA** `Traceability` manifest (atomik).
 4. **Runbook (kondisional, kedua jalur):**
-   - **Integrasi** (work-item kena vendor di `integrations.md`) → section runbook: URL webhook yang perlu didaftarkan di console vendor, env secret yang perlu di-set, switch mode test→live. (Scoped ke integrasi.)
-   - **Migrasi** (ada task `migrate`) → section runbook: urutan aman (expand/additive → deploy app pemakai → contract terakhir), backfill long-running, langkah zero-downtime per `conventions.md`. **Advisory** (bukan gate keras).
+   - **Integrasi** (work-item kena vendor di `integrations.md`) → **agregasi per vendor** ke section runbook: URL webhook yang perlu didaftarkan di console vendor (dari `Endpoint`/path receiver `integrations.md`), env secret yang perlu di-set (NAMA var dari `Secret env`), switch mode test→live. (Scoped ke integrasi.)
+   - **Migrasi** (ada task `migrate`) → section runbook: urutan aman (expand/additive → deploy app pemakai → contract terakhir), backfill long-running, langkah zero-downtime per `conventions.md`. **Advisory** (bukan gate keras — alat tak tahu infra deploy).
    - Pada jalur template repo, runbook masuk lewat `### Additional context (auto)`.
 5. **Judul** — conventional commit: `<type>(<unit>): <desc ringkas>`; `type` = `feat`(feature) / `fix` / `tweak`; `<unit>` = unit nyata utama yang kena; multi-unit → unit sentral atau hilangkan scope. Selaras gaya commit repo.
 
