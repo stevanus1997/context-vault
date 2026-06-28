@@ -61,7 +61,7 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 
 ### Pipeline utama (lifecycle produk)
 - `/discovery` — validasi ide mentah pra-init: riset pasar/kompetitor/monetisasi + verdict go/no-go, lalu auto lanjut `/init`.
-- `/init` — mulai produk baru (greenfield) atau adopsi repo/monorepo existing ke context-vault.
+- `/init` — mulai produk baru (greenfield) atau adopsi repo existing (monorepo / multi-repo alias polyrepo) ke context-vault.
 - `/architect` — tetapkan (greenfield) / rekam (brownfield) fondasi teknis: stack per app + capabilities + konvensi + kunci invarian platform.
 - `/wire` — bring-up skeleton kosong-tapi-jalan: scaffold app + DB + wiring FE↔BE + env (gated).
 - `/feature` — konduktor fitur end-to-end: `intake → fanout → plan` dengan gate tiap tahap.

@@ -1,6 +1,6 @@
 ---
 name: init
-description: Use when starting a new product (greenfield) or adopting an existing repo/monorepo/multi-repo into the context-vault system. Triggers — "init produk", "setup context-vault", "mulai produk baru", "adopsi repo ke context-vault".
+description: Use when starting a new product (greenfield) or adopting an existing repo/monorepo/multi-repo (polyrepo) into the context-vault system. Triggers — "init produk", "setup context-vault", "mulai produk baru", "adopsi repo ke context-vault".
 ---
 
 # init — Bootstrap Produk
@@ -17,20 +17,26 @@ Tentukan kondisi:
 - Ada `apps/` + file workspace monorepo (`turbo.json` / `pnpm-workspace.yaml` / `nx.json`) → **monorepo existing (brownfield)**.
 - Ada beberapa direktori yang masing-masing punya `.git` (sibling repos) → **multi-repo existing (brownfield)**.
 
-### 2. Konfirmasi topologi (GATE)
-Sampaikan kesimpulan deteksi + rekomendasi:
-- Greenfield → rekomendasi **monorepo**.
-- Existing → ikuti yang terdeteksi (monorepo / multi-repo).
-Minta user konfirmasi sebelum lanjut. JANGAN menulis apa pun sebelum dikonfirmasi.
-
-### 3. Framing Q&A (singkat, level produk)
-> Bila framing produk SUDAH tersedia (mis. dipanggil setelah skill `discovery`: nama produk + satu kalimat + apps sudah diketahui), JANGAN tanya ulang — pakai itu, cukup konfirmasi ringkas ke user, lalu lanjut ke langkah 4.
+### 2. Framing Q&A (singkat, level produk)
+> Bila framing produk SUDAH tersedia (mis. dipanggil setelah skill `discovery`: nama produk + satu kalimat + apps sudah diketahui), JANGAN tanya ulang — pakai itu, cukup konfirmasi ringkas ke user, lalu lanjut ke langkah 3 (keputusan topologi).
 
 Tanyakan satu per satu:
 - Nama produk?
 - Satu kalimat: ngapain & buat siapa?
 - App apa saja yang sudah kebayang? (greenfield: declare; existing: konfirmasi yang terdeteksi). Boleh mulai dari satu, tambah app lain nanti lewat skill `add-app`.
   - **(Opsional — blueprint app)** Kalau produk terdengar besar & app target sudah jelas sejak sekarang, boleh declare SEMUA app target sekaligus (semua masuk `apps[]` dengan `stack: {}` — lihat langkah 5). Tandai tiap app blueprint dengan menambah frasa `(blueprint — belum di-bring-up)` di akhir `responsibility`-nya + komentar `# blueprint, belum di-bring-up` pada entri-nya (lihat langkah 5), supaya pembaca seperti `ask`/`design-system`/`fanout` tahu app itu baru niat, belum dibangun. Ini cuma men-declare niat/topologi; bring-up (architect lalu wire) tetap per app saat app itu digarap — saat itu marker `(blueprint — belum di-bring-up)` dilepas. Produk kecil/belum jelas → cukup mulai satu, sisanya belakangan lewat `add-app`. (Nambah app sesudah init pertama tetap lewat `add-app`, bukan re-run init.)
+
+### 3. Keputusan topologi (GATE)
+App sudah diketahui (langkah 2) → tetapkan topology dengan dasar, bukan asal default.
+- **Brownfield (existing):** ikuti yang terdeteksi di langkah 1 (monorepo / multi-repo); konfirmasi ke user. `init` TIDAK mengusulkan mecah monorepo existing jadi multi-repo (atau sebaliknya) — itu migrasi kode, di luar jatah `init`.
+- **Greenfield, 1 app:** **monorepo** — tak perlu tanya, langsung lanjut.
+- **Greenfield, ≥2 app:** tanya **satu** pertanyaan ringkas buat baca sinyal — app-app ini (a) **berbagi bahasa/kode** (shared types/ui-kit/util) atau bakal jalan di bahasa beda?, dan (b) **deploy/scale/dimiliki independen** (tim beda, cadence rilis beda, atau ada runtime non-JS spt service Python/Go)?
+  - **Default condong monorepo** kalau ragu / sinyal lemah — lebih simpel buat mulai (YAGNI), tetap satu tempat, gampang dipecah belakangan.
+  - **Rekomendasiin multi-repo (polyrepo)** kalau divergensi jelas: runtime beneran beda **+** deploy/kepemilikan independen **+** sedikit kode bareng. Sodorkan rekomendasi + alasannya — jangan paksa.
+- Bila `discovery`/framing sudah ngasih sinyal topology, pakai itu — jangan tanya ulang.
+- **Catatan kejujuran:** `init` ini justru momen TERMURAH buat nentuin topology (belum ada kode — ganti = edit 1 baris `workspace.yaml`). Tapi begitu `wire` scaffold skeleton, topology nempel ke layout fisik (folder + git repo + config), jadi ganti setelahnya = migrasi mahal. Makanya putusin serius sekarang, jangan asal default.
+
+Minta user konfirmasi sebelum lanjut. JANGAN menulis apa pun sebelum dikonfirmasi. ("polyrepo" = sinonim user-facing untuk nilai `topology: multi-repo`.)
 
 ### 4. Scaffold control/
 - Copy isi `${CLAUDE_PLUGIN_ROOT}/template/control/` ke `<produk>/control/` (mis. `cp -R "${CLAUDE_PLUGIN_ROOT}/template/control/." "<produk>/control/"`).
@@ -42,7 +48,7 @@ Tanyakan satu per satu:
 Tulis `<produk>/control/workspace.yaml`:
 ```yaml
 product: <nama-produk>
-topology: <monorepo|multi-repo>
+topology: <monorepo|multi-repo>        # "polyrepo" = multi-repo
 apps:
   - name: <app>
     path: <apps/<app> untuk monorepo | ../<app> untuk multi-repo>
@@ -54,7 +60,7 @@ apps:
 packages: []                # shared package (ui-kit/types/utils) — diisi skill add-package; consumers diisi fanout
 ```
 Untuk existing, isi `stack` per app dari hasil deteksi `package.json` (framework, db bila terbaca). Biarkan `packages: []` kosong — package tumbuh lewat `add-package`, bukan di-declare saat init.
-Untuk app yang di-declare sebagai blueprint (opsi blueprint langkah 3 — di-declare tapi belum di-bring-up) → tambahkan frasa `(blueprint — belum di-bring-up)` di akhir `responsibility`-nya DAN komentar inline `# blueprint, belum di-bring-up` pada baris entri (mis. baris `- name:`), supaya pembaca `apps[]` (`ask`/`design-system`/`fanout`) tahu app itu baru niat. `architect`/`wire` melepas frasa marker dari `responsibility` saat app betul-betul di-bring-up.
+Untuk app yang di-declare sebagai blueprint (opsi blueprint langkah 2 — di-declare tapi belum di-bring-up) → tambahkan frasa `(blueprint — belum di-bring-up)` di akhir `responsibility`-nya DAN komentar inline `# blueprint, belum di-bring-up` pada baris entri (mis. baris `- name:`), supaya pembaca `apps[]` (`ask`/`design-system`/`fanout`) tahu app itu baru niat. `architect`/`wire` melepas frasa marker dari `responsibility` saat app betul-betul di-bring-up.
 
 ### 6. Generate CLAUDE.md
 Tulis `<produk>/.claude/CLAUDE.md`:
