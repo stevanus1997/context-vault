@@ -32,6 +32,7 @@ Triage **by framing user**:
 ## E. Floor-scan + mekanik PR
 **Floor-scan (step 5, WAJIB, mekanis):** grep diff final — (a) secret hardcoded (API key/token/password/connstring di luar env) + PII di log/response (persis quick-scan `ship` sensitivity-kosong); (b) pola security-loosening: `auth`/flag → `false`, penghapusan middleware auth/validasi, TTL membesar, penghapusan signature-check. Kena → STOP, lapor.
 **Mekanik PR (step 6, reuse `ship`):**
+- **Body+judul:** ikut `${CLAUDE_PLUGIN_ROOT}/rules/pr-template.md` (`rasa` = `tweak`). Bentuk fallback tweak: `Summary · Rationale · Changes · Challenge Checklist · Testing · Capture` — TANPA section Flow & Traceability (atomik). Judul `tweak(<unit>): …`.
 - Branch `tweak/<slug>` (kalau di `main`/`master` → minta izin / checkout dulu).
 - Base-branch: symbolic-ref; **tanya kalau ambigu**.
 - **Multi-repo:** karena override-sadar TIDAK berlaku buat ">1 unit", tweak paling banyak 1 unit app → commit kode di repo app + commit capture di repo hub `control/` → **PR di repo app**.
