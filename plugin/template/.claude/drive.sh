@@ -13,7 +13,8 @@
 # mesin di control/features/<fitur>/last-run.md (lihat build reference §G & §H).
 #
 # Prasyarat: plugin context-vault ter-install + `claude` CLI di PATH + allowlist harness
-# sudah diisi (wire 5.5 + bentuk multi-repo `git -C *`) supaya Bash tak beku di prompt.
+# sudah diisi (wire 5.5 + `git -C <path>` ENUMERASI per-path, BUKAN `git -C *` yg mati) +
+# workspace di-trust supaya Bash tak beku di prompt.
 # Flag --permission-mode acceptEdits = auto-terima Edit/Write file (tasks.yaml+kode) tanpa
 # prompt, TAPI Bash tetap tunduk allowlist (push/rm tetap diblok deny). Tanpa flag ini,
 # headless beku di tool Edit.
@@ -43,6 +44,20 @@ if [ ! -f "$SETTINGS" ] || [ "${nongit:-0}" -eq 0 ]; then
   echo "[drive] STOP — allowlist verifikasi stack belum keisi di .claude/settings.json." >&2
   echo "        Tanpa ini build beku di permission prompt headless. Jalankan 'wire' step 5.5 dulu." >&2
   exit 1
+fi
+
+# --- Precheck TRUST workspace (backstop RC2) — `permissions.allow` produk DIABAIKAN saat
+#     headless bila workspace belum di-trust (perintah read-only find/ls tetap jalan via
+#     sandbox → gejalanya "git ke-blok tapi yang lain jalan"). Manusia masih di terminal
+#     → instruksi + EXIT, jangan biarkan loop headless beku diam-diam di permission prompt. ---
+CLAUDE_JSON="$HOME/.claude.json"
+if command -v jq >/dev/null 2>&1 && [ -f "$CLAUDE_JSON" ]; then
+  trusted="$(jq -r --arg p "$ROOT" '.projects[$p].hasTrustDialogAccepted // false' "$CLAUDE_JSON" 2>/dev/null || echo false)"
+  if [ "$trusted" != "true" ]; then
+    echo "[drive] STOP — workspace belum di-trust; allowlist .claude/settings.json bakal DIABAIKAN headless." >&2
+    echo "        Fix: buka 'claude' interaktif sekali di root produk ini & terima dialog trust, lalu ulang drive.sh." >&2
+    exit 1
+  fi
 fi
 
 prev_done=-1
