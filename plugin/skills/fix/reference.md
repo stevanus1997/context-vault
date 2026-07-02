@@ -1,6 +1,6 @@
 # fix — Reference (skema `fix.yaml` + `tasks.yaml`-fix + dispatch deltas)
 
-Dibaca oleh skill `fix`. SKILL.md tetap ramping; detail skema & template ada di sini. Sebagian besar mesin eksekusi **dipinjam dari `build`** — lihat `${CLAUDE_PLUGIN_ROOT}/skills/build/reference.md` (rakit prompt §B, gate §D, resume §E). File ini hanya menulis **delta khas-fix**.
+Dibaca oleh skill `fix`. SKILL.md tetap ramping; detail skema & template ada di sini. Sebagian besar mesin eksekusi **dipinjam dari `build`** — lihat `${CLAUDE_PLUGIN_ROOT}/skills/build/reference.md` (rakit brief §B, gate §D, resume §E). File ini hanya menulis **delta khas-fix**.
 
 ## A. Skema `fix.yaml` (mode post-ship)
 
@@ -48,7 +48,7 @@ reason: ""                   # diisi saat dropped
 
 1. **Reproduce (subagent).** Dispatch subagent: "tulis SATU test/snapshot yang MERAH menangkap `<gejala>`; jangan perbaiki dulu". Balikan = path test + bukti merah. Test ini jadi `test` di task.
 2. **Root-cause (subagent, `systematic-debugging`).** Dispatch subagent investigasi (context-heavy → JANGAN di konduktor): "temukan akar `<gejala>` pakai systematic-debugging; balik 1 paragraf root cause + file/baris". Konduktor simpan ke `root_cause` (post-ship) atau ke `observed`/`approach` task (in-flight).
-3. **Implementasi (pinjam `build`).** Setelah task tertulis, eksekusi via `build` (post-ship: work-item `fixes/<id>/`; in-flight: `build` mem-`pick` task baru). Konteks prompt implementer untuk fix WAJIB memuat (eksplisit, jangan diasumsikan): `conventions.md` + pointer file pola + `root_cause` + (post-ship) kutipan `business.md` fitur `relates_to`. Lintas-unit → potongan `_shared.md` mini.
+3. **Implementasi (pinjam `build`).** Setelah task tertulis, eksekusi via `build` (post-ship: work-item `fixes/<id>/`; in-flight: `build` mem-`pick` task baru). Konteks brief implementer untuk fix WAJIB memuat (eksplisit, jangan diasumsikan): `conventions.md` + pointer file pola + `root_cause` + (post-ship) kutipan `business.md` fitur `relates_to`. Lintas-unit → potongan `_shared.md` mini.
 
 ## D. Triage 3-arah + tripwire + sensitivity re-eval
 
