@@ -5,37 +5,39 @@ Dibaca oleh skill `build`. Cara menyusun prompt implementer dari satu task, temp
 ## A. Pinjam dari `subagent-driven-development`
 
 `build` TIDAK meng-invoke skill `subagent-driven-development` (itu mengeksekusi plan `writing-plans` secara continuous + diakhiri `finishing-a-development-branch` — bentrok dengan gate kita & `ship`). `build` **meminjam** template & polanya:
-- `implementer-prompt.md` — struktur prompt implementer.
-- `task-reviewer-prompt.md` — reviewer task: SATU sesi, DUA verdict (spec compliance + code quality) atas satu kali baca diff. (superpowers ≥6.0 menggabungkan `spec-reviewer-prompt.md` + `code-quality-reviewer-prompt.md` lama — dua file itu sudah TIDAK ada, jangan dirujuk.)
+- `implementer-prompt.md` — struktur prompt implementer (≥6.0: ber-placeholder `[BRIEF_FILE]` + `[REPORT_FILE]`, bukan slot teks-task).
+- `task-reviewer-prompt.md` — reviewer task: SATU sesi, DUA verdict (spec compliance + code quality) atas satu kali baca file diff; input = TIGA path REQUIRED (`[BRIEF_FILE]`/`[REPORT_FILE]`/`[DIFF_FILE]`) + boleh balikin kategori ke-3 `⚠️ Cannot verify from diff` (routing: SKILL step 4). (superpowers ≥6.0 menggabungkan `spec-reviewer-prompt.md` + `code-quality-reviewer-prompt.md` lama — dua file itu sudah TIDAK ada, jangan dirujuk.)
+- `scripts/review-package BASE HEAD` — generator paket diff reviewer (commit list + stat + `diff -U10`, file dinamai per-range). Git-based → dipakai langsung.
 - Panduan pilih-model & penanganan status (DONE / DONE_WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT).
 
-**Yang TIDAK ikut dipinjam dari template task-reviewer:** klausa "jangan re-run test yang sudah dijalankan implementer" — controller `build` TETAP verifikasi sendiri (HEAD maju + re-run test, SKILL step 4). Yang digabung cuma sesi reviewer; paranoia controller tidak dilonggarkan.
+**Yang TIDAK ikut dipinjam dari template task-reviewer:** klausa "jangan re-run test yang sudah dijalankan implementer" — controller `build` TETAP verifikasi sendiri (HEAD maju + re-run test, SKILL step 4). Paranoia controller tidak dilonggarkan.
 
-Kunci dari template implementer: *controller mem-paste teks task ke prompt; subagent TIDAK membaca file plan.* Maka sumber teks task kita = `tasks.yaml` (bukan file `writing-plans`).
+Kunci dari template implementer (≥6.0): **file-handoff** — controller menulis BRIEF per task ke file, prompt dispatch cuma menunjuk path (brief + report); artefak bulky TIDAK di-paste ke prompt (rasional upstream: semua yang di-paste nempel di konteks controller tiap turn — sejalan tujuan sesi `build` ramping & resumable). Prinsip yang TETAP: *subagent TIDAK membaca file plan/`tasks.yaml` UTUH* — brief self-contained = satu-satunya sumber requirement. Sumber teks task kita = `tasks.yaml` → `build` **menulis brief-nya SENDIRI** (`scripts/task-brief` upstream mem-parse format plan `writing-plans`, TIDAK bisa baca `tasks.yaml` — jangan dipakai; `scripts/review-package` tetap dipakai karena git-based).
 
-## B. Menyusun prompt implementer dari satu task
+## B. Menyusun brief implementer dari satu task
 
-Dari satu entri `tasks.yaml`, controller (`build`) merakit prompt berisi:
+Dari satu entri `tasks.yaml`, controller (`build`) merakit **brief** — ditulis ke `<root>/.claude/build/<work-item>/task-<id>-brief.md` (SKILL step 3; scratch ter-gitignore, TIDAK di-paste ke prompt) — berisi:
 - **Task:** `desc` + `unit` (app/package/integration).
 - **Files:** isi `files` (path create/modify/test).
 - **Approach:** `approach`.
 - **Test cases:** daftar `test` → "tulis test ini dulu (TDD), pastikan merah, baru implementasi sampai hijau".
 - **Kontrak:** potongan `_shared.md` yang relevan.
 - **Konvensi & stack:** dari `conventions.md` + `workspace.yaml` `stack` app.
-- **Skema & struktur existing (WAJIB bila `unit ∈ apps[]` & `control/schema/<unit>.md` non-stub) — otoritatif, reuse jangan duplikat:** paste **slice skema relevan** + **listing dir target**, lalu directive reuse.
+- **Skema & struktur existing (WAJIB bila `unit ∈ apps[]` & `control/schema/<unit>.md` non-stub) — otoritatif, reuse jangan duplikat:** tulis **slice skema relevan** + **listing dir target** ke brief, lalu directive reuse.
   - **Slice skema** = fail-open UNION dibaca LIVE: tabel di `reuse:` ∪ tabel di `actions.affects` ∪ FK-neighbor (dari `control/schema/<unit>.md`) dari tabel mana pun yang disebut — di-cap ~15 tabel; format ringkas proyeksi (kolom·tipe·key·FK). `reuse:` = SELECTION HINT, **bukan** filter otoritatif (over-include murah & aman; under-include malah ngalahin tujuan) → `reuse:` basi/parsial TIDAK fatal.
   - **Listing dir** = file yang sudah ada di tiap dir pada `files` task (mis. `internal/user/` → `user.go, repo.go, …`), **di-cap ~30 entri** (lebih → ringkas + hitung) biar dir gede tak membanjiri prompt.
   - **Directive:** *"Tabel & file ini SUDAH ADA — reuse/extend; JANGAN bikin tabel paralel atau file duplikat (mis. ada `user.go` → tambahin di situ, bukan `users.go`). Fakta kolom/FK/index di sini otoritatif."*
   - **Degrade:** `control/schema/<unit>.md` absen/stub → blok jadi listing-dir saja + warning; lanjut (no-op bagian skema). `unit` = package/`integration`/FE tanpa proyeksi → skip otomatis.
-  - **Reconcile reuse↔proyeksi (cek di SKILL step 1, sekali di awal):** nama di `reuse:` task (table/file) di-assert MASIH ada di proyeksi/pohon SEBELUM dirakit ke prompt — `reuse:` basi (mis. tabel di-rename fitur lain → match-by-nama putus) → WARN (`risk:low`) / STOP (`risk`≥`normal`), bukan paste nama hantu yang nyuruh implementer extend tabel yang tak ada. Beda peran dari **Slice skema** di atas (yang fail-open & sengaja over-include untuk konteks): reconcile = **guard nama** anti-drift, slice = **konteks** otoritatif.
+  - **Reconcile reuse↔proyeksi (cek di SKILL step 1, sekali di awal):** nama di `reuse:` task (table/file) di-assert MASIH ada di proyeksi/pohon SEBELUM dirakit ke brief — `reuse:` basi (mis. tabel di-rename fitur lain → match-by-nama putus) → WARN (`risk:low`) / STOP (`risk`≥`normal`), bukan nulis nama hantu yang nyuruh implementer extend tabel yang tak ada. Beda peran dari **Slice skema** di atas (yang fail-open & sengaja over-include untuk konteks): reconcile = **guard nama** anti-drift, slice = **konteks** otoritatif.
 - **Pointer pola:** tunjuk 1-2 file existing sebagai contoh gaya (mis. route sejenis).
-- **Mockup (bila task ber-`mockup:`):** baca file di path → **teks** (HTML/CSS) di-**paste VERBATIM** ke prompt; **gambar** (PNG/JPG) → sertakan path & minta subagent **membuka/melihat**-nya; **URL Figma** → fetch via Figma MCP bila tersedia, kalau tidak → perlakukan sebagai screenshot/gambar. Instruksi (**tech-agnostic**): *"Reproduksi HASIL VISUAL — layout, spacing, hierarki, dan animasi/transisi — memakai stack app (`workspace.yaml`) + komponen pada file 'Pointer pola'. JANGAN transplant markup mentah mockup; terjemahkan ke idiom komponen project. BAWA transisi/animasi yang ada di mockup — jangan dibuang sebagai dekoratif."* **Bila `control/design-system.md` ada & app dalam scope sebuah design system (cek `Berlaku buat`):** pakai **motion vocab bernama** di section `Motion`-nya untuk transisi/animasi (alih-alih nemu sendiri) — biar konsisten antar-fitur. Mockup = byte opaque user; `build` tak pernah mengasumsi framework-nya.
-- **Signature dep (WAJIB bila ada `deps`):** untuk tiap task di `deps`, baca file yang dibuat/diubahnya **di disk** lalu paste signature/ekspor TERKINI-nya (mis. `hash(pw: string): Promise<string>`, `issueSession(userId): string`). Implementer membangun di atas kode NYATA, bukan tebakan dari teks `approach`. **Bila task dep punya `produces:`** (signature ditranskripsi `breakdown` — `breakdown/reference.md` §A): bandingkan signature DISK vs `produces:` — beda → tandai **DRIFT** di prompt (+ catat buat gate). Disk SELALU menang; `produces:` cuma hint auditability, tak pernah meng-override kode nyata.
-- **Instruksi:** pakai `test-driven-development`; commit setelah hijau; self-review; balik **ringkasan + status**. Bila spec kurang, subagent boleh **balik nanya dulu** sebelum mulai (jangan nebak).
+- **Mockup (bila task ber-`mockup:`):** baca file di path → **teks** (HTML/CSS) di-**tulis VERBATIM** ke brief; **gambar** (PNG/JPG) → sertakan path & minta subagent **membuka/melihat**-nya; **URL Figma** → fetch via Figma MCP bila tersedia, kalau tidak → perlakukan sebagai screenshot/gambar. Instruksi (**tech-agnostic**): *"Reproduksi HASIL VISUAL — layout, spacing, hierarki, dan animasi/transisi — memakai stack app (`workspace.yaml`) + komponen pada file 'Pointer pola'. JANGAN transplant markup mentah mockup; terjemahkan ke idiom komponen project. BAWA transisi/animasi yang ada di mockup — jangan dibuang sebagai dekoratif."* **Bila `control/design-system.md` ada & app dalam scope sebuah design system (cek `Berlaku buat`):** pakai **motion vocab bernama** di section `Motion`-nya untuk transisi/animasi (alih-alih nemu sendiri) — biar konsisten antar-fitur. Mockup = byte opaque user; `build` tak pernah mengasumsi framework-nya.
+- **Signature dep (WAJIB bila ada `deps`):** untuk tiap task di `deps`, baca file yang dibuat/diubahnya **di disk** lalu tulis signature/ekspor TERKINI-nya ke brief (mis. `hash(pw: string): Promise<string>`, `issueSession(userId): string`). Implementer membangun di atas kode NYATA, bukan tebakan dari teks `approach`. **Bila task dep punya `produces:`** (signature ditranskripsi `breakdown` — `breakdown/reference.md` §A): bandingkan signature DISK vs `produces:` — beda → tandai **DRIFT** di prompt (+ catat buat gate). Disk SELALU menang; `produces:` cuma hint auditability, tak pernah meng-override kode nyata.
+- **Instruksi (ditaruh di PROMPT dispatch, bukan brief):** baca brief dulu (requirement, nilai eksak verbatim); pakai `test-driven-development`; commit setelah hijau; self-review; **tulis report detail ke path report** (apa yang dibangun + bukti test TDD + concern); balikan chat = **status + commit SHA + 1 baris test + concern**. Bila spec kurang, subagent boleh **balik nanya dulu** sebelum mulai (jangan nebak).
 
-JANGAN suruh subagent membaca `tasks.yaml` — paste teksnya.
+JANGAN suruh subagent membaca `tasks.yaml` — tulis teksnya ke brief; prompt dispatch cuma pointer brief + path report + kontrak balikan.
 
 ### Contoh (task T3 `auth`)
+Brief `.claude/build/auth/task-T3-brief.md`:
 ```
 Task: POST /auth/register (unit: api)
 Files: create src/routes/auth/register.ts; modify src/routes/index.ts;
@@ -46,16 +48,25 @@ Test cases (tulis dulu, TDD): sukses 201+cookie; email kepake 409; pw lemah 422
 Kontrak (_shared): session = cookie httpOnly JWT HS256 TTL 7d
 Konvensi: error problem+json; validasi zod (pola: src/routes/auth/login.ts)
 Stack: Express + Prisma + Postgres
--> Pakai test-driven-development. Commit setelah hijau. Balik ringkasan + status.
+```
+Prompt dispatch (ramping):
+```
+Baca brief dulu — itu requirement-mu, nilai eksaknya dipakai verbatim:
+  .claude/build/auth/task-T3-brief.md
+Pakai test-driven-development. Commit setelah hijau. Self-review.
+Tulis report detail (apa yang dibangun + bukti test TDD + concern) ke:
+  .claude/build/auth/task-T3-report.md
+Balikan chat: status + commit SHA + 1 baris hasil test + concern.
 ```
 
 ### Task integrasi (`unit: integration`)
-Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yaml`), kontrak `_shared.md` yang diuji, kasus `test` roundtrip. Subagent menjalankan kedua app bareng (mis. start `api`, panggil dari `web`/HTTP), assert shape data cocok dua sisi. Status sama (DONE/BLOCKED/...). Konteks berat (boot+log) tetap di subagent.
+Controller merakit brief-nya (pola file-handoff sama): app mana yang di-boot (path/stack dari `workspace.yaml`), kontrak `_shared.md` yang diuji, kasus `test` roundtrip. Subagent menjalankan kedua app bareng (mis. start `api`, panggil dari `web`/HTTP), assert shape data cocok dua sisi. Status sama (DONE/BLOCKED/...). Konteks berat (boot+log) tetap di subagent.
 
 ## C. Pilih model (hemat biaya & cepat)
-- Task mekanikal (1-2 file, spec jelas) → model murah/cepat.
+- Task mekanikal (1-2 file, spec jelas) → tier terendah yang lolos floor di bawah.
 - Integrasi multi-file / pattern-matching → model standar.
 - Butuh judgment desain → model paling kuat. **Task ber-`mockup:` masuk kategori ini** — menerjemahkan mockup (yang teknologinya bisa ≠ stack project) ke komponen existing tanpa transplant markup butuh judgment desain.
+- **Turn count beats token price (upstream ≥6.1):** model termurah rutin makan 2–3× turn di kerja multi-step — total malah lebih lambat & lebih mahal. **Floor mid-tier untuk reviewer DAN implementer yang kerja dari prosa.** Task `tasks.yaml` = prosa (desc/approach/test, TANPA kode) → praktisnya implementer hampir selalu floor mid-tier; tier termurah HANYA bila teks task memuat kode lengkap tinggal transkripsi+test, atau fix mekanikal 1-file. Reviewer JANGAN pernah di bawah mid-tier (rubber-stamp + deteksi entity-equivalence butuh judgment).
 
 ## D. Cadence gate (mode A adaptif)
 - **Default:** gate per **app × milestone** — semua task satu unit (app/pkg) dalam satu milestone hijau → BERHENTI, tampilkan diff + test + "dibangun vs task" + challenge checklist → approve/revisi.
@@ -74,10 +85,11 @@ Controller merakit prompt: app mana yang di-boot (path/stack dari `workspace.yam
 - Buntu beneran (bug/dead-end) → `blocked` + STOP + lapor (sandar `systematic-debugging`). Jangan `done` palsu; **jangan auto-retry `blocked`** (risiko loop).
 - **Resume (sesi baru):** baca `tasks.yaml`. (1) `done` → lewati. (2) **`in_progress` → JANGAN dilewati**: sesi lalu mati di tengah; reconcile dengan working tree + `git log` (revert/bereskan WIP setengah jadi), reset ke `pending`, lalu re-dispatch. (3) `blocked` → laporkan + task yang nyangkut karena gantung ke situ; butuh reset eksplisit ke `pending` sebelum lanjut. (4) lanjut `pending` pertama yang seluruh `deps`-nya `done`.
 - **Status balikan subagent** (dari template implementer — beda dari `status` task di `tasks.yaml`):
-  - `DONE` → lanjut verifikasi + review.
+  - `DONE` → verifikasi controller (commit+test) → rakit paket review (brief + report + diff via `review-package`) → dispatch task-reviewer (SKILL step 4).
   - `DONE_WITH_CONCERNS` → JANGAN langsung anggap `done`; tampilkan concern-nya, biar review/gate yang putuskan.
   - `NEEDS_CONTEXT` → kasih konteks yang diminta → re-dispatch (**bukan** `blocked`).
   - `BLOCKED` → root-cause dulu: bug lokal → `systematic-debugging`; task salah → balik `breakdown`; kontrak salah → balik `plan`. Re-dispatch ke model sama tanpa perubahan = anti-pola.
+  - Verdict reviewer `⚠️ Cannot verify from diff` → BUKAN status implementer & BUKAN lulus otomatis: controller resolve tiap item sendiri (SKILL step 4); gap nyata = spec ❌ → re-dispatch.
 - **Eksekusi `actions`:** `install`/`cmd` → jalankan + verifikasi (paket/exit-code). `migrate` → **GATE**: tampilkan + **dampak (panggil `${CLAUDE_PLUGIN_ROOT}/rules/migration-impact.md`: consumer/lock/backfill/expand-contract; advisory)** + approve sebelum apply (destruktif). `env` → tulis ke `.env` app. Semua action terverifikasi = syarat `done`.
 - **Proyeksi skema (M4):** sesudah task ber-`migrate` mencapai `done`, regen `control/schema/<unit>.md` per `${CLAUDE_PLUGIN_ROOT}/rules/schema-projection.md` — **HANYA `unit` ∈ `apps[]`** (bukan package/`integration`); `label` = `feature:` (fitur) / `fix/<id>` (fix).
 - **`needs_human`** (task ber-`manual:` belum beres): dideteksi di step 2 → STOP seluruh build, lapor checklist; resume setelah user konfirmasi langkah manual beres → jalankan `actions` terkait → `in_progress`. Hitung sebagai BELUM siap-ship.

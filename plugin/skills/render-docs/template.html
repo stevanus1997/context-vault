@@ -41,6 +41,8 @@
     <a href="#overview">📊 Overview</a>
     <a href="#apps">🧩 Apps</a>
     <a href="#schema">🗄️ Model Data</a>
+    <a href="#packages">📦 Packages</a>
+    <a href="#integrations">🔗 Integrasi</a>
     <a href="#capabilities">🔌 Kapabilitas</a>
     <a href="#flows">🔀 Flows</a>
     <a href="#glossary">📖 Glossary</a>
@@ -61,6 +63,20 @@
     <p class="meta">Skema per app dari control/schema/. Read-only; app tanpa table di-skip.</p>
     <div class="card"><h3>api <span class="meta">· schema</span></h3>
       <p>Order(id, tenant_id→Tenant, status, total_cents) · Product(id, tenant_id→Tenant, name, price_cents)</p></div>
+  </section>
+  <!-- SLOT:packages -->
+  <section id="packages"><h2>Packages</h2>
+    <p class="meta">Shared package dari workspace.yaml. Bila produk tanpa package → lewati section + nav link.</p>
+    <div class="card"><h3>money-format <span class="meta">· package</span></h3>
+      <p>Util format & pembulatan uang lintas-app.</p>
+      <div><span class="chip">api</span><span class="chip">web</span><span class="chip">mandatory: money</span></div></div>
+  </section>
+  <!-- SLOT:integrations -->
+  <section id="integrations"><h2>Integrasi</h2>
+    <p class="meta">Vendor eksternal dari integrations.md. SHAPE-only — tanpa nilai secret. Bila kosong → lewati section + nav link.</p>
+    <div class="card"><h3>midtrans <span class="meta">· integrasi</span></h3>
+      <p>Dipakai: checkout (charge + webhook status pembayaran).</p>
+      <div><span class="chip">outbound+inbound</span><span class="chip">webhook</span></div></div>
   </section>
   <!-- SLOT:capabilities -->
   <section id="capabilities"><h2>Kapabilitas</h2><p class="meta">Matriks kapabilitas × app.</p></section>
