@@ -1,7 +1,7 @@
 {
   "name": "context-vault",
   "description": "AI-first product boilerplate: lapisan AI + knowledge untuk mengelola produk multi-app (guide (panduan & Q&A onboarding plugin: tur progresif + tanya skill/flow), init, architect + kunci invarian platform + wire bring-up, add-app nambah app baru, add-package nambah shared package, add-integration nambah vendor eksternal (kontrak SHAPE + webhook inbound), feature pipeline, breakdown/build dengan actions/manual + fan-IN package + integrasi cross-app + multi-repo aware, ship dengan security gate/drop + rakit PR per-rasa (feature/fix/tweak) yang hormati PR template repo (rules/pr-template.md), fix (lane bugfix dua-mode: in-flight/post-ship, control/fixes/ first-class, pintu mockup defect visual), ask (AMA produk read-only: knowledge-first + code-fallback, flag drift→route), debt (lane utang teknis: pintu ke-4 build + registry control/debt.yaml, status diturunkan, resurface by locality), design-system (bring-up fondasi visual: tokens+motion+komponen primitif dari mockup ke control/design-system.md, dua-mode SETUP/CAPTURE), graduated autonomy M7 (build --unattended auto-approve segmen risk rendah dengan hard-floor migrate/needs_human/security, allowlist harness + rem run-level, lapor-keluar via hook + outer-loop driver drive.sh/schedule lintas-sesi), upgrade (susulin produk lama ke template terbaru: sync .claude/ + control/ skeleton hilang, merge settings, tanpa sentuh knowledge), tweak (jalur ringan perubahan kecil berjejak: tripwire 3-cabang ukuran/keamanan/defect, capture ke business/* tanpa pipeline berat, finish-sampai-PR), docs).",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "author": {
     "name": "stevanus",
     "email": "stevanus.yohanesvcn@gmail.com"
