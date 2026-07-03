@@ -78,6 +78,39 @@ Controller merakit brief-nya (pola file-handoff sama): app mana yang di-boot (pa
   - **Rem run-level (wajib saat unattended):** (a) **circuit breaker** — 2 task berturut-turut berakhir `blocked`/gagal dengan akar serupa → STOP SELURUH run + lapor "dugaan masalah sistemik" (1 penyebab ≠ N bug; jangan giling task berikutnya, bakar token percuma); (b) **cap volume (budget bobot)** — BUKAN hitung jumlah task (10 task enteng ≠ 10 task berat ber-token); tiap task punya **bobot**, dan satu run berhenti **sebelum** mulai task yang bakal bikin total bobot **lewat budget** (default **10**) — jadi total bobot per run selalu **≤ budget**. **Bobot per task** diturunkan dari field `tasks.yaml` yang SUDAH ADA (tak perlu — & tak bisa — ukur token dari dalam): **3 (berat)** bila ber-`mockup:` ATAU `unit: integration` ATAU `files` > 4; **2 (sedang)** bila `files` 3–4; **1 (enteng)** selainnya. **Aturan stop (look-ahead):** sebelum dispatch tiap task, hitung `total_berjalan + bobot(task)`; bila `> budget` DAN sudah ≥1 task jalan di run ini → STOP + ringkasan run + sisa antrian. **Task PERTAMA tiap run SELALU jalan** (jamin minimal 1 task/run, biar 1 task super-berat tak ke-block selamanya). User boleh set budget lain saat memanggil. Efek: task berat "makan jatah" lebih cepat → proses tetap ramping (cegah 1 proses gendut sampai context membengkak). **`breakdown` TAK berubah** — bobot dihitung di build dari field yang sudah ada. Rem ini level-RUN — melengkapi cap 3-ronde review yang levelnya per-task (SKILL step 4), bukan menggantikannya.
 - Selalu hormati `deps` + Urutan `fanout` (mis. `web` dibangun setelah `api` nyata, bukan yang direncanakan).
 - **Simplify pass final (gate one-shot, SKILL step 7a):** BUKAN bagian loop cadence per-segmen di atas — jalan SEKALI sesudah semua task `done` (hard-guard lolos), sebelum nyatakan siap-ship. Atas **diff fitur utuh** (lintas-segmen/app), bukan per-segmen: nangkep duplikasi/helper-kembar/dead-code yang baru kelihatan pasca-rakit. **HANYA behavior-preserving** (seperti `kind: debt`; test existing = bukti regresi, re-run sesudah apply). Aman+lokal → apply→re-verify→GATE approve/revisi (cap 3 ronde seperti review step 4; mentok → buang perubahan); besar/berisiko/ubah-perilaku → APPEND `debt.yaml` (pintu ke-4), JANGAN paksa masuk. Floor-scan (verba bahaya §A + DDL) & aturan unattended sama persis dengan cadence di atas: kena floor → STOP attended apa pun `risk`; unattended fitur `risk` low/normal + ijo + lolos floor → boleh auto-approve. Anti-rekursi: inline, JANGAN invoke `/simplify`/`/debt`/`/fix`. Subagent: `code-simplifier` (dibekali diff + `conventions.md` + slice `control/schema/<unit>.md`).
+- **Milestone smoke + section "Coba sendiri" (M-smoke, SKILL step 6).** Tiap gate segmen menampilkan section **"Coba sendiri"** di samping diff/test/challenge:
+  - **Part A (SELALU, murah, tanpa boot):** (a) **test-case lulus** eksplisit dari `test:` task-task segmen (bukan cuma "N/N ijo"); (b) **resep verifikasi manual** — `curl`/URL "buka …" untuk surface yang dibangun, diturunkan dari **diff + `files` + port env-contract** (`wire` `.env`). Milestone logika-murni (tanpa surface) → resep kosong "no runnable surface", test-case tetap tampil.
+  - **Part B (self-smoke, KONDISIONAL — auto+lapor):** dispatch **smoke subagent** bila trigger (tabel bawah) terpenuhi. Brief smoke (pola file-handoff, sama `unit: integration`): app mana yang di-boot (path/stack `workspace.yaml`) + resep Part A + path report. Subagent: boot app (mekanisme SAMA boot `unit: integration` — BUKAN invoke skill `/run`/`/verify`; pinjam polanya) → jalankan resep terhadap app hidup → tangkap **observasi** (status+shape response untuk API; screenshot/render-check untuk UI page) → tulis report → balikan ringkas. Gate menampilkan observasi di sebelah resep. Model smoke subagent = **tier rendah** (boot+probe, bukan judgment).
+  - **Trigger Part B (semua harus IYA):**
+
+    | syarat | lolos bila |
+    |---|---|
+    | ada runnable surface | diff segmen `create` **ATAU** `modify` HTTP route / UI page (`modify` penting — `fix` ngedit endpoint existing) |
+    | belum di-boot integration | surface tak di-cover task `unit: integration` di segmen |
+    | bukan mockup | task **tanpa** `mockup:` (yang ber-`mockup:` sudah eyeball+buka app) |
+    | unit runnable | `unit ∈ apps[]` (package/`integration` → skip) |
+
+    Deteksi "runnable surface" = **heuristik ringan** atas `unit`+`files`+diff (cocok konvensi routing/page app). **Ragu → skip Part B** + catat "surface tak jelas — smoke di-skip" (advisory, BUKAN palang; false-skip = balik perilaku lama, aman).
+  - **Environment:** di titik gate env lokal DIJAMIN ada (DB ter-`wire`; `manual:` env/secret sudah lewat `needs_human` step 2). Smoke HANYA melawan env lokal ter-wire — tak pernah prod; boleh memutasi DB dev lokal (mis. `register` bikin row uji).
+  - **Failure:** boot-fail / endpoint 5xx / crash / render rusak **PADAHAL unit-test ijo** = **penyimpangan** → masuk **disiplin fix embed** step 6 (reproduce→root-cause→corrective `kind: fix`); karena "penyimpangan" = HARD floor, auto-approve unattended TIDAK nyala. Boot-fail karena prereq lingkungan yang mestinya ada → **blocker lingkungan** (`halt`), bukan corrective task. Observasi plausible → tampil gate (attended) / ringkas `last-run.md` (unattended).
+  - **Unattended (M7):** Part B tetap jalan (tujuannya). Observasi → prosa `last-run.md`. Ongkos = **satu boot per segmen qualifying** — TIDAK mengubah model bobot cap-volume (bobot = look-ahead per-task; smoke per-segmen di gate). Floor-scan tak terpengaruh (smoke tak nambah diff).
+  - **Anti-dobel:** smoke SKIP surface yang sudah di-cover `unit: integration` / `mockup:` / roundtrip `ship` step 3. M-smoke = lebih dini, per-milestone, single-surface.
+  - **Contoh (gate M2 `auth`):**
+    ```
+    ── Coba sendiri ──────────────────────────────
+    test case lulus:
+      • register sukses → 201 + set-cookie
+      • register email kepake → 409 · pw lemah → 422
+      • login sukses → 200 · pw salah → 401 · user ∅ → 401
+    verifikasi manual (localhost:3000):
+      curl -i -X POST localhost:3000/auth/register -d '{"email":"a@b.co","password":"secret12"}'
+      curl -i -X POST localhost:3000/auth/login    -d '{"email":"a@b.co","password":"salah"}'
+    smoke (auto):
+      ✓ POST /auth/register → 201 {id,email} + Set-Cookie: sid=…
+      ✓ POST /auth/login (pw salah) → 401 {error:"invalid_credentials"}
+    ──────────────────────────────────────────────
+    ```
+    M1 (`hash`/`session`) → resep+smoke kosong ("no runnable surface"), test-case tetap tampil. M3 (`login` UI ber-`mockup:`) → Part B skip (sudah eyeball via mockup).
 
 ## E. Status & resume
 - **Atomik (konkret):** set `in_progress` **sebelum** dispatch; set `done` **hanya** setelah lulus verifikasi (commit+test, lihat SKILL step 4) + review dua-verdict (task no-op fan-in → verifikasi deterministik step 4, tanpa reviewer). Tulis **satu task per operasi** (Edit satu field / temp-file lalu rename) — jangan batch banyak task dalam satu tulis, biar interupsi nggak ninggalin YAML korup. `tasks.yaml` ikut ke-commit, jadi versi korup bisa dipulihkan dari git.
