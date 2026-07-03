@@ -29,7 +29,7 @@ Bandingkan produk vs `${CLAUDE_PLUGIN_ROOT}/template/`:
 - `.claude/hooks/on-stop.sh`, `on-permission.sh` — ada? executable?
 - `.claude/drive.sh` — ada? executable?
 - `.claude/settings.json` — punya `permissions.allow` baseline (git read-only + `add`/`commit`)? `permissions.deny` foot-gun (force-push/reset --hard/clean/rm -rf)? blok `hooks` (`Stop` + `PermissionRequest`)? perintah verifikasi per-stack (test/lint/typecheck/build sesuai `workspace.yaml` `stack`)? **aturan multi-repo `git -C <path>` ter-enumerasi per unit path (BUKAN bentuk-mati `git -C *`)?** **workspace di-`trust`** (`hasTrustDialogAccepted: true` di `~/.claude.json` — tanpa ini `permissions.allow` produk DIABAIKAN saat headless)? **`includeCoAuthoredBy: false` + `attribution` (`commit`/`pr` kosong)** — matiin trailer co-author Claude di commit & body PR produk?
-- `.gitignore` — punya `.claude/notify.sh` + `.claude/.unattended*` + `.claude/build/` (scratch brief/report file-handoff `build`)?
+- `.gitignore` — punya `.claude/notify.sh` + `.claude/.unattended*` + `.claude/build/` (scratch brief/report/paket-diff file-handoff `build`)?
 - `control/` — file/dir template mana yang ABSEN di produk (mis. `invariants.md`, `integrations.md`, `design-system.md`, `business/risks.md`, `debt.yaml`, `fixes/`)? (CATATAN: `control/schema/` di-generate runtime oleh `wire`/`build` dari skema nyata — BUKAN skeleton template; jangan disync di sini.)
 Susun **daftar selisih** + tampilkan ke user (apa yang akan disusulin, apa yang di-skip karena sudah-ada/itu-knowledge). Tak ada selisih → "produk sudah current" + STOP.
 
