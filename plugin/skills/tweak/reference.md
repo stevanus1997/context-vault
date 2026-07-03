@@ -31,6 +31,7 @@ Triage **by framing user**:
 
 ## E. Floor-scan + mekanik PR
 **Floor-scan (step 5, WAJIB, mekanis):** grep diff final — (a) secret hardcoded (API key/token/password/connstring di luar env) + PII di log/response (persis quick-scan `ship` sensitivity-kosong); (b) pola security-loosening: `auth`/flag → `false`, penghapusan middleware auth/validasi, TTL membesar, penghapusan signature-check. Kena → STOP, lapor.
+**Section "Coba sendiri" (step 5, Part A — cermin gate `build`):** setelah floor-scan lolos, gate menampilkan (a) **test-case lulus** dari test yang ditulis TDD (step 3); (b) **resep verifikasi manual** (`curl`/URL untuk perilaku yang diubah, diturunkan dari diff). **TANPA Part B/auto-boot** (khusus `build` — tweak inline/single-session/non-resumable). Kosmetik murni (tak ada test) → skip.
 **Mekanik PR (step 6, reuse `ship`):**
 - **Body+judul:** ikut `${CLAUDE_PLUGIN_ROOT}/rules/pr-template.md` (`rasa` = `tweak`). Bentuk fallback tweak: `Summary · Rationale · Changes · Challenge Checklist · Testing · Capture` — TANPA section Flow & Traceability (atomik). Judul `tweak(<unit>): …`.
 - Branch `tweak/<slug>` (kalau di `main`/`master` → minta izin / checkout dulu).
@@ -82,6 +83,7 @@ Validasi perilaku skill = jalanin tiap prompt ini dan cek routing/cabang/perilak
 | diff ada API key hardcoded | floor-scan STOP di step 5 |
 | diff `auth: false` (lolos cabang B?) | floor-scan tetep nangkep pola loosening → STOP |
 | gate | nampilin Challenge Checklist TERISI (bukan "approve?" doang) |
+| gate perubahan berperilaku | nampilin "Coba sendiri": test-case lulus + resep `curl`/URL (Part A, TANPA auto-boot) |
 | di `main` | bikin branch `tweak/<slug>` dulu (minta izin) |
 | finish | commit + buka PR (BUKAN nyerah ke `/ship`) |
 | interupsi setelah commit | re-run dari awal (sandar git), bukan resume manifest |
