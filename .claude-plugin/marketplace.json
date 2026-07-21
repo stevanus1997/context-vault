@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "AI-first product boilerplate.",
-    "version": "0.20.0"
+    "version": "0.21.0"
   },
   "plugins": [
     {
       "name": "context-vault",
       "source": "./plugin",
       "description": "Skills (guide onboarding & Q&A plugin (tur progresif + tanya skill/flow, read-only) + init→ship + lane bugfix fix (pintu mockup defect visual) + ask read-only + lane utang teknis debt + design-system bring-up fondasi visual + graduated autonomy M7 build --unattended + outer-loop driver + upgrade migrasi produk lama ke template terbaru + tweak jalur ringan perubahan kecil berjejak + PR template per-rasa ship/tweak (hormati template repo)), agent, dan rules untuk mengelola produk multi-app secara AI-first.",
-      "version": "0.20.0"
+      "version": "0.21.0"
     }
   ]
 }
