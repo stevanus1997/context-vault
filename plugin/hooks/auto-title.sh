@@ -12,6 +12,8 @@ PROMPT="$(printf '%s' "$INPUT" | jq -r '.prompt // empty' 2>/dev/null)" || exit 
 [ -n "$PROMPT" ] || exit 0
 
 SESSION_ID="$(printf '%s' "$INPUT" | jq -r '.session_id // "unknown"' 2>/dev/null)" || SESSION_ID="unknown"
+SESSION_ID="${SESSION_ID//[^A-Za-z0-9._-]/_}"   # sanitasi: session_id cuma boleh jadi NAMA file, bukan path
+[ -n "$SESSION_ID" ] || SESSION_ID="unknown"
 LOCK_DIR="$HOME/.claude/context-vault/session-locks"
 LOCK_FILE="$LOCK_DIR/$SESSION_ID"
 

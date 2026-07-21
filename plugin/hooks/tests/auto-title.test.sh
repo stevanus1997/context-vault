@@ -86,5 +86,16 @@ run "session lain tetap ke-judul" \
   "$(pj '/build checkout-v2' 'sess-bebas')" \
   "$(title 'build: checkout-v2')"
 
+run "session_id aneh disanitasi (no traversal)" \
+  "$(pj '/rename jahat' '../evil')" \
+  ""
+if [ -f "$HOME/.claude/context-vault/evil" ]; then
+  FAIL=$((FAIL+1)); echo "FAIL - traversal kejadian (file di luar session-locks)"
+elif [ -f "$HOME/.claude/context-vault/session-locks/.._evil" ]; then
+  PASS=$((PASS+1)); echo "ok   - lock tersanitasi di dalam session-locks"
+else
+  FAIL=$((FAIL+1)); echo "FAIL - lock tersanitasi tidak ditemukan"
+fi
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
