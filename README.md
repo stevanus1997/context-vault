@@ -10,6 +10,17 @@ AI-first product boilerplate — lapisan AI + knowledge (bukan kode) untuk menge
 /plugin install context-vault
 ```
 
+## Kimi Code
+
+Plugin ini juga bisa dipakai di [Kimi Code CLI](https://www.kimi.com/code/docs/en/) (MoonshotAI) lewat tree hasil generate `plugin-kimi/`. Source of truth tetap `plugin/` (format Claude Code) — **jangan edit `plugin-kimi/` langsung**; edit `plugin/` lalu regen.
+
+- **Install:** buka `kimi` → `/plugins` → tab **Custom** → install dari path `<repo-ini>/plugin-kimi` → `/reload`.
+- **Invokasi:** `/skill:<nama>` (mis. `/skill:guide`, `/skill:build checkout-v2`) — namespace beda dari Claude Code (`/context-vault:<nama>`).
+- **Belum tersedia di Kimi (fase 2):** auto-title session (`sessionTitle` = fitur Claude-only) dan `build --unattended` — `kimi -p` auto-approve SEMUA tool, rem allowlist/deny belum terbukti berlaku di mode itu, jadi skill `build` versi Kimi akan MENOLAK `--unattended`.
+- **Pola hybrid:** state produk hidup di disk (`control/`, `tasks.yaml`, git) — kerja interaktif bebas di Kimi/Claude; lane unattended tetap via Claude Code: `bash .claude/drive.sh <fitur>`.
+- **Ritual rilis:** tiap rilis plugin → `bash tools/build-kimi.sh` (regen) + `bash tools/tests/build-kimi.test.sh` (jaga sync) → commit `plugin-kimi/`.
+- Spec & keputusan desain: `docs/superpowers/specs/2026-07-21-kimi-code-port-design.md`.
+
 ## Mulai produk
 ```
 # punya ide masih MENTAH? mulai dari sini (business consultant, lalu auto lanjut ke init)
