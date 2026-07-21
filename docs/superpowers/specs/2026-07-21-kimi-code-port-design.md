@@ -165,3 +165,16 @@ Install `plugin-kimi/` via `/plugins` tab Custom → 24 skill kelisting; `/skill
 | Drift `plugin/` vs `plugin-kimi/` antar rilis | Regen-dari-nol; test version-sync; ritual rilis di README |
 | Generator tak sengaja nulis ke `plugin/` | Self-check porcelain `plugin/` kosong → exit 1 keras (D1, test #2) |
 | Edit nyasar langsung di `plugin-kimi/` | README GENERATED di root tree + regen berikutnya menimpa (by design) |
+
+---
+
+## 9. Addendum pasca-implementasi (2026-07-21)
+
+Temuan empiris acceptance `kimi` 0.28.1 (install nyata via `/plugins` tab Custom):
+
+1. **Skema manifest — D2 terkoreksi:** manifest minimal `{name, description, version, author}` DITERIMA (state ok, terdeteksi `kimi-plugin-dir`) TAPI **skills TIDAK auto-discover** — panel `/plugins` menunjukkan `Skills (0)`. Kimi WAJIB deklarasi eksplisit `"skills": "./skills/"` (beda dari Claude Code yang auto-discover folder `skills/`). Fix di generator (commit `72694ed`); sesudahnya panel menunjukkan `Skill instructions: present` + `Skills (1)` — angka itu = jumlah PATH yang dideklarasikan (folder `./skills/`), bukan jumlah skill individual; skill individual muncul di autocomplete `/skill:`.
+2. **`skillInstructions` dipakai (di luar rencana D2 minimal):** field manifest Kimi untuk instruksi harness level-plugin — diisi mapping subagent (critic/security-critic → `explore` + prompt dari `agents/*.md`, implementer → `coder`) + penegasan tolak `--unattended`. Preseden: plugin superpowers ter-install di mesin yang sama memakai pola ini dan terbukti jalan. Komplemen (bukan pengganti) pointer D4 + `rules/kimi-harness.md`.
+3. **Namespace invokasi:** `/skill:<nama>` (mis. `/skill:guide`) — sesuai asumsi D7; README akurat tanpa perubahan.
+4. **Substitusi `${KIMI_SKILL_DIR}`:** terbukti jalan — probe `/skill:ask` di folder produk membaca `rules/kimi-harness.md` via path absolut instalan (`~/.kimi-code/plugins/managed/context-vault/…`). Fallback prosa D3 TIDAK diperlukan.
+5. **Smoke:** `/skill:guide` jalan end-to-end; `/skill:ask` jalan di folder produk. Dikonfirmasi user di terminal.
+6. **Catatan operasional:** install Kimi = COPY ke `$KIMI_CODE_HOME/plugins/managed/<id>/` — perubahan di `plugin-kimi/` repo TIDAK otomatis kebawa; user perlu `/plugins` → Update (atau reinstall) + `/reload` tiap kali artefak di-regen.
