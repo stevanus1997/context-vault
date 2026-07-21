@@ -67,6 +67,9 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 | `/fix` | perilaku lama yang *salah* (defect) |
 | `/feature` | kapabilitas baru / gede / lintas-app / fondasional |
 
+## Auto-title session
+Session Claude Code otomatis di-judul dari skill kerja yang dipanggil — `/build checkout-v2` → session `build: checkout-v2` di `/resume`. Skill kerja terakhir menang; skill read-only (`/ask`, `/guide`, `/render-docs`, `/debt`) tidak mengubah judul. Butuh Claude Code v2.1.196+ (versi lama: no-op aman). Catatan: nama hasil `/rename` manual bertahan sampai skill kerja berikutnya dipanggil (batasan hook Claude Code saat ini).
+
 ## Tanya produk (read-only)
 ```
 /ask <pertanyaan>   # tanya APA PUN soal produk (greenfield/brownfield): knowledge-first, code-fallback
