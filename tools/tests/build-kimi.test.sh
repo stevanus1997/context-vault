@@ -46,6 +46,36 @@ NDST="$(find "$DST/skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
 # --- template ikut utuh termasuk dotdir .claude/ (produk hybrid, spec D6) ---
 [ -f "$DST/template/.claude/drive.sh" ] && ok "template/.claude/ ikut (drive.sh ada)" || bad "template/.claude/ tak ikut utuh"
 
+# --- 5. injeksi D4 & D5 ---
+[ -f "$DST/rules/kimi-harness.md" ] && grep -q 'explore' "$DST/rules/kimi-harness.md" \
+  && ok "rules/kimi-harness.md ada + mapping explore" || bad "rules/kimi-harness.md hilang/kosong"
+
+# Pointer: presence XOR — skill ber-'subagent' WAJIB punya pointer, yang tidak WAJIB bersih.
+# Daftar diturunkan dari grep atas SOURCE (mirror logika generator), bukan hardcode.
+PTR_OK=1
+for f in "$SRC"/skills/*/SKILL.md; do
+  name="$(basename "$(dirname "$f")")"
+  dst_f="$DST/skills/$name/SKILL.md"
+  if grep -qi 'subagent' "$f"; then
+    grep -q 'kimi-harness.md' "$dst_f" || { PTR_OK=0; echo "     (pointer HILANG di $name)"; }
+  else
+    grep -q 'kimi-harness.md' "$dst_f" && { PTR_OK=0; echo "     (pointer NYASAR di $name)"; }
+  fi
+done
+[ "$PTR_OK" = 1 ] && ok "pointer kimi-harness presence-XOR sesuai grep subagent" || bad "pointer kimi-harness tidak sesuai daftar grep"
+
+# Banner D5 di build/SKILL.md, posisinya DI ATAS H1 (tepat bawah frontmatter)
+BF="$DST/skills/build/SKILL.md"
+bline="$(grep -n 'HARNESS KIMI CODE' "$BF" 2>/dev/null | head -1 | cut -d: -f1)"
+hline="$(grep -n '^# ' "$BF" 2>/dev/null | head -1 | cut -d: -f1)"
+if [ -n "$bline" ] && [ -n "$hline" ] && [ "$bline" -lt "$hline" ]; then
+  ok "banner unattended di build/SKILL.md (di atas H1)"
+else bad "banner unattended hilang/salah posisi di build/SKILL.md"; fi
+
+# Note D5 di build/reference.md (setelah heading unattended pertama)
+grep -q 'Harness Kimi Code' "$DST/skills/build/reference.md" \
+  && ok "note unattended di build/reference.md" || bad "note unattended hilang di build/reference.md"
+
 # --- 7. deterministik: dua kali jalan → identik ---
 TMP="$(mktemp -d)"
 cp -R "$DST" "$TMP/first"

@@ -56,7 +56,56 @@ inject_below_frontmatter() { # <target-md> <file-teks-injeksi>
     }' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
 }
 
-# (Injeksi D4/D5 diisi Task 2 — urutan: pointer subagent dulu, lalu banner build.)
+# --- 6. rules/kimi-harness.md (spec D4) — mapping subagent → sub-agent bawaan Kimi ---
+cat > "$DST/rules/kimi-harness.md" <<'EOF'
+# Harness Kimi Code — mapping subagent
+
+Kimi Code TIDAK punya custom agent file (padanan `agents/*.md` Claude tak ada).
+Sub-agent yang tersedia hanya built-in: `coder` (baca+tulis+shell), `explore`
+(read-only), `plan` (desain, tanpa shell). Sub-agent TIDAK menerima custom
+system prompt → seluruh isi file agent dimasukkan sebagai bagian PROMPT tugas.
+
+| Dispatch di skill | Di Kimi Code |
+|---|---|
+| subagent `context-vault:critic` | sub-agent `explore` (read-only); prompt = SELURUH isi `agents/critic.md` di root plugin (baca via Read) + konteks tugas |
+| subagent `context-vault:security-critic` | sub-agent `explore`; prompt = SELURUH isi `agents/security-critic.md` di root plugin + diff/konteks |
+| implementer / worker nulis-kode (build, fix, dst) | sub-agent `coder` |
+| reviewer / reader read-only | sub-agent `explore` |
+
+Root plugin = dua level di atas folder skill yang sedang jalan (`${KIMI_SKILL_DIR}/../..`).
+EOF
+
+# --- 7. Pointer D4 — inject di SKILL.md yang menyebut 'subagent' (grep-driven, bukan hardcode) ---
+PTR_FILE="$(mktemp)"
+printf '%s\n' '> **Harness Kimi Code:** sebelum dispatch subagent apa pun, baca `${KIMI_SKILL_DIR}/../../rules/kimi-harness.md` (mapping critic/implementer → sub-agent bawaan Kimi).' > "$PTR_FILE"
+for f in "$DST"/skills/*/SKILL.md; do
+  grep -qi 'subagent' "$f" || continue
+  inject_below_frontmatter "$f" "$PTR_FILE"
+done
+rm -f "$PTR_FILE"
+
+# --- 8. Banner D5 — build/SKILL.md (jalan SESUDAH pointer → banner mendarat DI ATAS pointer) ---
+BANNER_FILE="$(mktemp)"
+cat > "$BANNER_FILE" <<'EOF'
+> ⛔ **HARNESS KIMI CODE — `--unattended` BELUM diporting (fase 2).**
+> `kimi -p` auto-approve SEMUA tool; rem allowlist/deny belum terbukti berlaku di mode itu.
+> Kalau user minta `build <fitur> --unattended` di sini: TOLAK, jelaskan alasan di atas,
+> lalu tawarkan build interaktif biasa ATAU lane unattended via Claude Code
+> (`bash .claude/drive.sh <fitur>`) di repo yang sama.
+EOF
+inject_below_frontmatter "$DST/skills/build/SKILL.md" "$BANNER_FILE"
+rm -f "$BANNER_FILE"
+
+# --- 8b. Note D5 — build/reference.md, sesudah heading pertama ber-'unattended' ---
+REF="$DST/skills/build/reference.md"
+grep -qiE '^#{1,6} .*unattended' "$REF" || die "anchor heading 'unattended' di build/reference.md tak ketemu — source berubah, sesuaikan generator"
+awk '
+  done==0 && /^#/ && tolower($0) ~ /unattended/ {
+    print; print ""
+    print "> ⛔ **Harness Kimi Code:** bagian unattended di file ini BELUM berlaku di Kimi — lihat banner di `SKILL.md` (fase 2)."
+    done=1; next
+  }
+  { print }' "$REF" > "$REF.tmp" && mv "$REF.tmp" "$REF"
 
 # --- 9. Self-checks (fail keras, jangan diam-diam) ---
 AFTER="$(git -C "$ROOT" status --porcelain -- plugin/)"
