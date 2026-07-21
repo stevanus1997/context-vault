@@ -21,7 +21,7 @@ Plugin context-vault berformat plugin Claude Code. Kebutuhan: plugin ini bisa di
 
 **Inventaris ke-Claude-an plugin saat ini:**
 
-- 37× `${CLAUDE_PLUGIN_ROOT}` di ~20 file (skills + rules) — nunjuk `rules/` & `template/`.
+- 60× kemunculan `${CLAUDE_PLUGIN_ROOT}` di 24 file (skills + rules) — nunjuk `rules/` & `template/`. (Koreksi audit final review 2026-07-21; angka awal "37× di ~20 file" undercount.)
 - `agents/critic.md` + `agents/security-critic.md` — subagent custom, dispatch dari ~10 skill.
 - `hooks/hooks.json` + `auto-title.sh` — bersandar `sessionTitle` UPS yang undocumented (lihat addendum spec auto-title).
 - `template/.claude/` — settings.json permissions format Claude, `drive.sh` hardcode `claude -p ... --permission-mode acceptEdits`, on-stop/on-permission hooks.

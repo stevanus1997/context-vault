@@ -18,7 +18,7 @@ Plugin ini juga bisa dipakai di [Kimi Code CLI](https://www.kimi.com/code/docs/e
 - **Invokasi:** `/skill:<nama>` (mis. `/skill:guide`, `/skill:build checkout-v2`) — namespace beda dari Claude Code (`/context-vault:<nama>`).
 - **Belum tersedia di Kimi (fase 2):** auto-title session (`sessionTitle` = fitur Claude-only) dan `build --unattended` — `kimi -p` auto-approve SEMUA tool, rem allowlist/deny belum terbukti berlaku di mode itu, jadi skill `build` versi Kimi akan MENOLAK `--unattended`.
 - **Pola hybrid:** state produk hidup di disk (`control/`, `tasks.yaml`, git) — kerja interaktif bebas di Kimi/Claude; lane unattended tetap via Claude Code: `bash .claude/drive.sh <fitur>`.
-- **Ritual rilis:** tiap rilis plugin → `bash tools/build-kimi.sh` (regen) + `bash tools/tests/build-kimi.test.sh` (jaga sync) → commit `plugin-kimi/`.
+- **Ritual rilis:** tiap rilis plugin → `bash tools/build-kimi.sh` (regen) + `bash tools/tests/build-kimi.test.sh` (jaga sync) → commit `plugin-kimi/`. Lalu di kimi: `/plugins` → **Update** plugin context-vault + `/reload` — install Kimi itu COPY ke `~/.kimi-code/plugins/managed/`, regen di repo tidak otomatis kebawa.
 - Spec & keputusan desain: `docs/superpowers/specs/2026-07-21-kimi-code-port-design.md`.
 
 ## Mulai produk
