@@ -29,6 +29,11 @@ if jq -e . "$MAN" >/dev/null 2>&1; then ok "manifest JSON valid"; else bad "mani
 if [ "$(jq -r .version "$MAN" 2>/dev/null)" = "$(jq -r .version "$SRC/.claude-plugin/plugin.json")" ]; then
   ok "version manifest == version source"
 else bad "version manifest != version source"; fi
+# Temuan empiris kimi 0.28.1: tanpa deklarasi eksplisit, /plugins nunjukin "Skills (0)"
+[ "$(jq -r '.skills // empty' "$MAN" 2>/dev/null)" = "./skills/" ] \
+  && ok "manifest deklarasi skills eksplisit" || bad "manifest tanpa deklarasi skills (Skills(0) di kimi)"
+[ -n "$(jq -r '.skillInstructions // empty' "$MAN" 2>/dev/null)" ] \
+  && ok "manifest skillInstructions terisi" || bad "manifest skillInstructions kosong"
 
 # --- 6. hooks/ & .claude-plugin/ TIDAK ikut; tree wajib ada ---
 [ ! -e "$DST/hooks" ]          && ok "hooks/ tidak ikut"          || bad "hooks/ ikut ke plugin-kimi/"

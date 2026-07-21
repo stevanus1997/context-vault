@@ -31,7 +31,17 @@ cp -R "$SRC/template" "$DST/template"
 find "$DST" -type f -name '*.md' -exec perl -pi -e 's|\$\{CLAUDE_PLUGIN_ROOT\}|\$\{KIMI_SKILL_DIR}/../..|g' {} +
 
 # --- 4. Manifest (spec D2): name/description/version/author sync dari source via jq ---
-jq '{name, description, version, author}' "$SRC/.claude-plugin/plugin.json" > "$DST/.kimi-plugin/plugin.json"
+# Temuan empiris kimi 0.28.1 (acceptance): skills TIDAK auto-discover — wajib deklarasi
+# eksplisit "skills": "./skills/". skillInstructions = mapping harness level-manifest
+# (pola plugin superpowers yang terbukti jalan di kimi versi sama; komplemen pointer D4).
+SKILL_INSTRUCTIONS='Mapping harness Kimi Code untuk skill context-vault:
+- Sebelum dispatch subagent apa pun, baca rules/kimi-harness.md di root plugin (dua level di atas folder skill yang sedang jalan).
+- Dispatch subagent context-vault:critic / context-vault:security-critic → tool Agent subagent_type "explore" dengan prompt = SELURUH isi agents/critic.md / agents/security-critic.md + konteks tugas.
+- Implementer/worker nulis-kode → subagent_type "coder"; reviewer/reader read-only → subagent_type "explore".
+- build <fitur> --unattended DITOLAK di Kimi Code (belum diporting — fase 2); tawarkan build interaktif atau lane unattended via Claude Code.'
+jq --arg si "$SKILL_INSTRUCTIONS" \
+   '{name, description, version, author, skills: "./skills/", skillInstructions: $si}' \
+   "$SRC/.claude-plugin/plugin.json" > "$DST/.kimi-plugin/plugin.json"
 
 # --- 5. README penanda GENERATED ---
 cat > "$DST/README.md" <<'EOF'
