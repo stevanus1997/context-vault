@@ -11,6 +11,20 @@ command -v jq >/dev/null 2>&1 || exit 0
 PROMPT="$(printf '%s' "$INPUT" | jq -r '.prompt // empty' 2>/dev/null)" || exit 0
 [ -n "$PROMPT" ] || exit 0
 
+SESSION_ID="$(printf '%s' "$INPUT" | jq -r '.session_id // "unknown"' 2>/dev/null)" || SESSION_ID="unknown"
+LOCK_DIR="$HOME/.claude/context-vault/session-locks"
+LOCK_FILE="$LOCK_DIR/$SESSION_ID"
+
+# /rename manual → kunci session ini, auto-judul berhenti (spec D5 tingkat 1).
+# Kalau /rename built-in tak pernah lewat hook, blok ini no-op alami (degradasi tingkat 2).
+case "$PROMPT" in
+  "/rename "*|"/rename")
+    mkdir -p "$LOCK_DIR" 2>/dev/null && : > "$LOCK_FILE" 2>/dev/null
+    find "$LOCK_DIR" -type f -mtime +30 -delete 2>/dev/null   # prune opportunistik
+    exit 0 ;;
+esac
+[ -f "$LOCK_FILE" ] && exit 0
+
 # Lapis 1: tag expansion <command-name>/<command-args>; Lapis 2: fallback slash mentah (spec D6)
 SKILL=""; ARGS=""
 if printf '%s' "$PROMPT" | grep -q '<command-name>'; then

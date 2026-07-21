@@ -68,5 +68,23 @@ run "fallback slash mentah non-whitelist → diam" \
   "$(pj '/help')" \
   ""
 
+# --- lock /rename (spec D5) ---
+run "/rename → diam + tulis lock" \
+  "$(pj '/rename eksperimen-gw' 'sess-lock')" \
+  ""
+if [ -f "$HOME/.claude/context-vault/session-locks/sess-lock" ]; then
+  PASS=$((PASS+1)); echo "ok   - lock file kebentuk"
+else
+  FAIL=$((FAIL+1)); echo "FAIL - lock file kebentuk (tidak ada)"
+fi
+
+run "session ke-lock → skill kerja diam" \
+  "$(pj '/build checkout-v2' 'sess-lock')" \
+  ""
+
+run "session lain tetap ke-judul" \
+  "$(pj '/build checkout-v2' 'sess-bebas')" \
+  "$(title 'build: checkout-v2')"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
