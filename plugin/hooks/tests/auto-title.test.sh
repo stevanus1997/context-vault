@@ -17,6 +17,10 @@ pj() { jq -cn --arg p "$1" --arg s "${2:-sess-default}" '{session_id:$s, hook_ev
 
 export HOME="$(mktemp -d)"   # isolasi lock dir (~/.claude/context-vault/session-locks)
 
+# NB: kasus tag <command-name>/<command-args> di bawah ini menguji lapis-1 (defensif) —
+# probe empiris 2026-07-21 (task-3-report.md) menunjukkan invokasi skill context-vault NYATA
+# tiba MENTAH tanpa tag apa pun (lihat kasus "prompt NYATA (probe empiris)" di bawah, yang
+# lewat lapis-2/fallback). Kasus tag dipertahankan sebagai jaga-jaga format CLI lain/mendatang.
 EXP_BUILD='<command-message>build is running…</command-message>
 <command-name>/context-vault:build</command-name>
 <command-args>checkout-v2</command-args>'
@@ -67,6 +71,10 @@ run "fallback slash mentah" \
 run "fallback slash mentah non-whitelist → diam" \
   "$(pj '/help')" \
   ""
+
+run "prompt NYATA (probe empiris 2026-07-21): /context-vault:build via fallback" \
+  "$(pj '/context-vault:build coba-probe')" \
+  "$(title 'build: coba-probe')"
 
 # --- lock /rename (spec D5) ---
 run "/rename → diam + tulis lock" \

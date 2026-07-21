@@ -18,7 +18,10 @@ LOCK_DIR="$HOME/.claude/context-vault/session-locks"
 LOCK_FILE="$LOCK_DIR/$SESSION_ID"
 
 # /rename manual → kunci session ini, auto-judul berhenti (spec D5 tingkat 1).
-# Kalau /rename built-in tak pernah lewat hook, blok ini no-op alami (degradasi tingkat 2).
+# Probe empiris 2026-07-21 (claude -p, lihat task-3-report.md): "/rename <nama>" TIDAK PERNAH
+# muncul di UserPromptSubmit — built-in /rename di-handle CLI sebelum hook, jadi TINGKAT 2
+# berlaku (degradasi jujur, lihat README). Blok ini tetap dipertahankan sebagai no-op aman:
+# kalau versi CLI mendatang mengubah perilaku ini, lock jalan tanpa perlu ubah kode.
 case "$PROMPT" in
   "/rename "*|"/rename")
     mkdir -p "$LOCK_DIR" 2>/dev/null && : > "$LOCK_FILE" 2>/dev/null
@@ -28,6 +31,9 @@ esac
 [ -f "$LOCK_FILE" ] && exit 0
 
 # Lapis 1: tag expansion <command-name>/<command-args>; Lapis 2: fallback slash mentah (spec D6)
+# Probe empiris 2026-07-21: invokasi skill context-vault (mis. "/context-vault:build coba-probe")
+# tiba di UserPromptSubmit MENTAH — tanpa tag apa pun. Lapis 1 dipertahankan defensif (jaga-jaga
+# CLI/command lain yang expand ke tag), lapis 2 adalah jalur nyata yang teramati.
 SKILL=""; ARGS=""
 if printf '%s' "$PROMPT" | grep -q '<command-name>'; then
   SKILL="$(printf '%s' "$PROMPT" | sed -n 's/.*<command-name>\([^<]*\)<\/command-name>.*/\1/p' | head -n1)"
