@@ -117,3 +117,14 @@ plugin/
 | Args aneh ngerusak JSON output | `jq` buat escape (D7) |
 | Hook error mblokir prompt user | selalu exit 0, gak pake `decision: block` (D7) |
 | Claude Code lama gak kenal `sessionTitle` | field diabaikan, no-op aman (D8) |
+
+---
+
+## 9. Addendum pasca-implementasi (2026-07-21)
+
+Temuan empiris selama implementasi yang meng-update asumsi desain:
+
+1. **D6 kebalik prioritasnya.** Invokasi skill context-vault sampai ke hook dalam bentuk MENTAH (`/context-vault:build x`) karena plugin ship *Skills*, bukan *Commands* — tag `<command-name>` tidak pernah muncul. Lapis-2 (fallback slash mentah) adalah jalur utama; lapis-1 dipertahankan sebagai defensif.
+2. **D5 Tingkat 2 yang berlaku.** `/rename` built-in ditangani CLI dan TIDAK pernah lewat `UserPromptSubmit`. Blok lock dipertahankan (no-op alami) sesuai keputusan desain.
+3. **`sessionTitle` di `UserPromptSubmit` = perilaku belum-terdokumentasi.** Docs resmi hooks (dicek 2026-07-21) mencantumkan `sessionTitle` HANYA untuk `SessionStart`. Empiris di CLI v2.1.216: emit dari `UserPromptSubmit` BEKERJA (transcript menulis `customTitle`, judul ke-set; kontrol `SessionStart` juga jalan). Konsekuensi: fitur bersandar pada perilaku yang bisa berubah — degradasinya aman (JSON valid ber-field tak dikenal di-ignore; diverifikasi tidak bocor jadi konteks model, record transcript bertipe `attachment`). Re-verifikasi singkat disarankan tiap upgrade besar Claude Code.
+4. **Guard prompt raksasa.** Review final menemukan ekspansi `%%` bash 3.2 macOS quadratic di prompt >100KB berawalan `/` — di-guard `head -n1` + batas 2048 char + `"timeout": 5` di hooks.json.

@@ -68,7 +68,7 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 | `/feature` | kapabilitas baru / gede / lintas-app / fondasional |
 
 ## Auto-title session
-Session Claude Code otomatis di-judul dari skill kerja yang dipanggil — `/build checkout-v2` → session `build: checkout-v2` di `/resume`. Skill kerja terakhir menang; skill read-only (`/ask`, `/guide`, `/render-docs`, `/debt`) tidak mengubah judul. Butuh Claude Code v2.1.196+ (versi lama: no-op aman). Catatan: nama hasil `/rename` manual bertahan sampai skill kerja berikutnya dipanggil (batasan hook Claude Code saat ini).
+Session Claude Code otomatis di-judul dari skill kerja yang dipanggil — `/build checkout-v2` → session `build: checkout-v2` di `/resume`. Skill kerja terakhir menang; skill read-only (`/ask`, `/guide`, `/render-docs`, `/debt`) tidak mengubah judul. Butuh Claude Code v2.1.196+ (versi lama: no-op aman). Catatan: nama hasil `/rename` manual bertahan sampai skill kerja berikutnya dipanggil (batasan hook Claude Code saat ini). Mekanisme `sessionTitle` via `UserPromptSubmit` diverifikasi empiris di v2.1.216 — docs resmi baru mencantumkannya untuk `SessionStart`; kalau CLI mendatang berubah, hook jadi no-op aman.
 
 ## Tanya produk (read-only)
 ```
