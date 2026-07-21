@@ -40,7 +40,8 @@ if printf '%s' "$PROMPT" | grep -q '<command-name>'; then
   ARGS="$(printf '%s' "$PROMPT" | sed -n 's/.*<command-args>\([^<]*\)<\/command-args>.*/\1/p' | head -n1)"
 else
   case "$PROMPT" in
-    /*) FIRST_LINE="${PROMPT%%$'\n'*}"
+    /*) FIRST_LINE="$(printf '%s' "$PROMPT" | head -n1)"
+        [ "${#FIRST_LINE}" -le 2048 ] || exit 0   # bukan invokasi skill; hindari O(n²) expansion bash 3.2 di prompt raksasa
         SKILL="${FIRST_LINE%% *}"
         [ "$SKILL" = "$FIRST_LINE" ] && ARGS="" || ARGS="${FIRST_LINE#* }" ;;
     *)  exit 0 ;;

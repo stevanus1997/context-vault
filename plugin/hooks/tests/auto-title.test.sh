@@ -6,10 +6,10 @@ HOOK="$(cd "$(dirname "$0")/.." && pwd)/auto-title.sh"
 PASS=0; FAIL=0
 
 run() { # run <nama> <json-stdin> <expected-stdout>
-  local name="$1" input="$2" expected="$3" actual
-  actual="$(printf '%s' "$input" | bash "$HOOK" 2>/dev/null)" || true
-  if [ "$actual" = "$expected" ]; then PASS=$((PASS+1)); echo "ok   - $name"
-  else FAIL=$((FAIL+1)); echo "FAIL - $name"; echo "    expected: $expected"; echo "    actual:   $actual"; fi
+  local name="$1" input="$2" expected="$3" actual rc
+  actual="$(printf '%s' "$input" | bash "$HOOK" 2>/dev/null)"; rc=$?
+  if [ "$actual" = "$expected" ] && [ "$rc" -eq 0 ]; then PASS=$((PASS+1)); echo "ok   - $name"
+  else FAIL=$((FAIL+1)); echo "FAIL - $name (rc=$rc)"; echo "    expected: $expected"; echo "    actual:   $actual"; fi
 }
 
 title() { jq -cn --arg t "$1" '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",sessionTitle:$t}}'; }
@@ -104,6 +104,20 @@ elif [ -f "$HOME/.claude/context-vault/session-locks/.._evil" ]; then
 else
   FAIL=$((FAIL+1)); echo "FAIL - lock tersanitasi tidak ditemukan"
 fi
+
+# --- robustness (final review) ---
+run "stdin bukan JSON → diam, exit 0" \
+  'not json {{{' \
+  ""
+
+run "stdin kosong → diam, exit 0" \
+  '' \
+  ""
+
+HUGE="/$(head -c 200000 /dev/zero | tr '\0' 'x')"
+run "prompt raksasa diawali / → diam, cepat, exit 0" \
+  "$(pj "$HUGE")" \
+  ""
 
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
