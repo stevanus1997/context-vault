@@ -29,7 +29,7 @@ Baca `control/business/*.md` (domain, flows, glossary, **`risks.md`** — kewaji
 Q&A ikuti `${CLAUDE_PLUGIN_ROOT}/rules/elicitation.md` (keputusan-bercabang satu per giliran, opsi bawa konsekuensi). Tanya level bisnis: siapa penggunanya, **alur yang dilewati pengguna (happy-path) + minimal 1 skenario edge/gagal**, aturan/kebijakan, hasil yang diharapkan, batasan. JANGAN tanya hal teknis (framework, DB, dll) — itu jatah skill `plan`.
 
 ### 4. Cek feasibility kasar
-Bandingkan kebutuhan fitur dengan `capabilities` app di `workspace.yaml`. Catat mana yang sudah didukung vs baru. **Sizing-check (advisory, M1):** bila kebutuhan fitur terlihat sebesar epik (banyak app/flow/milestone independen, scope melar), **usulkan** pecah jadi beberapa fitur lebih kecil — isi `epic` (pengelompok) + `depends_on` (urutan) di tiap `feature.yaml`. Usulan saja; user putuskan. Tak memblokir.
+Bandingkan kebutuhan fitur dengan `capabilities` app di `workspace.yaml`. Catat mana yang sudah didukung vs baru. **Sizing-check (advisory, M1):** bila kebutuhan fitur terlihat sebesar epik (banyak app/flow/milestone independen, scope melar), **usulkan** pecah jadi beberapa fitur lebih kecil — isi `epic` (pengelompok) + `depends_on` (urutan) di tiap `feature.yaml`. Bila usul pecah diterima & `control/roadmap.md` ada → sarankan re-run `/roadmap` supaya pecahan tercatat di backlog (advisory). Usulan saja; user putuskan. Tak memblokir.
 
 ### 5. Challenge Checklist (WAJIB tampilkan sebelum gate)
 - Bentrok aturan bisnis yang mana? (cek `control/business/`)
