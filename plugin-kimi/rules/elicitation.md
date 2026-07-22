@@ -1,7 +1,7 @@
 # Elicitation — Aturan Q&A & Penyajian Opsi
 
 Dirujuk skill yang meng-elicit keputusan dari user lewat Q&A discovery/design
-(intake, fanout, plan, tweak, fix). Berlaku saat skill MENANYAKAN keputusan ke
+(discovery, intake, fanout, plan, tweak, fix, roadmap). Berlaku saat skill MENANYAKAN keputusan ke
 user — BUKAN ke routing mekanis (mis. triage verba-list tweak/fix). Tujuan:
 keputusan yang MENYETIR hasil diambil sadar oleh user — bukan keborong jadi satu
 tembakan, bukan "asal pilih recommended".

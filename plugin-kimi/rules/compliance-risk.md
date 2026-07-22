@@ -1,9 +1,9 @@
 # Compliance Risk — risiko compliance durable (aturan share)
 
-Dirujuk skill yang menulis/membaca kewajiban compliance di `control/business/risks.md`: **penulis** `discovery` (seed carve-out); **pembaca** `architect` (kunci invarian PII/PCI), `intake` (constraint per-fitur + perkuat `sensitivity`), `ship`/`security-critic` (baseline red-team). **BUKAN langkah berdiri sendiri** — dokumentasi + prosedur ringan yang dipanggil pemanggil itu. Semua **advisory**.
+Dirujuk skill yang menulis/membaca kewajiban compliance di `control/business/risks.md`: **penulis** `discovery` (seed carve-out — kondisional opt-in); **pembaca** `architect` (kunci invarian PII/PCI), `intake` (constraint per-fitur + perkuat `sensitivity`), `ship`/`security-critic` (baseline red-team). **BUKAN langkah berdiri sendiri** — dokumentasi + prosedur ringan yang dipanggil pemanggil itu. Semua **advisory**.
 
 ## Penulis tunggal = discovery (pembaca read-only)
-Hanya `discovery` yang menulis `risks.md` (seed pra-init). **Tak ada pembaca yang menulis** `risks.md`. Bila pembaca menemukan gap compliance baru → **angkat ke user** (advisory), JANGAN tulis diam-diam. Efek "gap baru" beda per kelas pembaca (lihat Advisory di bawah).
+Hanya `discovery` yang menulis `risks.md` (seed pra-init; penulisan KONDISIONAL — opt-in operator di discovery step 4, heuristik pemicu + satu pertanyaan; `risks.md` skeleton/absen = jalur NORMAL, bukan anomali → pembaca pakai Degrade-ke-best-effort di bawah). **Tak ada pembaca yang menulis** `risks.md`. Bila pembaca menemukan gap compliance baru → **angkat ke user** (advisory), JANGAN tulis diam-diam. Efek "gap baru" beda per kelas pembaca (lihat Advisory di bawah).
 
 ## Batas carve-out (definisi tunggal)
 - **DURABLE ke `risks.md`:** kewajiban **compliance/regulasi** lepas-dari-fitur — PCI (kartu/bayar) · GDPR/privasi (data pribadi) · pajak (jurisdiksi/PPN) · KYC/AML (identitas) + regulasi sektor/jurisdiksi spesifik. Label `terverifikasi`/`asumsi` + sumber/alasan.

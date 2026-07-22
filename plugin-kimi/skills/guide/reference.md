@@ -6,17 +6,17 @@ Lapisan terkurasi untuk jawaban instan. Untuk **detail** satu skill, `guide` bac
 
 **Greenfield (ide masih mentah):**
 ```
-discovery → init → architect → wire → feature → breakdown → build → ship
+discovery → init → roadmap? → architect → wire → feature → breakdown → build → ship
 ```
 **Greenfield (ide sudah jelas):**
 ```
-init → architect → wire → feature → breakdown → build → ship
+init → roadmap? → architect → wire → feature → breakdown → build → ship
 ```
 **Brownfield (repo existing):**
 ```
 init → architect → extract(opsional) → wire → feature → breakdown → build → ship
 ```
-`feature` = konduktor yang menjalankan `intake → fanout → plan`. Lane samping bisa kapan saja: `fix` (bug), `tweak` (perubahan kecil), `debt` (utang teknis), `ask` (tanya produk), `drop` (batalin fitur).
+`feature` = konduktor yang menjalankan `intake → fanout → plan`. `roadmap?` = opsional — susun/re-plan backlog fitur terurut (`control/roadmap.md`); brownfield pun boleh panggil standalone kapan saja. Lane samping bisa kapan saja: `fix` (bug), `tweak` (perubahan kecil), `debt` (utang teknis), `ask` (tanya produk), `drop` (batalin fitur).
 
 ## Cheatsheet — kapan pakai apa
 
@@ -26,6 +26,7 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 | Mulai produk (ide jelas / adopsi repo existing) | `/init` |
 | Tetapkan stack & fondasi teknis | `/architect` |
 | Nyalain skeleton project (kosong-tapi-jalan) | `/wire` |
+| Susun / re-plan backlog fitur (mulai dari mana) | `/roadmap` |
 | Bikin kapabilitas/fitur baru | `/feature` |
 | Pecah plan → task kecil | `/breakdown` |
 | Eksekusi task → kode | `/build` |
@@ -60,8 +61,9 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 ## Katalog skill
 
 ### Pipeline utama (lifecycle produk)
-- `/discovery` — validasi ide mentah pra-init: riset pasar/kompetitor/monetisasi + verdict go/no-go, lalu auto lanjut `/init`.
+- `/discovery` — validasi ide mentah pra-init: Q&A visi operator dulu, baru riset pasar/kompetitor/monetisasi + verdict go/no-go (compliance conditional opt-in), lalu auto lanjut `/init` + tawaran `/roadmap`.
 - `/init` — mulai produk baru (greenfield) atau adopsi repo existing (monorepo / multi-repo alias polyrepo) ke context-vault.
+- `/roadmap` — (opsional) jembatan konsep→backlog: Q&A flow produk + fitur inti (MVP vs nanti) + urutan → `control/roadmap.md` (fitur · epic · depends_on · target; status turunan `feature.yaml`); re-runnable buat re-plan.
 - `/architect` — tetapkan (greenfield) / rekam (brownfield) fondasi teknis: stack per app + capabilities + konvensi + kunci invarian platform.
 - `/wire` — bring-up skeleton kosong-tapi-jalan: scaffold app + DB + wiring FE↔BE + env (gated).
 - `/feature` — konduktor fitur end-to-end: `intake → fanout → plan` dengan gate tiap tahap.
