@@ -53,7 +53,7 @@ SKILL="${SKILL#/}"; SKILL="${SKILL#context-vault:}"
 
 # whitelist skill kerja (spec D3) — di luar ini (termasuk ask/guide/render-docs/debt) → diam
 case "$SKILL" in
-  feature|intake|fanout|plan|breakdown|build|fix|tweak|ship|drop|add-app|add-package|add-integration|init|architect|wire|design-system|extract|upgrade|discovery) ;;
+  feature|intake|fanout|plan|breakdown|build|fix|tweak|ship|drop|add-app|add-package|add-integration|init|architect|wire|design-system|extract|upgrade|discovery|roadmap) ;;
   *) exit 0 ;;
 esac
 
