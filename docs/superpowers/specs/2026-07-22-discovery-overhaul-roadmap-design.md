@@ -121,6 +121,7 @@ Skill terpisah = balon (skill ke-26 yang selalu jalan bareng discovery). Visi me
 4. `plugin/skills/feature/SKILL.md` + `intake/SKILL.md` — integrasi §6.
 5. `plugin/.claude-plugin/plugin.json` — description + `0.22.0`; `.claude-plugin/marketplace.json` — description.
 6. `README.md` root — seksi skill + lifecycle + ritual rilis; `plugin/skills/guide/reference.md` — cheatsheet + peta pipeline (baris `init → roadmap? → architect`).
+6b. `plugin/hooks/auto-title.sh` — whitelist skill kerja (case-list hardcoded) + `|roadmap` — temuan implementasi 2026-07-22; roadmap = skill kerja, wajib ikut judul session.
 7. Regen `plugin-kimi/` via `tools/build-kimi.sh` (skills ter-copy utuh — roadmap ikut otomatis; verifikasi hitungan skill di output).
 8. Spec induk §12 TIDAK diedit — spec ini = addendum (pola addendum kimi `72ec743`).
 
