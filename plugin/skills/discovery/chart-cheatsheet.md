@@ -1,6 +1,6 @@
 # discovery — Chart Cheatsheet (render-time)
 
-Dibaca saat **langkah 5 (Render HTML)**. `template.html` itu visual-first: tiap section
+Dibaca saat **langkah 7 (Render HTML)**. `template.html` itu visual-first: tiap section
 punya minimal 1 elemen visual statik (HTML/CSS/SVG). Saat ganti angka contoh dengan data
 nyata, **hitung ulang geometri** sesuai aturan di bawah biar chart nggak meleset.
 
