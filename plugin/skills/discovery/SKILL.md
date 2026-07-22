@@ -7,7 +7,7 @@ description: Use saat punya ide produk MENTAH dan mau divalidasi jadi konsep pro
 
 Tujuan: ubah ide mentah jadi konsep produk yang tervalidasi (level STRATEGI, bukan fitur, NOL teknis), seed ke `control/business/` + hasilkan HTML strategis, lalu serahkan ke `init`.
 
-> Operator mungkin BUKAN orang produk/bisnis. Tugasmu MENYETIR: usulkan & riset, jangan cuma mewawancara. **Riset web WAJIB** — jangan andalkan ingatan. Baca `${CLAUDE_PLUGIN_ROOT}/skills/discovery/reference.md` (framework pertanyaan + aturan sitasi/label), pakai `${CLAUDE_PLUGIN_ROOT}/skills/discovery/template.html` sebagai desain HTML, dan `${CLAUDE_PLUGIN_ROOT}/skills/discovery/chart-cheatsheet.md` untuk geometri chart-nya.
+> Operator mungkin BUKAN orang produk/bisnis — tapi visinya tetap sumber kebenaran. Prinsip dibelah per-ranah (`reference.md` §A): **visi produk — operator menyetir**, kamu menggali & merekam (step 2, TANPA riset); **riset pasar — kamu menyetir**, usulkan & riset, jangan tanya kosong soal angka pasar. **Riset web WAJIB mulai step 3** — jangan andalkan ingatan. Baca `${CLAUDE_PLUGIN_ROOT}/skills/discovery/reference.md` (framework pertanyaan + aturan sitasi/label), pakai `${CLAUDE_PLUGIN_ROOT}/skills/discovery/template.html` sebagai desain HTML, dan `${CLAUDE_PLUGIN_ROOT}/skills/discovery/chart-cheatsheet.md` untuk geometri chart-nya.
 
 ## Langkah
 
@@ -36,7 +36,7 @@ Clone `${CLAUDE_PLUGIN_ROOT}/skills/discovery/template.html` APA ADANYA (CSS & s
 Suruh operator buka `./discovery-draft.html` & baca. Tampung feedback. Bila ada → balik ke langkah 2–5 (gali visi ulang / riset ulang / tajamkan) → regen HTML. ULANG sampai operator bilang **SEPAKAT**. JANGAN lanjut tanpa kata sepakat eksplisit.
 
 ### 9. Sepakat → init + seed (GATE)
-1. Jalankan alur skill `init`. Kamu SUDAH punya framing (nama produk + 1 kalimat + apps yang kebayang) dari langkah 1–5, jadi `init` skip Framing Q&A-nya (lihat klausa di `init` langkah 3). `init` deteksi topologi (gate-nya sendiri) → scaffold `control/` + `workspace.yaml` + `CLAUDE.md`.
+1. Jalankan alur skill `init`. Kamu SUDAH punya framing (nama produk + 1 kalimat + apps yang kebayang) dari langkah 1–5, jadi `init` skip Framing Q&A-nya (lihat klausa di `init` langkah 2). `init` deteksi topologi (gate-nya sendiri) → scaffold `control/` + `workspace.yaml` + `CLAUDE.md`.
 2. SEED `business/` (KONSERVATIF, hanya `terverifikasi` & durable — `reference.md` bagian D): `domain.md` (Produk/Pengguna/Nilai + `## Aturan Domain` awal bila jelas), `glossary.md` (istilah), `flows.md` (flow kunci bila ada), **`risks.md`** (HANYA bila asesmen compliance step 4 dijalankan — kewajiban dari seksi Risiko, `terverifikasi`/`asumsi`+sumber, carve-out M6, lihat `${CLAUDE_PLUGIN_ROOT}/rules/compliance-risk.md`; slot tak relevan → `N/A — alasan`; asesmen di-skip → JANGAN seed, biarkan `risks.md` skeleton — jalur degrade normal pembaca M6). Yang `asumsi`/`spekulatif` & analisis pasar JANGAN dimasukkan (kecuali kewajiban compliance → `risks.md`).
 3. Pindahkan HTML final: `./discovery-draft.html` → `control/docs/discovery.html`.
 4. Ringkas hasil + **tawarkan chain `/roadmap`** (susun backlog fitur — konteks lagi hangat; boleh skip), lalu sarankan `architect` (fondasi teknis).

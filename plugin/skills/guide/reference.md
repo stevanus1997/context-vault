@@ -24,9 +24,9 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 |---|---|
 | Validasi ide yang masih mentah | `/discovery` |
 | Mulai produk (ide jelas / adopsi repo existing) | `/init` |
+| Susun / re-plan backlog fitur (mulai dari mana) | `/roadmap` |
 | Tetapkan stack & fondasi teknis | `/architect` |
 | Nyalain skeleton project (kosong-tapi-jalan) | `/wire` |
-| Susun / re-plan backlog fitur (mulai dari mana) | `/roadmap` |
 | Bikin kapabilitas/fitur baru | `/feature` |
 | Pecah plan → task kecil | `/breakdown` |
 | Eksekusi task → kode | `/build` |

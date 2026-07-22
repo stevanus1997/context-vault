@@ -33,7 +33,7 @@ Tulis `control/roadmap.md`:
 > Ditulis skill roadmap. Status fitur TIDAK disimpan di sini — turunan control/features/*/feature.yaml.
 
 ## Flow produk
-<jalur pengguna inti, berurutan>
+<jalur pengguna inti, berurutan: daftar → … → dapat nilai>
 
 ## Backlog terurut
 | # | Fitur | Tujuan | Epic | depends_on | Target |

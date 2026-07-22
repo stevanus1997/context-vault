@@ -546,3 +546,12 @@ git commit -m "chore(kimi): regen plugin-kimi 0.22.0 — 25 skills (masuk roadma
 - Prefill `epic`/`depends_on` jalur intake-dipanggil-langsung — batas sadar spec §6/§FLAG.
 - Spec induk §12 TIDAK diedit — spec 2026-07-22 = addendum (pola kimi `72ec743`).
 - Pointer lama `(lihat klausa di `init` langkah 3)` di discovery step 9 — pre-existing (framing klausa sebenarnya di init langkah 2), DI LUAR scope; bila mau, FLAG terpisah.
+
+---
+
+## Post-exec notes (verifikasi 2026-07-22, sesi terpisah — battery + 3 verifier adversarial)
+
+- Eksekusi landed 11 commit (`8bfb173`…`b742912`); battery hijau, `build-kimi.test.sh` 21 pass, `auto-title.test.sh` 20 pass, versi 0.22.0 sinkron 3 tempat + manifest kimi.
+- **Penyimpangan benar eksekutor:** `chart-cheatsheet.md` ikut renumber "langkah 5→7 (Render HTML)" (commit `bfda382`) — file ini luput dari peta FILE→task & constraint no-renumber plan; battery Task 12 `grep "langkah 7" → kosong` OBSOLETE terhadap state benar (1 hit sah di chart-cheatsheet.md:3 = rujukan baru yang benar).
+- **Errata battery plan:** Task 1 expected `grep -Fc 'turunan control/features/*/feature.yaml'` = 2 keliru (blockquote pakai frasa "diturunkan dari" → hasil benar = 1); Task 10 `grep -c roadmap README.md ≥8` = 7 baris (konten tetap lengkap).
+- **Temuan review pasca-eksekusi (fix commit follow-up):** blockquote pembuka `discovery/SKILL.md` masih prinsip MENYETIR lama (kontradiksi step 2) → dibelah per-ranah; pointer `init` "langkah 3" → "langkah 2"; placeholder Flow produk `roadmap/SKILL.md` disamakan spec ("daftar → … → dapat nilai"); row cheatsheet guide `/roadmap` dipindah setelah `/init` (konsisten peta flow & katalog).
