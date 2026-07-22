@@ -10,6 +10,8 @@ Tujuan: menyetir pipeline fitur dari ide sampai plan siap-eksekusi. Jalankan dar
 ## Langkah
 
 ### 1. Buat folder & status fitur
+**Roadmap-aware (bila `control/roadmap.md` ada; absen → skip diam-diam, jalan seperti biasa):** dipanggil TANPA nama fitur → tampilkan backlog + status turunan (baca `status` tiap `features/<fitur>/feature.yaml`; roadmap TIDAK menyimpan status) dan sarankan fitur berikutnya yang belum shipped — operator tetap bebas milih lain. Dipanggil DENGAN nama — nama ada di roadmap → **prefill** `epic`/`depends_on` `feature.yaml` di bawah dari baris roadmap-nya (user konfirmasi di gate intake seperti biasa); tak ada di roadmap → catatan advisory "tak tercatat di roadmap — lanjut saja; re-run `/roadmap` bila mau dicatat", lalu jalan normal. Roadmap = saran, BUKAN palang.
+
 Buat `control/features/<nama>/feature.yaml`:
 ```yaml
 name: <nama>
