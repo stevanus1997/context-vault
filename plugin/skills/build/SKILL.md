@@ -1,6 +1,6 @@
 ---
 name: build
-description: Use untuk mengeksekusi tasks.yaml sebuah fitur (status active) jadi kode lulus-test — dispatch implementer subagent per task (TDD), review dua-verdict (spec+quality, satu reviewer), gate per unit/milestone, simplify pass final, lalu siap di-ship. Resumable lintas-sesi. Trigger — "build <fitur>", "implement <fitur>", "kerjain <fitur>", "build <fitur> unattended" (mode tanpa pengawasan — auto-approve segmen risk rendah, lihat step 6). Jalankan dari root produk yang punya control/.
+description: Use untuk mengeksekusi tasks.yaml sebuah fitur (status active) jadi kode lulus-test — dispatch implementer subagent per task (TDD), review dua-verdict (spec+quality, satu reviewer), gate per unit/milestone, simplify pass final, lalu siap di-ship. Resumable lintas-sesi. Trigger — "build <fitur>", "implement <fitur>", "kerjain <fitur>", "build <fitur> unattended" (mode tanpa pengawasan — gate ditunda ke antrian review gates.yaml, blocker cuma nahan subtree-nya, lihat step 6 + reference §I). Jalankan dari root produk yang punya control/.
 ---
 
 # build — Eksekusi `tasks.yaml` (orchestrator)
