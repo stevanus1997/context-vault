@@ -33,7 +33,7 @@ milestones:
         actions:                   # OPSIONAL — kerja non-file; build yang EKSEKUSI + VERIFIKASI
           - install: <pkg>         #   build: `npm install <pkg>` (auto), verifikasi masuk package.json
           - cmd: <perintah>        #   perintah lain non-destruktif (auto), mis. "npx prisma generate"
-          - migrate: <deskripsi>   #   DESTRUKTIF → build TAMPILKAN + GATE sebelum apply (jangan auto)
+          - migrate: <deskripsi>   #   build: attended = TAMPILKAN + GATE sebelum apply; unattended = additive auto-apply (bila opt-in allowlist wire 5.5), destructive/backfill = hold needs_human
             kind: additive|destructive|backfill   # migrate.kind (action-scoped, BEDA dari kind: feat|fix|debt level-task) — WAJIB tugas migrate
             affects: [Order, Order.status]         # tabel (+ Table.kolom bila ngerusak kolom) — basis gate dampak H3
           - env: [VAR1, VAR2]      #   build tulis var ke .env (nilai dari manual:/prompt user)
@@ -47,6 +47,7 @@ milestones:
         deps: []                   # id task lain yang harus done dulu
         status: pending            # pending | in_progress | done | blocked | needs_human
         commits: [<base7>..<head7>, ...]   # OPSIONAL — DIISI build saat done (rentang commit per repo tersentuh, audit task→commit); bukan dari breakdown
+        hold: "<alasan 1 baris>"           # OPSIONAL — DIISI build saat needs_human BUKAN-karena-manual: (migrate destructive/backfill | allowlist migrate absen | NEEDS_CONTEXT: <pertanyaan> | konflik <invariant>); dihapus saat keluar needs_human; bukan dari breakdown (build/reference.md §I)
       # Task integrasi cross-app (lihat §D-3 & spec S2): menjalankan >1 app bareng
       - id: T_INT
         unit: integration           # pseudo-unit — gate-nya membentang beberapa tree, tak punya path sendiri
