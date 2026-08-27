@@ -5,6 +5,7 @@
 **Scope:** build (step 1–7a + lapor-keluar) · artefak baru `gates.yaml` · `drive.sh` · `wire` 5.5 + `upgrade` (opt-in allowlist migrate) · `intake`/`feature` (arti `risk`) · `ship` (tolak antrian belum kosong) · doc-sync
 **Menyusul / mengoreksi:** `2026-06-06-m7-graduated-autonomy-design.md` (D4 + floor `risk:high`), `2026-06-18-unattended-risk-floor-decouple-design.md` (§6 "granularitas per-segmen — out of scope")
 **Amandemen arahan M7:** "JANGAN batch/sticky-approve" **dipertegas, bukan dibatalkan** — approve tetap **per gate** (tidak sticky); yang di-batch hanya **waktunya** (drain pagi). Lintas-app sticky tetap dilarang.
+**Koreksi pasca-verifikasi 2026-08-27 (diedit di tempat, tiap edit bertanda koreksi):** §3.2 contoh skema → `fitur-x` + kosakata `reason` (+debt fondasional); §3.3 contoh penanda stop + pintu ke-4 unattended; §3.4 filter blast-radius `files:` ATAU `deps:`; §9.4 angka `login`/`generate-website`.
 
 ---
 
@@ -70,7 +71,7 @@ gates:
     status: queued                  # queued | approved | revised | auto
     reason: "floor-scan T1 (origin/redirect), T2 (session/token)"
     #   ATAU "risk:high" | "ddl additive T7 (auto-applied)" | "ddl undeclared T9 (TIDAK di-apply)"
-    #   | "penyimpangan → corrective T13" | "smoke gagal: POST /login 500" | "bersih (risk:normal, floor-scan nihil)"
+    #   | "penyimpangan → corrective T13" | "smoke gagal: POST /login 500" | "bersih (risk:normal, floor-scan nihil)" | "debt fondasional T9: <1 baris>"
     critic: .claude/build/fitur-x/gate-G1-critic.md    # OPSIONAL — laporan security-critic (scratch)
     impact: .claude/build/fitur-x/gate-G1-impact.md    # OPSIONAL — laporan migration-impact (bila ada ddl)
     smoke: "no runnable surface"                     # OPSIONAL — ringkas observasi Part B
@@ -140,7 +141,7 @@ Segmen due → evaluasi seperti sekarang (floor-scan verba+DDL, `risk` efektif, 
 - **`risk:high` / floor-scan / DDL / penyimpangan / smoke gagal** → entri `queued` (alasan spesifik) → bila alasan verba keamanan/uang ATAU `sensitivity` non-kosong → dispatch **`security-critic`** (agent existing, read-only; input = path diff per task + `invariants`/`conventions`/`integrations`/`risks`) → `gate-Gn-critic.md` → lanjut. Critic tak menghalangi dispatch task berikutnya; wajib selesai sebelum `last-run.md` ditulis. Critic **tidak** dihitung bobot cap-volume.
 - **Penyimpangan / smoke gagal** → disiplin fix embed otomatis (reproduce → root-cause → corrective `kind: fix` ke `tasks.yaml`, **milestone yang sama**) → gate `queued` "penyimpangan → corrective Tn". Corrective kelar → segmen due lagi → entri gate baru.
 - **Undeclared DDL** → `queued` "ddl undeclared Tn (TIDAK di-apply)".
-- Pintu ke-4 (debt), guard smoke lintas-app (lane): nol perubahan.
+- Pintu ke-4 (debt): fondasional saat unattended → APPEND `open` `owner: foundation` ke `control/debt.yaml` + gate segmen `queued` "debt fondasional Tn: <1 baris>" (drain pagi memutuskan route-nya — koreksi 2026-08-27 pasca-review); guard smoke lintas-app (lane): nol perubahan.
 - Challenge checklist **tidak disimpan** malam itu — drain mengevaluasi ulang live.
 
 **Step 7 / 7a**
@@ -161,7 +162,7 @@ Segmen due → evaluasi seperti sekarang (floor-scan verba+DDL, `risk` efektif, 
 4. **Blocker** (`needs_human`/`blocked`) sesudahnya.
 5. Daftar `auto` ringkas, nol aksi.
 
-**Tiap gate = UX gate step 6 + bukti semalam:** header (segmen · task · commits · alasan · tanggal) · diff per task · hasil test + "dibangun vs task" · **Challenge checklist dievaluasi live** · temuan security-critic (hilang → jalankan sekarang) · laporan migration-impact bila ada · observasi smoke · **"Kalau direvisi, yang kena:"** = task yang dibangun *sesudah* gate ini — yaitu (a) task milik entri gate ber-G-id **lebih besar**, plus (b) task `done` yang belum masuk entri gate mana pun (segmennya belum due) — yang `files:`-nya tumpang-tindih dengan `files:` task gate ini ATAU punya jalur `deps:` (langsung/transitif) ke salah satu task gate ini (deterministik dari `gates.yaml` + `tasks.yaml`; superset, tak pernah under-report — koreksi 2026-08-27 pasca-verifikasi: filter `files:` saja cuma menghasilkan {T13, T15} untuk contoh ini, karena konsumen kontrak `produces:` tak mengedit file produsennya; contoh G1 `login`: T1 → T4, T5, T9, T10, T13, T15 ⊂ hasil aturan gabungan, 11 task) · "Coba sendiri" Part A · → **approve / revisi** — **per gate, tanpa "approve semua"**.
+**Tiap gate = UX gate step 6 + bukti semalam:** header (segmen · task · commits · alasan · tanggal) · diff per task · hasil test + "dibangun vs task" · **Challenge checklist dievaluasi live** · temuan security-critic (hilang → jalankan sekarang) · laporan migration-impact bila ada · observasi smoke · **"Kalau direvisi, yang kena:"** = task yang dibangun *sesudah* gate ini — yaitu (a) task milik entri gate ber-G-id **lebih besar**, plus (b) task `done` yang belum masuk entri gate mana pun (segmennya belum due) — yang `files:`-nya tumpang-tindih dengan `files:` task gate ini ATAU punya jalur `deps:` (langsung/transitif) ke salah satu task gate ini (deterministik dari `gates.yaml` + `tasks.yaml`; superset — under-report hanya bila `deps:` bolong — koreksi 2026-08-27 pasca-verifikasi: filter `files:` saja cuma menghasilkan {T13, T15} untuk contoh ini, karena konsumen kontrak `produces:` tak mengedit file produsennya; contoh G1 `login`: T1 → T4, T5, T9, T10, T13, T15 ⊂ hasil aturan gabungan, 11 task) · "Coba sendiri" Part A · → **approve / revisi** — **per gate, tanpa "approve semua"**.
 
 **Keputusan:**
 - **approve** → `approved` + `decided_at` + `decision: approve`.
