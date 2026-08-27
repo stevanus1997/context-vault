@@ -26,6 +26,7 @@ Tentukan domain pertanyaan, buka **hanya** file yang relevan (bukan semua `contr
 | Konvensi lintas-app | `conventions.md` |
 | Vendor eksternal (arah/mode/dipakai-di) | `integrations.md` |
 | Status: fitur apa saja, draft/active/shipped, perilaku 1 fitur | `features/*/feature.yaml` (+ `business.md`) |
+| Antrian gate unattended: "ada yang nunggu review gw?", "kenapa build berhenti semalam" | `features/*/gates.yaml` (`queued`/`approved`/`revised`/`auto`) + `features/*/last-run.md` (header `outcome`/`review`/`blockers`) |
 | Bug / known-issues / riwayat fix | `fixes/*/fix.yaml` (+ `notes.md`) |
 | Feedback / sinyal lapangan (keluhan/incident/request) | `feedback/*.md` |
 | Utang teknis (yang ditunda sadar — "ada utang apa", "kenapa belum dibenerin") | `control/debt.yaml` (status diturunkan: silang `pays_debt` di `tasks.yaml`) |
