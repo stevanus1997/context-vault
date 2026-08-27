@@ -61,7 +61,7 @@ Alternatif "tunda gate, tapi dependents ikut nunggu" ditolak operator: untuk fit
 **`control/features/<fitur>/gates.yaml`** — penulis tunggal `build`; ke-commit bareng `control/` (durable, resumable, pulih dari git seperti `tasks.yaml`). Hanya work-item **fitur** (fix selalu attended → tidak punya).
 
 ```yaml
-feature: login
+feature: fitur-x
 gates:
   - id: G1                          # urut kronologis penulisan (G1, G2, …); satu segmen boleh muncul >1 kali (per due-event)
     segment: web×M1                 # <unit>×<milestone> | <unit>×<milestone>/<task-id> (cadence per-task §D) | integration×<task-id> | simplify (7a)
@@ -71,8 +71,8 @@ gates:
     reason: "floor-scan T1 (origin/redirect), T2 (session/token)"
     #   ATAU "risk:high" | "ddl additive T7 (auto-applied)" | "ddl undeclared T9 (TIDAK di-apply)"
     #   | "penyimpangan → corrective T13" | "smoke gagal: POST /login 500" | "bersih (risk:normal, floor-scan nihil)"
-    critic: .claude/build/login/gate-G1-critic.md    # OPSIONAL — laporan security-critic (scratch)
-    impact: .claude/build/login/gate-G1-impact.md    # OPSIONAL — laporan migration-impact (bila ada ddl)
+    critic: .claude/build/fitur-x/gate-G1-critic.md    # OPSIONAL — laporan security-critic (scratch)
+    impact: .claude/build/fitur-x/gate-G1-impact.md    # OPSIONAL — laporan migration-impact (bila ada ddl)
     smoke: "no runnable surface"                     # OPSIONAL — ringkas observasi Part B
     queued_at: 2026-08-27           # tanggal entri ditulis (juga untuk `auto`)
     decided_at: 2026-08-28          # diisi saat drain
@@ -148,7 +148,7 @@ Segmen due → evaluasi seperti sekarang (floor-scan verba+DDL, `risk` efektif, 
 - Tak ada `queued` (semua `auto`) → 7a seperti sekarang; floor kena → gate `simplify` `queued` → `review: 1`.
 - `done` = semua `done` + antrian kosong + 7a clear.
 
-**Lapor-keluar:** presedensi §3.1; `.unattended-stop` satu baris (mis. *"review: 6 gate + 1 blocker — build login"*); banner, notif via hook: nol perubahan mekanik.
+**Lapor-keluar:** presedensi §3.1; `.unattended-stop` satu baris (mis. *"review: 6 gate + 1 blocker — build fitur-x"*); banner, notif via hook: nol perubahan mekanik.
 
 ### 3.4 Alur pagi — drain (attended)
 

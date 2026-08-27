@@ -145,7 +145,7 @@ Tujuan: run hands-off TAK berhenti DIAM — manusia dikabari saat dibutuhkan, bu
 
 **Tiga artefak (ditulis `build`):**
 1. **Penanda mode** `<root>/.claude/.unattended` — ditulis di AWAL run unattended (step 1); berarti "ada run hands-off berjalan, kabari kalau beku". Di-clear saat run ATTENDED (self-heal penanda basi dari run yang ke-abort) & dihapus hook `on-stop` saat run berhenti.
-2. **Penanda stop** `<root>/.claude/.unattended-stop` — ditulis TEPAT sebelum mengakhiri turn di SETIAP titik STOP (cap-volume / tak ada task READY — antrian & blocker / abnormal / selesai — pemetaan SKILL step 1), isi = SATU baris alasan (mis. `review: 6 gate + 1 blocker — build login`). Hanya ditulis bila run mode unattended.
+2. **Penanda stop** `<root>/.claude/.unattended-stop` — ditulis TEPAT sebelum mengakhiri turn di SETIAP titik STOP (cap-volume / tak ada task READY — antrian & blocker / abnormal / selesai — pemetaan SKILL step 1), isi = SATU baris alasan (mis. `review: 6 gate + 1 blocker — build fitur-x`). Hanya ditulis bila run mode unattended.
 3. **Laporan** `<work-item>/last-run.md` — ditulis di tiap stop. **Baris pertama WAJIB header mesin** (kebaca driver outer-loop §H), lalu prosa human-readable:
    ```
    outcome: continue|review|done|halt
@@ -207,7 +207,7 @@ Driver menumpang floor (langkah-1 §D) + notif (§G); ia **tak pernah** melongga
 
 ### Skema `<work-item>/gates.yaml` (penulis tunggal `build`; ke-commit bareng `control/`; HANYA work-item fitur)
 ```yaml
-feature: login
+feature: fitur-x
 gates:
   - id: G1                          # urut kronologis penulisan; satu segmen boleh muncul >1 kali (per due-event, mis. sesudah corrective)
     segment: web×M1                 # <unit>×<milestone> | <unit>×<milestone>/<task-id> (cadence per-task §D) | integration×<task-id> | simplify (7a)
@@ -217,8 +217,8 @@ gates:
     reason: "floor-scan T1 (origin/redirect), T2 (session/token)"
     #   ATAU "risk:high" | "ddl additive T7 (auto-applied)" | "ddl undeclared T9 (TIDAK di-apply)"
     #   | "penyimpangan → corrective T13" | "smoke gagal: POST /login 500" | "bersih (risk:normal, floor-scan nihil)"
-    critic: .claude/build/login/gate-G1-critic.md    # OPSIONAL — laporan security-critic (scratch)
-    impact: .claude/build/login/gate-G1-impact.md    # OPSIONAL — laporan migration-impact (bila ada ddl)
+    critic: .claude/build/fitur-x/gate-G1-critic.md    # OPSIONAL — laporan security-critic (scratch)
+    impact: .claude/build/fitur-x/gate-G1-impact.md    # OPSIONAL — laporan migration-impact (bila ada ddl)
     smoke: "no runnable surface"                     # OPSIONAL — ringkas observasi Part B
     queued_at: 2026-08-27           # tanggal entri ditulis (juga untuk `auto`)
     decided_at: 2026-08-28          # diisi saat drain
