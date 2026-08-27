@@ -116,7 +116,7 @@ Dua prasyarat unattended bila absen bikin freeze ronde-1 **terlepas dari risk**:
 
 ## 6. Di luar scope (fase lanjutan, BUKAN sekarang)
 
-- **Risk granularitas per-segmen/per-milestone** (login/checkout dapat sebagian unattended) — lebih berat: nambah field `tasks.yaml`, `breakdown` nge-tag per-milestone, **wajib eval akurasi tagger** dulu, plus masalah *topological collapse* (UI aman depend ke API sensitif). Dicatat sebagai kandidat lanjutan; tidak dikerjakan di iterasi ini.
+- **Risk granularitas per-segmen/per-milestone** (login/checkout dapat sebagian unattended) — lebih berat: nambah field `tasks.yaml`, `breakdown` nge-tag per-milestone, **wajib eval akurasi tagger** dulu, plus masalah *topological collapse* (UI aman depend ke API sensitif). Dicatat sebagai kandidat lanjutan; tidak dikerjakan di iterasi ini. **Menyusul 2026-08-27:** kebutuhan ini terpenuhi lewat jalur BERBEDA — antrian gate `gates.yaml` (gate ditunda, bukan tag per-task), lihat `2026-08-27-build-deferred-gate-review-queue-design.md`.
 
 ---
 

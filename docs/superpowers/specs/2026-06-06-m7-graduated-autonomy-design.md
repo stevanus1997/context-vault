@@ -184,3 +184,26 @@ unattended (notify/allowlist) via wire/upgrade + backstop `drive.sh`.
 Spec lengkap: `docs/superpowers/specs/2026-06-18-unattended-risk-floor-decouple-design.md`.
 Plan: `docs/superpowers/plans/2026-06-18-unattended-risk-floor-decouple.md`.
 (Sejarah D4 di atas DIPERTAHANKAN — ini catatan menyusul, bukan tulis-ulang.)
+
+---
+
+## Amendemen 2026-08-27 — gate ditunda ke antrian review (`gates.yaml`)
+
+Operator lapor build tetap terhalang kehadiran manusia (`risk:high` = halt ronde-1;
+floor-scan + `migrate` = stop-the-world; `drive.sh` mati di `halt`). Perubahan:
+
+- **Gate ditunda, bukan stop.** Gate memeriksa kode yang sudah jadi → persetujuan
+  diantrikan ke `<work-item>/gates.yaml` (`queued|approved|revised|auto`), build lanjut
+  membangun di atasnya. Tiga kelas titik-manusia: A gate review (ditunda) · B blocker
+  (subtree nunggu via `needs_human`/`blocked` + `hold:`) · C auto.
+- **`risk:high` BUKAN kill-switch** — = semua gate segmen diantrikan. D4/2026-06-18 tetap
+  berlaku untuk floor payments-movement, kini non-blocking.
+- **Migrate by `kind`:** additive auto-apply (opt-in allowlist `wire` 5.5 + cross-check DDL);
+  destructive/backfill hold `needs_human`.
+- **`outcome: review`** baru; `halt` hanya abnormal. `ship` menolak selama ada `queued`.
+- **Arahan "JANGAN batch/sticky-approve" DIPERTEGAS, bukan dibatalkan:** approve tetap
+  per gate (tak sticky); yang di-batch hanya WAKTUNYA (drain pagi). Lintas-app sticky
+  tetap dilarang (M7-FLAG-B).
+
+Spec: `docs/superpowers/specs/2026-08-27-build-deferred-gate-review-queue-design.md`.
+Plan: `docs/superpowers/plans/2026-08-27-build-deferred-gate-review-queue.md`.
