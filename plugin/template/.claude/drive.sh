@@ -8,9 +8,12 @@
 # makan jatah lebih cepat, bukan sekadar hitung jumlah task) supaya tiap proses kecil &
 # mati sebelum context membengkak; driver ini = rem KERAS di luar model.
 #
-# Berhenti saat: outcome=done (selesai) / outcome=halt (butuh manusia — TAK di-restart) /
-# satu putaran nol-kemajuan (mandek) / lewat batas waktu. Sinyal dibaca dari header
-# mesin di control/features/<fitur>/last-run.md (lihat build reference §G & §H).
+# Berhenti saat: outcome=done (selesai) / outcome=review (gate/blocker nunggu manusia —
+# drain pagi via `build <fitur>` attended, lalu jalankan lagi) / outcome=halt (ABNORMAL:
+# circuit-breaker/env/allowlist/state — TAK di-restart) / satu putaran nol-kemajuan (mandek)
+# / lewat batas waktu. Sinyal dibaca dari header mesin di control/features/<fitur>/last-run.md
+# (lihat build reference §G, §H, §I). Gate yang butuh manusia TIDAK menghentikan build —
+# ia diantrikan ke gates.yaml; build lanjut sampai tak ada task yang bisa dibangun.
 #
 # Prasyarat: plugin context-vault ter-install + `claude` CLI di PATH + allowlist harness
 # sudah diisi (wire 5.5 + `git -C <path>` ENUMERASI per-path, BUKAN `git -C *` yg mati) +
@@ -73,10 +76,15 @@ while :; do
   outcome="$(grep -m1 '^outcome:' "$REPORT" | awk '{print $2}')"
   done_now="$(grep -m1 '^done:'    "$REPORT" | awk '{print $2}')"
   [[ "$done_now" =~ ^[0-9]+$ ]] || done_now=0   # header malformed/non-numerik → 0 (fail-safe: nol-kemajuan bakal nge-bail)
+  rev_n="$(grep -m1 '^review:'   "$REPORT" | awk '{print $2}')"   # opsional (header lama tak punya) → "?"
+  blk_n="$(grep -m1 '^blockers:' "$REPORT" | awk '{print $2}')"
+  [[ "${rev_n:-}" =~ ^[0-9]+$ ]] || rev_n="?"
+  [[ "${blk_n:-}" =~ ^[0-9]+$ ]] || blk_n="?"
 
   case "$outcome" in
-    done) echo "[drive] outcome=done → SELESAI, fitur siap di-ship 🎉"; break ;;
-    halt) echo "[drive] outcome=halt → butuh manusia 🔔 (floor; TIDAK di-restart)"; break ;;
+    done)   echo "[drive] outcome=done → SELESAI, fitur siap di-ship 🎉"; break ;;
+    review) echo "[drive] outcome=review → ${rev_n} gate + ${blk_n} blocker nunggu lo 🔔 — pagi jalankan 'build $FITUR' (attended) buat drain, lalu drive.sh lagi (TIDAK di-restart otomatis)"; break ;;
+    halt)   echo "[drive] outcome=halt → ABNORMAL (circuit-breaker/env/allowlist/state) — cek last-run.md; TIDAK di-restart"; break ;;
     continue) : ;;                                                   # ada pending, aman lanjut
     *)    echo "[drive] outcome tak dikenal ('$outcome') → STOP (fail-safe)"; break ;;
   esac
