@@ -32,7 +32,7 @@ milestones:
         produces: <OPSIONAL — 1 baris signature ekspor utama task ini (mis. "hash(pw:string):Promise<string>"); cuma untuk task yang jadi deps task lain. NAMA+signature saja, BUKAN kode/badan. build baca signature ASLI dari disk & cross-check vs ini (deteksi drift).>
         actions:                   # OPSIONAL — kerja non-file; build yang EKSEKUSI + VERIFIKASI
           - install: <pkg>         #   build: `npm install <pkg>` (auto), verifikasi masuk package.json
-          - cmd: <perintah>        #   perintah lain non-destruktif (auto), mis. "npx prisma generate"
+          - cmd: <perintah>        #   perintah lain non-destruktif (auto), mis. "npx prisma generate" — BUKAN apply-migrasi (itu migrate: + kind/affects; build men-hold cmd yang ternyata apply-migrasi)
           - migrate: <deskripsi>   #   build: attended = TAMPILKAN + GATE sebelum apply; unattended = additive auto-apply (bila opt-in allowlist wire 5.5), destructive/backfill = hold needs_human
             kind: additive|destructive|backfill   # migrate.kind (action-scoped, BEDA dari kind: feat|fix|debt level-task) — WAJIB tugas migrate
             affects: [Order, Order.status]         # tabel (+ Table.kolom bila ngerusak kolom) — basis gate dampak H3
@@ -47,7 +47,7 @@ milestones:
         deps: []                   # id task lain yang harus done dulu
         status: pending            # pending | in_progress | done | blocked | needs_human
         commits: [<base7>..<head7>, ...]   # OPSIONAL — DIISI build saat done (rentang commit per repo tersentuh, audit task→commit); bukan dari breakdown
-        hold: "<alasan 1 baris>"           # OPSIONAL — DIISI build saat needs_human BUKAN-karena-manual: (migrate destructive/backfill | allowlist migrate absen | NEEDS_CONTEXT: <pertanyaan> | konflik <invariant>); dihapus saat keluar needs_human; bukan dari breakdown (build/reference.md §I)
+        hold: "<alasan 1 baris>"           # OPSIONAL — DIISI build saat needs_human BUKAN-karena-manual: (migrate destructive/backfill | allowlist migrate absen | NEEDS_CONTEXT: <pertanyaan> | konflik <invariant> | reuse basi: <nama>); dihapus saat keluar needs_human; bukan dari breakdown (build/reference.md §I)
       # Task integrasi cross-app (lihat §D-3 & spec S2): menjalankan >1 app bareng
       - id: T_INT
         unit: integration           # pseudo-unit — gate-nya membentang beberapa tree, tak punya path sendiri
