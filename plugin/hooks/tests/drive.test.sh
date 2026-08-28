@@ -51,7 +51,7 @@ if grep -q 'outcome=review' <<<"$out" && grep -q '6 gate' <<<"$out" && [ "$(call
 
 # 2. review tanpa baris review:/blockers: → tetap berhenti (toleran header lama)
 setup $'review:5'; out="$(drive)"
-if grep -q 'outcome=review' <<<"$out" && [ "$(calls)" = 1 ]; then ok "review tanpa angka → tetap stop"; else bad "review tanpa angka" "$out"; fi
+if grep -q 'outcome=review' <<<"$out" && grep -q '? gate + ? blocker' <<<"$out" && [ "$(calls)" = 1 ]; then ok "review tanpa angka → tetap stop, fallback '?'"; else bad "review tanpa angka" "$out"; fi
 
 # 3. continue → continue → done = 3 putaran, SELESAI
 setup $'continue:3\ncontinue:6\ndone:9'; out="$(drive)"
@@ -74,8 +74,20 @@ setup $'nofile'; out="$(drive)"
 if grep -q 'last-run.md tak ada' <<<"$out" && [ "$(calls)" = 1 ]; then ok "last-run.md absen → stop"; else bad "last-run absen" "$out"; fi
 
 # 8. precheck notify.sh absen → exit 1, nol putaran
-setup $'done:1'; rm -f "$PROD/.claude/notify.sh"; out="$(drive)"; rc=$?
+setup $'done:1'; rm -f "$PROD/.claude/notify.sh"; out="$(drive)"
 if grep -q 'notify.sh belum diset' <<<"$out" && [ "$(calls)" = 0 ]; then ok "precheck notify absen → exit tanpa putaran"; else bad "precheck notify" "$out"; fi
+
+# 9. precheck allowlist: cuma git + rule apply-migrate → STOP (rule migrate bukan bukti verifikasi stack)
+setup $'done:1'; printf '{"permissions":{"allow":["Bash(git status:*)","Bash(alembic upgrade:*)"]}}\n' > "$PROD/.claude/settings.json"; out="$(drive)"
+if grep -q 'allowlist verifikasi stack belum keisi' <<<"$out" && [ "$(calls)" = 0 ]; then ok "precheck allowlist: rule migrate saja → STOP"; else bad "precheck allowlist migrate-only" "$out"; fi
+
+# 10. precheck allowlist kosong → STOP
+setup $'done:1'; printf '{"permissions":{"allow":[]}}\n' > "$PROD/.claude/settings.json"; out="$(drive)"
+if grep -q 'allowlist verifikasi stack belum keisi' <<<"$out" && [ "$(calls)" = 0 ]; then ok "precheck allowlist kosong → STOP"; else bad "precheck allowlist kosong" "$out"; fi
+
+# 11. precheck workspace belum di-trust → STOP
+setup $'done:1'; jq -n --arg p "$PROD" '{projects:{($p):{hasTrustDialogAccepted:false}}}' > "$HOME/.claude.json"; out="$(drive)"
+if grep -q 'workspace belum di-trust' <<<"$out" && [ "$(calls)" = 0 ]; then ok "precheck trust → STOP"; else bad "precheck trust" "$out"; fi
 
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
