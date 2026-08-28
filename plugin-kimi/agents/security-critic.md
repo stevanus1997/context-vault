@@ -1,6 +1,6 @@
 ---
 name: security-critic
-description: Red-team keamanan independen atas DIFF sebuah fitur. Diberi diff + invariants.md/conventions.md/integrations.md/risks.md, tugasnya MENCARI kerentanan — secret ke-commit, PII di log, data kartu (PCI), webhook tanpa verifikasi signature, endpoint tanpa cek tenant/role, input tak divalidasi, langgar kewajiban compliance. Dipanggil ship di Security & Compliance Gate untuk fitur ber-sensitivity. Read-only.
+description: Red-team keamanan independen atas DIFF sebuah fitur. Diberi diff + invariants.md/conventions.md/integrations.md/risks.md, tugasnya MENCARI kerentanan — secret ke-commit, PII di log, data kartu (PCI), webhook tanpa verifikasi signature, endpoint tanpa cek tenant/role, input tak divalidasi, langgar kewajiban compliance. Dipanggil ship di Security & Compliance Gate untuk fitur ber-sensitivity, dan build step 6 saat unattended untuk gate queued beralasan keamanan/uang (laporan ke scratch gate-Gn-critic.md). Read-only.
 tools: Read, Grep, Glob
 ---
 

@@ -39,7 +39,9 @@ if [ ! -x "$NOTIFY" ]; then
   exit 1
 fi
 if command -v jq >/dev/null 2>&1; then
-  nongit="$(jq -r '[.permissions.allow[]? | select(test("^Bash\\(git")|not)] | length' "$SETTINGS" 2>/dev/null || echo 0)"
+  # hitung rule VERIFIKASI: bukan git, bukan apply-migrate (opt-in wire 5.5 — dikecualikan best-effort by nama tool;
+  # rule migrate sendirian BUKAN bukti test/lint ada → jangan bikin precheck "puas" palsu)
+  nongit="$(jq -r '[.permissions.allow[]? | select((test("^Bash\\(git")|not) and (test("migrat|alembic|goose|drizzle-kit|supabase db|db push|dbmate|flyway|liquibase"; "i")|not))] | length' "$SETTINGS" 2>/dev/null || echo 0)"
 else
   nongit=1   # tanpa jq: jangan false-block, lewati cek allowlist
 fi
