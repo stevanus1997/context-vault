@@ -2,11 +2,13 @@
 
 Dirujuk skill yang mengubah skema database sebuah app: `wire` (migrasi baseline) & `build` (table fitur, sesudah task `migrate` `done`). **BUKAN langkah berdiri sendiri** — ia **prosedur** yang dipanggil pemanggil itu. Tujuan: skema data punya **proyeksi durable** `control/schema/<app>.md` (di-generate, **JANGAN edit tangan**) supaya `plan` membaca model data, bukan merekonstruksi dari kode tiap sesi. Hormati induk §4 "satu sumber kebenaran (kode: skema/migrasi), banyak proyeksi".
 
+**Proyeksi milik PEMILIK SKEMA, bukan tiap app (amandemen 2026-09-14).** Bila beberapa app menempel ke satu database, hanya app pemilik yang punya folder migrasi — jadi hanya ia yang punya proyeksi. Resolve `schema_owner(app)` per `${CLAUDE_PLUGIN_ROOT}/rules/db-ownership.md` lebih dulu: `is_schema_owner(app)` **true** → prosedur jalan seperti biasa, menulis `control/schema/<app>.md`; **false** → **NO-OP DIAM, jangan tulis stub**. Stub berarti "app ini nol tabel" — pernyataan yang SALAH untuk app non-pemilik, dan justru mematikan deteksi reuse di `plan`/`breakdown`/`build`. Ketiadaan file pada non-pemilik bukan lubang: pembaca me-resolve ke file pemiliknya. `databases[]` absen ⇒ `schema_owner(app) == app` ⇒ semua app pemilik dirinya sendiri ⇒ perilaku persis seperti sebelum amandemen ini.
+
 ## Penulis tunggal
 HANYA aturan ini yang menulis `control/schema/`. `wire`/`build` **memanggil**; `plan`/`render-docs` cuma **baca**. Jangan ada skill lain menulis ke sana.
 
 ## Input (di-supply pemanggil)
-- `app` — nama app (∈ `workspace.yaml` `apps[].name`). HANYA unit app — package tak punya table; pseudo-unit `integration` n/a.
+- `app` — nama app (∈ `workspace.yaml` `apps[].name`). HANYA unit app — package tak punya table; pseudo-unit `integration` n/a. **Pemanggil boleh menyerahkan app mana pun**; rule me-resolve `schema_owner(app)` lebih dulu dan no-op bila app itu bukan pemilik (lihat paragraf kepemilikan di atas).
 - `label` — penanda work-item untuk provenance: **nama fitur** (`tasks.yaml` `feature:`) saat feature-build; **`fix/<id>`** saat fix-build (`build` juga jalan di `fixes/<id>/`, tasks.yaml-nya tanpa `feature:`); **`<none>`** saat `wire`-baseline / refresh.
 - `stack` app — dari `workspace.yaml` (`db`, `orm`).
 - Proyeksi sebelumnya `control/schema/<app>.md` (bila ada) — untuk preserve provenance.
