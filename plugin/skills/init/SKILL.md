@@ -51,7 +51,7 @@ product: <nama-produk>
 topology: <monorepo|multi-repo>        # "polyrepo" = multi-repo
 apps:
   - name: <app>
-    path: <apps/<app> untuk monorepo | ../<app> untuk multi-repo>
+    path: <lokasi unit relatif root produk — default apps/<app> (monorepo) | ../<app> (multi-repo); layout BEBAS, konfirmasi ke user>
     repo_url: <isi untuk multi-repo, kosongkan untuk monorepo>
     type: <fe|be|fullstack>
     responsibility: "<ringkas>"
@@ -61,6 +61,7 @@ packages: []                # shared package (ui-kit/types/utils) — diisi skil
 databases: []               # DB fisik + pemilik migrasi — diisi architect saat app KEDUA nempel ke DB yang sama; kosong = tiap app 1:1 (rules/db-ownership.md)
 ```
 Untuk existing, isi `stack` per app dari hasil deteksi `package.json` (framework, db bila terbaca). Biarkan `packages: []` kosong — package tumbuh lewat `add-package`, bukan di-declare saat init.
+**`path` = layout fisik, BUKAN turunan `topology` (amandemen 2026-09-14).** Nilai di atas cuma **default**; brownfield → pakai lokasi NYATA yang terdeteksi langkah 1, greenfield → tawarkan default lalu **konfirmasi** (user boleh override). Multi-repo sah di layout mana pun — sibling (`../x`), nested flat (`x`), atau nested di bawah folder induk (`apps/x`) yang tiap foldernya punya `.git` sendiri; `apps/` **bukan** penanda monorepo (yang bikin monorepo satu repo, bukan nama folder). Yang ditentukan `topology` cuma `repo_url` (diisi untuk multi-repo). Konvensi yang dipilih di sini jadi pola yang dibaca `add-app` untuk app berikutnya (`add-app` langkah 2).
 Untuk app yang di-declare sebagai blueprint (opsi blueprint langkah 2 — di-declare tapi belum di-bring-up) → tambahkan frasa `(blueprint — belum di-bring-up)` di akhir `responsibility`-nya DAN komentar inline `# blueprint, belum di-bring-up` pada baris entri (mis. baris `- name:`), supaya pembaca `apps[]` (`ask`/`design-system`/`fanout`) tahu app itu baru niat. `architect`/`wire` melepas frasa marker dari `responsibility` saat app betul-betul di-bring-up.
 
 ### 6. Generate CLAUDE.md

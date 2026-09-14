@@ -30,9 +30,11 @@ Tanya:
 - `type`: fe / be / fullstack
 - `responsibility`: satu kalimat
 
-Derive `path` dari `topology`:
-- **monorepo** → `apps/<nama>` (atau konvensi yang terbaca dari apps existing)
-- **multi-repo** → `../<nama>` + minta `repo_url` (boleh kosong kalau repo belum dibuat)
+Tentukan `path` — **LAYOUT itu fakta fisik, BUKAN turunan `topology`** (amandemen 2026-09-14):
+- **Ada app existing** → baca pola `apps[].path` mereka, **usulkan yang KONSISTEN** — sibling (`../x`), nested flat (`x`), atau nested di bawah folder induk (`apps/x`). **Pola existing SELALU menang** atas default di bawah.
+- **Belum ada app existing** → default: monorepo → `apps/<nama>`; multi-repo → `../<nama>`.
+- **Selalu tampilkan path hasilnya lalu konfirmasi** — user boleh override bebas. Multi-repo sah di mana saja, termasuk `apps/` yang tiap foldernya punya `.git` sendiri (itu **BUKAN** monorepo — yang bikin monorepo satu repo, bukan nama folder).
+- `repo_url` diminta bila `topology: multi-repo` (boleh kosong kalau repo belum dibuat) — **itu** yang ditentukan topology, bukan `path`.
 
 JANGAN tanya framework/db/orm di sini — itu `architect` (langkah 4).
 
@@ -40,7 +42,7 @@ JANGAN tanya framework/db/orm di sini — itu `architect` (langkah 4).
 Tambah entri app baru ke `apps[]` (ikuti bentuk entri `init`):
 ```yaml
   - name: <nama>
-    path: <apps/<nama> | ../<nama>>
+    path: <hasil langkah 2 — konsisten dengan apps[] existing; default apps/<nama> | ../<nama>>
     repo_url: <isi untuk multi-repo, kosongkan untuk monorepo>
     type: <fe|be|fullstack>
     responsibility: "<ringkas>"

@@ -32,9 +32,11 @@ Tanya:
 - `responsibility`: satu kalimat (mis. "format dan hitung uang")
 - (opsional) wajib dipakai app mana? → usulan `mandatory_for` (kosong kalau nggak wajib)
 
-Derive `path` dari `topology`:
-- **monorepo** → `packages/<nama>` (atau konvensi yang terbaca)
-- **multi-repo** → `../<nama>` + minta `repo_url` (boleh kosong)
+Tentukan `path` — **LAYOUT itu fakta fisik, BUKAN turunan `topology`** (amandemen 2026-09-14):
+- **Ada package existing** → baca pola `packages[].path` mereka, **usulkan yang KONSISTEN**. **Pola existing SELALU menang** atas default di bawah. (Tak ada package existing → lirik pola `apps[].path` sebagai petunjuk layout produk.)
+- **Belum ada pola apa pun** → default: monorepo → `packages/<nama>`; multi-repo → `../<nama>`.
+- **Selalu tampilkan path hasilnya lalu konfirmasi** — user boleh override bebas. Multi-repo sah di layout mana pun, termasuk `packages/` yang tiap foldernya punya `.git` sendiri (itu **BUKAN** monorepo — yang bikin monorepo satu repo, bukan nama folder).
+- `repo_url` diminta bila `topology: multi-repo` (boleh kosong) — **itu** yang ditentukan topology, bukan `path`.
 
 JANGAN tanya bahasa/build-tool/test-runner di sini — itu `architect` (langkah 4).
 
@@ -42,7 +44,7 @@ JANGAN tanya bahasa/build-tool/test-runner di sini — itu `architect` (langkah 
 Tambah entri package baru ke `packages[]`:
 ```yaml
   - name: <nama>
-    path: <packages/<nama> | ../<nama>>
+    path: <hasil langkah 2 — konsisten dengan pola existing; default packages/<nama> | ../<nama>>
     repo_url: <isi untuk multi-repo, kosongkan untuk monorepo>
     type: package
     responsibility: "<ringkas>"
