@@ -1184,3 +1184,10 @@ git status --porcelain
 - **Kalau anchor tak ketemu (`grep -Fc` = 0):** STOP dan lapor. Jangan tebak pengganti, jangan `sed` berbasis nomor baris. Kemungkinan besar file drift sejak plan ditulis (2026-09-14) — plan perlu di-refresh, bukan diakali.
 - **Kalau sebuah edit terasa membuat produk 1:1 berubah perilaku:** itu tanda edit-nya salah. Default legacy adalah invarian (Global Constraints), bukan fitur opsional.
 - **Jangan menambah skill.** Yang ditambah `rules/db-ownership.md` = *rule*, bukan skill; README / `plugin.json` / `marketplace.json` tak berubah.
+
+## Catatan pasca-eksekusi (2026-09-14)
+
+- Dieksekusi di branch `feat/db-ownership` lewat applier byte-exact (`.superpowers/sdd/2026-09-14-db-ownership/`, git-ignored); hasil T1–T11 identik byte dengan dry-run seluruh plan.
+- **Footer commit** memakai session eksekusi, bukan session desain yang tertulis di Global Constraints (preseden eksekusi 0.23.0).
+- **Errata ekspektasi (edit-nya benar, angka plan-nya salah):** T4 step 4 `db-ownership.md` = `2` (bullet (3) promosi ikut menyebutnya); T5 step 8 `amandemen 2026-09-14` = `5` (Edit E menulis `dipersempit 2026-09-14`); T13 step 2 pola `databases\[\] absen` tak menangkap bentuk ber-backtick — pakai ``grep -rn 'databases\[\]`\{0,1\} absen' plugin/`` (11 baris).
+- **T13 `fix(review)`:** (a) **wire 5.5** — deny cermin non-pemilik WAJIB ber-path; contoh polos `Bash(supabase db push:*)` mematikan allow pemilik (permissions satu file per produk, deny menang) → skenario Step 7 GAGAL sebelum fix; spec §3.4 dikoreksi. (b) sisa `control/schema/<app|unit>.md` di jalur reuse yang tak di-resolve plan — `breakdown` :15 read-set / :23 klausa Degrade / :32 advisory, `plan` :53 template + klarifikasi Fallback :39 (string terkunci T7 dipertahankan), `build` :47/:53/:58, `build/reference.md` §B :26/:27/:30 + :81/:128/:261, `wire/reference.md` :74. (c) `breakdown` kini menjalankan validasi `databases[]` di gate (rule §Validasi + spec §3.2/§7 menyebutnya; plan tak memuatnya).
