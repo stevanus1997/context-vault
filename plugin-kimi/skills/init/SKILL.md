@@ -12,10 +12,16 @@ Tujuan: menyiapkan lapisan `control/` untuk sebuah produk, mendeteksi topologi, 
 ## Langkah
 
 ### 1. Inspect folder target
-Tentukan kondisi:
-- **Kosong** (tidak ada file selain config dasar) → **greenfield**.
-- Ada `apps/` + file workspace monorepo (`turbo.json` / `pnpm-workspace.yaml` / `nx.json`) → **monorepo existing (brownfield)**.
-- Ada beberapa direktori yang masing-masing punya `.git` (sibling repos) → **multi-repo existing (brownfield)**.
+**Topology = BERAPA GIT REPO, bukan bentuk folder (amandemen 2026-09-14).** Deteksi dari repo NYATA, jangan dari nama folder: `apps/` bisa berisi banyak repo terpisah, dan repo-repo terpisah bisa duduk di dalam root produk.
+
+1. **Kumpulkan kandidat unit** — direktori di kedalaman 1–2 dari root yang kelihatan proyek (punya manifest: `package.json` / `go.mod` / `pyproject.toml` / `Cargo.toml` / `pom.xml` / dsb.) ATAU memuat `.git`. Abaikan `node_modules`, `.next`, `dist`, `build`, `vendor`, `target`, `.venv`.
+2. **Resolve repo tiap kandidat DAN root produk:** `git -C <dir> rev-parse --show-toplevel` (gagal/exit≠0 ⇒ belum ter-git). Toplevel root produk sendiri = `ROOT_TOP` (boleh kosong bila root bukan repo).
+3. **Simpulkan** — bandingkan toplevel kandidat terhadap `ROOT_TOP`, **jangan cuma hitung jumlahnya** (satu unit = satu repo, jumlah saja tak pernah bisa membedakan monorepo dari multi-repo):
+   - Nol kandidat & folder kosong (selain config dasar) → **greenfield**.
+   - Semua kandidat resolve ke **`ROOT_TOP`** (root produk sendiri repo-nya, unit hidup di dalamnya) → **monorepo existing (brownfield)**. File workspace (`turbo.json` / `pnpm-workspace.yaml` / `nx.json`) = **bukti penguat**, BUKAN penentu.
+   - Ada kandidat yang toplevel-nya **BUKAN `ROOT_TOP`** (termasuk saat `ROOT_TOP` kosong — hub `control/` bakal duduk di luar repo app mana pun) → **multi-repo existing (brownfield)**, **walau kandidatnya cuma SATU** — layout apa pun: nested flat (`x`), nested di bawah folder induk (`apps/x`), atau sibling. Satu repo app + hub terpisah = produk multi-repo yang app keduanya belum ada.
+   - Ada kandidat tapi **nol** yang ter-git → **TANYA user**: kode existing yang belum di-`git init`, atau greenfield dengan sisa file? Jangan tebak.
+4. **Catat LAYOUT-nya juga, bukan cuma topology** — lokasi NYATA tiap kandidat relatif root produk. Itu yang dipakai langkah 5 mengisi `path`; brownfield **WAJIB** pakai lokasi nyata, jangan default. (Catatan jujur: deteksi ini memindai folder target, jadi multi-repo yang KETEMU di sini pasti ber-layout nested — `path` = `x`/`apps/x`, **bukan** `../x`. Default `../<app>` di langkah 5 hanya masuk akal bila user sengaja menaruh hub `control/` BERSEBELAHAN dengan repo-repo app, dan itu tak akan pernah terdeteksi dari sini — tanyakan, jangan asumsikan.)
 
 ### 2. Framing Q&A (singkat, level produk)
 > Bila framing produk SUDAH tersedia (mis. dipanggil setelah skill `discovery`: nama produk + satu kalimat + apps sudah diketahui), JANGAN tanya ulang — pakai itu, cukup konfirmasi ringkas ke user, lalu lanjut ke langkah 3 (keputusan topologi).
