@@ -42,7 +42,7 @@ Ditentukan hasil Q&A 0.5, bukan hardcode:
 Gate penutup punya acceptance bar konkret:
 
 1. **BE boot** — proses start; health endpoint (bila ada) merespons.
-2. **DB reachable** — ORM connect, migrasi baseline ter-apply, smoke query ijo.
+2. **DB reachable** — ORM connect, migrasi baseline ter-apply, smoke query ijo. **Non-pemilik skema (amandemen 2026-09-14):** klausa "migrasi baseline ter-apply" **DICORET** — syaratnya jadi *ORM connect + smoke query ijo* saja. Unit itu memang tak pernah meng-apply DDL (`wire` SKILL langkah 3); yang tetap wajib dibuktikan adalah koneksinya.
 3. **FE→BE** — FE boot & berhasil panggil BE (health/ping). Fullstack (Next): app boot & route internal ke API sendiri jalan.
 
 Semua ijo → tandai "siap di-`feature`". Ada merah → **STOP**, lapor akar masalah (sandar `systematic-debugging`), JANGAN tandai siap (anti-yes-man). Ini menutup dead-end loop `plan` (yang dulu cuma balik ke architect). App **non-Node** (Go/Python): ada server → HTTP ping; selain itu tanya definisi "boot ok" di Q&A.
@@ -51,7 +51,7 @@ Semua ijo → tandai "siap di-`feature`". Ada merah → **STOP**, lapor akar mas
 
 - Deteksi state per app: belum ter-scaffold → scaffold penuh; ter-scaffold belum ter-wire → isi **HANYA** yang kurang; sudah ter-wire → **no-op**, lapor.
 - **Idempotent:** re-run di app yang sudah jalan tidak merusak — deteksi yang ada, tambal celah. Jangan timpa kode / `.env` / migrasi existing.
-- **Proyeksi skema = presence-based, lepas dari status-wired:** "no-op pada sudah-ter-wire" berlaku untuk scaffold/DB/FE↔BE — TAPI `control/schema/<app>.md` yang **absen/stub** TETAP di-seed dari sumber existing (SKILL §0), karena proyeksi yang hilang ≠ wiring yang lengkap. Sejajar prinsip repair "lengkapi yang kurang". Single-writer dihormati: `wire` **invoke** `schema-projection.md`, tak nulis `control/schema/` langsung.
+- **Proyeksi skema = presence-based, lepas dari status-wired:** "no-op pada sudah-ter-wire" berlaku untuk scaffold/DB/FE↔BE — TAPI `control/schema/<app>.md` yang **absen/stub** TETAP di-seed dari sumber existing (SKILL §0), karena proyeksi yang hilang ≠ wiring yang lengkap. Sejajar prinsip repair "lengkapi yang kurang". Single-writer dihormati: `wire` **invoke** `schema-projection.md`, tak nulis `control/schema/` langsung. **Hanya pemilik yang punya proyeksi (amandemen 2026-09-14):** seed presence-based ini berlaku untuk app `is_schema_owner`; app non-pemilik sengaja TIDAK punya file di `control/schema/` (rule-nya no-op, bukan stub) — ketiadaannya bukan lubang yang perlu di-seed.
 - `wire(repair)` = pasangan operasional dari architect **CAPTURE** (existing).
 
 ## G. Multi-repo & git
