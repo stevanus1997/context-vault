@@ -21,12 +21,17 @@ Untuk tiap app, cek kode di `path`-nya:
 ### 3a. SETUP (app greenfield)
 - Q&A **TEKNIKAL** (bukan bisnis): framework, bahasa, DB/ORM, lib kunci.
 - Tulis hasil ke `stack` app di `control/workspace.yaml` (mis. `stack: { framework: Next.js, db: Postgres, orm: Prisma }`).
+- **Kepemilikan DB (amandemen 2026-09-14) — tanya HANYA bila produk sudah punya ≥1 app ber-DB lain.** Pertanyaannya: *"DB buat app ini — bikin baru, atau nempel ke `<name>` (`<engine>`, dipegang `<owner>`)?"*
+  - **Bikin baru** → entri `databases[]` baru dengan `owner` = app ini. **Kecuali** bila `databases[]` masih absen DAN ini app ber-DB pertama → biarkan absen; 1:1 legacy sudah benar, jangan tulis blok yang tak mengubah perilaku.
+  - **Nempel** → `stack.db` app ini = `<name>`; `owner` **TIDAK** berubah.
+  - **Promosi 1:1 → N:1** (app kedua memilih nempel sementara `databases[]` masih absen) — lahirkan bloknya dalam SATU transaksi ter-GATE: (1) baca free-text `stack.db` app pemilik, ekstrak engine + path folder migrasi **by-understanding** (`conventions.md` + struktur repo, cara yang sama `schema-projection.md` step 1 melokalisasi sumber); (2) tulis entri `databases[]` — `name` (usulkan `main`, konfirmasi), `engine`, `migrations`, `owner` = app pemilik; (3) **tulis ulang `stack.db` KEDUA app jadi referensi** — tanpa ini deklarasi tak berlaku (pencocokan toleran `db-ownership.md`); (4) tampilkan diff `workspace.yaml` → **approve**.
+  - `architect` adalah **penulis tunggal `databases[]`**. Bentuk, 4 fungsi resolusi, dan 4 aturan validasi: `${CLAUDE_PLUGIN_ROOT}/rules/db-ownership.md`. Validasi SEBELUM menulis; tak konsisten → tampilkan + minta koreksi, JANGAN auto-repair.
 - Catat command bootstrap RESMI stack-nya (mis. `npx create-next-app@latest apps/web`) sebagai bagian keputusan. **Eksekusi scaffold/bring-up = jatah `wire`** (gated), BUKAN di sini. `architect` TIDAK menulis/menjalankan kode framework — ia menetapkan, `wire` yang men-scaffold lewat scaffolder resmi.
 
 ### 3b. CAPTURE (app existing)
 - Scan `package.json` + struktur folder/route di `path` app → rekam `stack` (framework, db bila terbaca) ke `control/workspace.yaml`.
 - Inferensi `capabilities` dari nama route/module/folder (mis. `routes/checkout` → `checkout`) → isi `capabilities` app di `workspace.yaml`. **Konfirmasi ke user** sebelum menulis.
-- Catat **divergensi** antar-app (mis. `web` pakai Prisma, `dashboard` pakai TypeORM) → laporkan ke user.
+- Catat **divergensi** antar-app (mis. `web` pakai Prisma, `dashboard` pakai TypeORM) → laporkan ke user. **Bila dua app ternyata menembak DB yang sama (amandemen 2026-09-14):** sodorkan kepemilikan di gate — usulkan `databases[]` + `owner` (prosedur promosi di 3a). Divergensi `orm` antar-app sesama-DB **sah** (mis. satu pakai client SDK, satu pakai driver mentah) → laporkan, jangan jadikan palang.
 
 ### 3c. PACKAGE (unit `type: package`, dipanggil `add-package`)
 Bila dijalankan untuk sebuah shared package (bukan app): Q&A **teknikal** singkat — bahasa, build-tool, test-runner. Tulis ke `stack` package di `control/workspace.yaml`. Rekam konvensi import/build package ke `conventions.md` (langkah 4). Package = CONSUMER invarian — langkah 4.5 hanya RE-KONFIRMASI `stack` package tak melanggar `invariants.md` terkunci (tak mengunci ulang).
