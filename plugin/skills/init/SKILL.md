@@ -58,6 +58,7 @@ apps:
     capabilities: []        # diisi fanout/architect
     stack: {}               # diisi architect
 packages: []                # shared package (ui-kit/types/utils) — diisi skill add-package; consumers diisi fanout
+databases: []               # DB fisik + pemilik migrasi — diisi architect saat app KEDUA nempel ke DB yang sama; kosong = tiap app 1:1 (rules/db-ownership.md)
 ```
 Untuk existing, isi `stack` per app dari hasil deteksi `package.json` (framework, db bila terbaca). Biarkan `packages: []` kosong — package tumbuh lewat `add-package`, bukan di-declare saat init.
 Untuk app yang di-declare sebagai blueprint (opsi blueprint langkah 2 — di-declare tapi belum di-bring-up) → tambahkan frasa `(blueprint — belum di-bring-up)` di akhir `responsibility`-nya DAN komentar inline `# blueprint, belum di-bring-up` pada baris entri (mis. baris `- name:`), supaya pembaca `apps[]` (`ask`/`design-system`/`fanout`) tahu app itu baru niat. `architect`/`wire` melepas frasa marker dari `responsibility` saat app betul-betul di-bring-up.

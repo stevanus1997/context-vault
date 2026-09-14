@@ -19,7 +19,7 @@ Tentukan domain pertanyaan, buka **hanya** file yang relevan (bukan semua `contr
 | Domain pertanyaan | Sumber `control/` |
 |---|---|
 | Bisnis: produk apa, pengguna, nilai, istilah, langkah flow | `business/domain.md` · `flows.md` · `glossary.md` |
-| Arsitektur: app/package, tanggung jawab, stack, capability, topology | `workspace.yaml` |
+| Arsitektur: app/package, tanggung jawab, stack, capability, topology, **pemilik skema DB** (`databases[]`) | `workspace.yaml` |
 | Aturan platform (tenancy/money/idempotency/authz/PII-PCI) | `invariants.md` |
 | Konvensi lintas-app | `conventions.md` |
 | Vendor eksternal (arah/mode/dipakai-di) | `integrations.md` |
