@@ -29,7 +29,7 @@ Plugin ini juga bisa dipakai di [Kimi Code CLI](https://www.kimi.com/code/docs/e
 # produk sudah jelas (atau existing)? langsung:
 /init
 ```
-Lalu `roadmap` (opsional — susun backlog fitur), `architect` (fondasi teknis), `wire` (bring-up skeleton kosong-tapi-jalan), `feature` (bikin fitur), `ship`/`drop` (lifecycle), `render-docs` (doc human-readable).
+Lalu `roadmap` (opsional — susun backlog fitur), `architect` (fondasi teknis), `wire` (bring-up skeleton kosong-tapi-jalan), `feature` (bikin fitur), `ship`/`drop` (lifecycle), `render-docs` (doc human-readable), `share` (file review per fitur buat rekan).
 
 ## Validasi ide (opsional, greenfield)
 ```
@@ -98,8 +98,9 @@ Session Claude Code otomatis di-judul dari skill kerja yang dipanggil — `/buil
 ## Dokumentasi
 ```
 /render-docs        # generate doc HTML human-readable dari knowledge -> control/docs/site/index.html
+/share <fitur>      # satu file HTML review fitur buat rekan -> control/features/<fitur>/share.html
 ```
-Otomatis dipanggil `ship`; bisa juga manual untuk preview.
+`render-docs` otomatis dipanggil `ship`; bisa juga manual untuk preview. `share` otomatis di akhir `feature` (rancangan) & `ship` (dibangun); paste blok "Copy feedback" dari rekan ke `/share` untuk triase.
 
 ## Maintenance / migrasi
 ```

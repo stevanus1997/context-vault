@@ -41,6 +41,7 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 | Bring-up fondasi visual (tokens+komponen) | `/design-system` |
 | Front-load knowledge dari kode (brownfield) | `/extract` |
 | Doc HTML buat stakeholder | `/render-docs` |
+| File review fitur buat rekan + triase feedback-nya | `/share <fitur>` |
 | Susulin produk lama ke template terbaru | `/upgrade` |
 
 ### `/feature` vs `/fix` vs `/tweak`
@@ -90,5 +91,6 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 ### Docs & maintenance
 - `/extract` — (brownfield, opsional) front-load `control/business/` dari kode existing.
 - `/render-docs` — generate doc HTML human-readable dari knowledge → `control/docs/site/index.html`.
+- `/share` — satu file HTML review per fitur buat rekan (storyboard mockup, keputusan, 💬 + Copy feedback) → `control/features/<f>/share.html`; paste blok feedback balik → triase ke `reviews.md`. Beda `/render-docs`: per-fitur buat reviewer vs tingkat produk buat stakeholder. Otomatis di akhir `/feature` & `/ship`.
 - `/upgrade` — susulin produk lama (di-init versi plugin sebelumnya) ke template terbaru tanpa menyentuh knowledge.
 - `/guide` — (skill ini) panduan & Q&A plugin: tur orientasi progresif + tanya skill/flow/metodologi.

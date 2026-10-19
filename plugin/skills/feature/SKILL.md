@@ -41,7 +41,9 @@ Jangan lanjut tahap berikutnya sebelum gate tahap sebelumnya di-approve user.
 Setelah semua `plan` di-approve, set `control/features/<nama>/feature.yaml` → `status: active`.
 
 ### 4. Ringkas
-Tampilkan artifact yang dihasilkan (`business.md`, `fanout.md`, `plans/*`). Sarankan langkah berikutnya: jalankan `breakdown` (pecah plan jadi `tasks.yaml`) lalu `build` (eksekusi) — sebaiknya masing-masing sesi terpisah — baru `ship` saat selesai.
+Invoke skill **`share <nama>`** (mode rancangan) → file review `control/features/<nama>/share.html` yang bisa dikirim ke rekan; feedback mereka di-paste balik ke `/share` untuk ditriase. Gagal (mis. Chrome tak ada) = catatan di ringkasan, **BUKAN** penghalang — status tetap `active`.
+
+Tampilkan artifact yang dihasilkan (`business.md`, `fanout.md`, `plans/*`, `share.html`). Sarankan langkah berikutnya: jalankan `breakdown` (pecah plan jadi `tasks.yaml`) lalu `build` (eksekusi) — sebaiknya masing-masing sesi terpisah — baru `ship` saat selesai.
 
 ## Catatan
 - `intake`/`fanout`/`plan` modular — bisa dipanggil sendiri untuk mengulang satu tahap (mis. `fanout` ulang setelah revisi `business.md`).

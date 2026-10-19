@@ -219,6 +219,23 @@ PY
 for n in $(grep -o '__IMG:[A-Za-z0-9_.-]*__' "$T/ref-body.html" | sed 's/__IMG:\(.*\)__/\1/' | sort -u); do cp "$T/img/shot.png" "$T/img/$n.png"; done
 if asm "$T/ref-body.html" "$T/ref.html" > /dev/null 2> "$T/ref.err"; then ok "S8 semua cuplikan katalog reference.md lolos validasi"; else bad "S8 cuplikan reference.md gagal validasi" "$(cat "$T/ref.err")"; fi
 
+# === sambungan ===
+grep -q 'share <nama>' "$ROOT/plugin/skills/feature/SKILL.md" && ok "W1 feature langkah 4 memanggil share" || bad "W1 feature tak memanggil share"
+grep -q 'share <fitur>' "$ROOT/plugin/skills/ship/SKILL.md" && ok "W2 ship langkah 6 memanggil share" || bad "W2 ship tak memanggil share"
+$PY - "$ROOT/plugin/skills/ship/SKILL.md" <<'PY' && ok "W3 ship: share sebelum render-docs" || bad "W3 urutan share/render-docs di ship"
+import sys
+s=open(sys.argv[1],encoding='utf-8').read()
+a=s.find('share <fitur>'); b=s.find('Regenerate doc')
+sys.exit(0 if 0<=a<b else 1)
+PY
+for f in init upgrade; do
+  grep -q 'control/features/\*/share.html' "$ROOT/plugin/skills/$f/SKILL.md" && grep -q '.claude/share/' "$ROOT/plugin/skills/$f/SKILL.md" \
+    && ok "W4 $f menyebut baris .gitignore share" || bad "W4 $f tanpa baris .gitignore share"; done
+grep -q '/share' "$ROOT/plugin/skills/guide/reference.md" && ok "W5 guide/reference.md menyebut /share" || bad "W5 guide tanpa /share"
+grep -q '/share' "$ROOT/README.md" && ok "W6 README menyebut /share" || bad "W6 README tanpa /share"
+[ -f "$ROOT/plugin-kimi/skills/share/SKILL.md" ] && [ -f "$ROOT/plugin-kimi/skills/share/assemble.py" ] \
+  && ok "W7 plugin-kimi memuat skill share" || bad "W7 plugin-kimi belum diregen"
+
 # === RINGKASAN ===
 echo "---"; echo "pass=$PASS fail=$FAIL skip=$SKIP"
 [ "$FAIL" -eq 0 ]
