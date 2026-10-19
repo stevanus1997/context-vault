@@ -1,0 +1,113 @@
+# tasks.yaml — checkout-v2 (fixture tools/tests/build-status.test.sh)
+# Ditulis breakdown, status diupdate build. Komentar header sengaja panjang
+# dan memuat karakter yang menjebak parser: key: value, [list], {map}, # pagar.
+feature: checkout-v2
+generated_from:
+  - plans/_shared.md
+  - plans/api.md
+milestones:
+  - id: M1
+    title: Fondasi auth
+    tasks:
+      - id: T1
+        unit: api
+        desc: schema users
+        files:
+          - create: db/users.sql
+        deps: []
+        status: done
+      - id: T2
+        unit: api
+        desc: session token
+        files:
+          - create: src/session.ts
+          - test:   test/session.test.ts
+        approach: |
+          token acak 32 byte: simpan hash-nya, bukan token mentah
+          rotasi tiap login - [lihat T1]
+        deps: [T1]
+        status: done
+      - id: T3
+        unit: money
+        desc: format uang
+        files:
+          - create: src/money.ts
+        deps: []
+        status: done
+      - id: T4
+        unit: web
+        desc: login page
+        files:
+          - create: app/login/page.tsx
+        deps: [T2]
+        status: done
+  - id: M2
+    title: Checkout
+    tasks:
+      - id: T5
+        unit: api
+        desc: cart totals service
+        files:
+          - create: src/cart/totals.ts
+          - test: test/cart/totals.test.ts
+        approach: >-
+          hitung subtotal per item,
+          lalu diskon dan pajak
+        deps: [T1]
+        status: done
+      - id: T6
+        unit: api
+        desc: session-bound cart
+        files:
+          - modify: src/cart/store.ts
+        deps: [T2, T5]
+        status: done
+      - id: T7
+        unit: web
+        desc: cart page shell
+        files:
+          - create: app/cart/page.tsx
+        deps: [T4]
+        status: done
+      - id: T8
+        unit: api
+        desc: checkout endpoint
+        files:
+          - create: src/checkout/route.ts
+          - test: test/checkout/route.test.ts
+        approach: "POST /checkout: {cart_id} # idempoten via header"
+        deps: [T6]
+        status: in_progress
+      - id: T9
+        unit: api
+        desc: migrate orders
+        files:
+          - create: db/migrations/0007_orders.sql
+        actions:
+          - migrate: orders
+            kind: destructive
+            affects: [Order, Order.status]
+        deps: [T5]
+        status: needs_human
+        hold: "migrate destructive — nunggu lo"
+      - id: T11
+        unit: web
+        desc: cart summary UI
+        files:
+          - create: app/cart/summary.tsx
+        deps: [T7]
+        status: in_progress
+      - id: T12
+        unit: web
+        desc: checkout button
+        files:
+          - modify: app/cart/page.tsx
+        deps: [T9, T11]
+        status: pending
+      - id: T13
+        unit: integration
+        desc: checkout roundtrip
+        test:
+          - 'POST /checkout dari web: order tercatat'
+        deps: [T8, T12]
+        status: pending

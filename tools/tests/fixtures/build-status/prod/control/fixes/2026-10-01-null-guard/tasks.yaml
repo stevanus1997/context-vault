@@ -1,0 +1,19 @@
+fix: 2026-10-01-null-guard
+milestones:
+  - id: FIX
+    title: null-guard
+    tasks:
+      - id: fix-null-guard
+        kind: fix
+        unit: web
+        desc: guard null di cart summary
+        files:
+          - modify: app/cart/summary.tsx
+        deps: []
+        status: in_progress
+      - id: fix-cleanup
+        kind: fix
+        files:
+          - modify: app/cart/util.ts
+        deps: [T99]
+        status: pending

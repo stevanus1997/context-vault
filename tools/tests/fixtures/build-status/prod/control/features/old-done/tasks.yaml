@@ -1,0 +1,18 @@
+feature: old-done
+milestones:
+  - id: M1
+    title: Kelar semua
+    tasks:
+      - id: T1
+        unit: api
+        desc: satu
+        files:
+          - create: src/a.ts
+        status: done
+      - id: T2
+        unit: web
+        desc: dua
+        files:
+          - create: app/b.tsx
+        deps: [T1]
+        status: done

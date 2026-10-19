@@ -1,0 +1,12 @@
+feature: checkout-v2
+gates:
+  - id: G1
+    segment: api×M1
+    tasks: [T1, T2]
+    status: approved
+    reason: "floor-scan T2 (session)"
+  - id: G3
+    segment: api×M2
+    tasks: [T5, T6]
+    status: queued
+    reason: "floor-scan T6 (token)"

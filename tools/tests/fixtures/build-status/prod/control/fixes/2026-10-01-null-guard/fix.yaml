@@ -1,0 +1,3 @@
+id: 2026-10-01-null-guard
+status: open               # open → diagnosed → shipped
+severity: normal

@@ -1,0 +1,11 @@
+feature: shipped-x
+milestones:
+  - id: M1
+    title: Sisa basi
+    tasks:
+      - id: T1
+        unit: api
+        desc: in_progress basi di fitur shipped
+        files:
+          - create: src/x.ts
+        status: in_progress

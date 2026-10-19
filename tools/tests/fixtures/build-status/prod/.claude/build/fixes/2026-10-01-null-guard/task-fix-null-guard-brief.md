@@ -1,0 +1,1 @@
+brief fix-null-guard

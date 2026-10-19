@@ -14,6 +14,7 @@ build/
 # Exception: `build/` di atas untuk artefak app, BUKAN skill dir `build`
 !plugin/skills/build/
 !plugin-kimi/skills/build/
+!tools/tests/fixtures/build-status/prod/.claude/build/
 
 # Logs
 *.log

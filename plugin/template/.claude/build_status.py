@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
+import time
 from pathlib import Path
 
 
@@ -450,11 +452,201 @@ def load_yaml(path: Path):
         raise YamlError(f"{path}: {e}") from None
 
 
+# --- Snapshot v1 ---------------------------------------------------------------------------
+# Skema dikunci (dicerminkan plugin/types/index.d.ts). Aturan: spec §5.
+
+HELD = ('blocked', 'needs_human')
+
+
+def _dict(x) -> dict:
+    return x if isinstance(x, dict) else {}
+
+
+def _list(x) -> list:
+    if isinstance(x, list):
+        return x
+    return [] if x is None or x == '' else [x]
+
+
+def _str(x) -> str:
+    return x if isinstance(x, str) else ''
+
+
+def _mtime(p: Path) -> float | None:
+    try:
+        return p.stat().st_mtime
+    except OSError:
+        return None
+
+
+def fmt_dur(seconds: float) -> str:
+    s = int(seconds)
+    if s < 60:
+        return '<1m'
+    if s < 3600:
+        return f"{s // 60}m"
+    h, m = divmod(s // 60, 60)
+    return f"{h}j{m}m" if m else f"{h}j"
+
+
+def weight(task: dict) -> int:
+    """Bobot cap-volume build (reference §D)."""
+    nfiles = len(_list(task.get('files')))
+    if task.get('mockup') or task.get('unit') == 'integration' or nfiles > 4:
+        return 3
+    return 2 if nfiles >= 3 else 1
+
+
+def _heartbeat(scratch: Path):
+    """drive.json hidup → dict-nya; file absen/rusak/PID mati → None."""
+    try:
+        hb = json.loads((scratch / 'drive.json').read_text(encoding='utf-8'))
+        pid = int(hb['pid'])
+        if pid <= 0:
+            return None
+        os.kill(pid, 0)
+    except PermissionError:
+        return hb                          # proses ada, cuma bukan milik kita
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return hb
+
+
+def _scratch(root: Path, kind: str, name: str) -> Path:
+    base = root / '.claude' / 'build'
+    if kind == 'fix' and (base / 'fixes' / name).is_dir():
+        return base / 'fixes' / name
+    return base / name
+
+
+def _item(root: Path, kind: str, wdir: Path, now: float, quiet_min: int) -> dict:
+    name = wdir.name
+    doc = _dict(load_yaml(wdir / 'tasks.yaml'))
+    gates_doc = _dict(load_yaml(wdir / 'gates.yaml'))
+    scratch = _scratch(root, kind, name)
+    hb = _heartbeat(scratch) if kind == 'feature' else None
+
+    stamps = [_mtime(wdir / f) for f in ('tasks.yaml', 'gates.yaml', 'last-run.md')]
+    if scratch.is_dir():
+        stamps += [_mtime(f) for f in scratch.iterdir() if f.is_file()]
+    last_activity = max([s for s in stamps if s is not None], default=0.0)
+    quiet = hb is None and now - last_activity > quiet_min * 60
+
+    milestones = [m for m in _list(doc.get('milestones')) if isinstance(m, dict)]
+    tasks = [t for m in milestones for t in _list(m.get('tasks')) if isinstance(t, dict)]
+    status = {_str(t.get('id')): _str(t.get('status')) for t in tasks}
+
+    def deps_of(t: dict) -> list:
+        return [d for d in _list(t.get('deps')) if isinstance(d, str)]
+
+    deps = {_str(t.get('id')): deps_of(t) for t in tasks}
+
+    def reaches(tid: str, target: str) -> bool:
+        seen, stack = set(), list(deps.get(tid, []))
+        while stack:
+            d = stack.pop()
+            if d == target:
+                return True
+            if d not in seen:
+                seen.add(d)
+                stack.extend(deps.get(d, []))
+        return False
+
+    held, held_reason = [], {}
+    for t in tasks:
+        tid, st = _str(t.get('id')), _str(t.get('status'))
+        if st not in HELD:
+            continue
+        manual = [x for x in _list(t.get('manual')) if isinstance(x, str)]
+        reason = t.get('hold') if isinstance(t.get('hold'), str) and t.get('hold') else (manual[0] if manual else None)
+        held_reason[tid] = reason
+        blocks = [_str(o.get('id')) for o in tasks
+                  if o is not t and o.get('status') != 'done' and reaches(_str(o.get('id')), tid)]
+        held.append({'id': tid, 'unit': _str(t.get('unit')), 'status': st, 'reason': reason, 'blocks': blocks})
+
+    lanes, out_ms = [], []
+    for m in milestones:
+        rows = []
+        for t in (x for x in _list(m.get('tasks')) if isinstance(x, dict)):
+            tid, st = _str(t.get('id')), _str(t.get('status'))
+            row = {'id': tid, 'unit': _str(t.get('unit')), 'desc': _str(t.get('desc')), 'status': st,
+                   'elapsed': None, 'phase': None, 'quiet': False, 'quiet_for': None,
+                   'reason': held_reason.get(tid) if st in HELD else None, 'waiting_on': []}
+            if st == 'in_progress':
+                brief = _mtime(scratch / f"task-{tid}-brief.md")
+                report = _mtime(scratch / f"task-{tid}-report.md")
+                row['elapsed'] = fmt_dur(now - brief) if brief is not None else None
+                row['phase'] = 'impl' if brief is not None and report is None else None
+                if quiet:
+                    row['quiet'], row['quiet_for'] = True, fmt_dur(now - last_activity)
+                lanes.append({k: row[k] for k in ('id', 'unit', 'desc', 'elapsed', 'phase', 'quiet', 'quiet_for')})
+            elif st == 'pending':
+                row['waiting_on'] = [d for d in deps_of(t) if status.get(d) != 'done']
+            rows.append(row)
+        out_ms.append({'id': _str(m.get('id')), 'title': _str(m.get('title')),
+                       'done': sum(r['status'] == 'done' for r in rows), 'total': len(rows), 'tasks': rows})
+
+    gates = [{'id': _str(g.get('id')), 'segment': _str(g.get('segment')), 'reason': _str(g.get('reason'))}
+             for g in _list(gates_doc.get('gates')) if isinstance(g, dict) and g.get('status') == 'queued']
+    drive = None
+    if hb is not None:
+        try:
+            drive = {'round': int(hb.get('round', 0)), 'elapsed': fmt_dur(now - float(hb.get('started', now))),
+                     'max': f"{hb.get('max_hours', '?')}j"}
+        except (TypeError, ValueError):
+            drive = {'round': 0, 'elapsed': '', 'max': f"{hb.get('max_hours', '?')}j"}
+    try:
+        rel = wdir.relative_to(root).as_posix()
+    except ValueError:
+        rel = wdir.as_posix()
+    return {
+        'kind': kind, 'name': name, 'dir': rel,
+        'mode': 'unattended' if hb is not None else 'attended', 'drive': drive,
+        'done': sum(t.get('status') == 'done' for t in tasks), 'total': len(tasks),
+        'running': hb is not None or any(not ln['quiet'] for ln in lanes),
+        'lanes': lanes, 'held': held, 'gates': gates, 'eta': None,
+        'milestones': out_ms, 'drive_line': '',
+        '_show': bool(lanes or hb is not None or gates or held),
+        '_mtime': _mtime(wdir / 'tasks.yaml') or 0.0,
+    }
+
+
+def _active_items(root: Path) -> list[tuple[str, Path]]:
+    out = []
+    for kind, sub, manifest, ok in (('feature', 'features', 'feature.yaml', ('active',)),
+                                    ('fix', 'fixes', 'fix.yaml', ('open', 'diagnosed'))):
+        for mf in sorted((root / 'control' / sub).glob(f'*/{manifest}')):
+            if _dict(load_yaml(mf)).get('status') in ok:
+                out.append((kind, mf.parent))
+    return out
+
+
+def snapshot(root: Path, now: float, work_item: str | None = None, quiet_min: int = 30) -> dict:
+    root = Path(root).resolve()
+    if work_item:
+        wdir = Path(work_item)
+        wdir = (wdir if wdir.is_absolute() else root / wdir).resolve()
+        kind = 'fix' if wdir.parent.name == 'fixes' else 'feature'
+        items = [_item(root, kind, wdir, now, quiet_min)]
+    else:
+        items = [_item(root, kind, d, now, quiet_min) for kind, d in _active_items(root)
+                 if (d / 'tasks.yaml').is_file()]
+        items = sorted((it for it in items if it['_show']), key=lambda it: -it['_mtime'])
+    for it in items:
+        del it['_show'], it['_mtime']
+    return {'v': 1, 'items': items, 'alerts': [], 'status_line': None}
+
+
 # --- CLI -----------------------------------------------------------------------------------
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog='build_status.py', description='Pembaca status build context-vault (read-only).')
     ap.add_argument('--parse-yaml', metavar='FILE', help='parse FILE dengan parser subset, cetak JSON')
+    ap.add_argument('--root', default='.', help='root produk (folder yang punya control/)')
+    ap.add_argument('--format', choices=('json',), help='json = snapshot v1')
+    ap.add_argument('--work-item', metavar='DIR', help='hanya work-item ini (relatif root), mis. control/features/<f>')
+    ap.add_argument('--now', type=float, help='epoch "sekarang" (untuk test)')
+    ap.add_argument('--quiet-min', type=int, default=30, help='ambang menit "diam" (default 30)')
     args = ap.parse_args(argv)
     try:
         if args.parse_yaml:
@@ -462,6 +654,11 @@ def main(argv: list[str]) -> int:
             if not p.is_file():
                 raise YamlError(f"{p}: file tidak ada")
             print(json.dumps(load_yaml(p), ensure_ascii=False))
+            return 0
+        if args.format:
+            now = args.now if args.now is not None else time.time()
+            snap = snapshot(Path(args.root), now, args.work_item, args.quiet_min)
+            print(json.dumps(snap, ensure_ascii=False))
             return 0
     except YamlError as e:
         print(f"build_status: {e}", file=sys.stderr)

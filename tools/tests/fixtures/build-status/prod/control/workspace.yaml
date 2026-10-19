@@ -1,0 +1,7 @@
+topology: multi-repo
+apps:
+  - name: api
+    path: api
+  - name: web
+    path: web
+packages: []
