@@ -5,7 +5,7 @@ description: Use untuk ngerti/onboarding plugin context-vault sendiri (BUKAN pro
 
 # guide — Panduan & Q&A plugin context-vault (read-only)
 
-> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya (satu pengecualian: lihat §Batas). Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
 
 Tujuan: bantu siapa pun **paham plugin context-vault** — ada skill apa aja, flow-nya gimana, mulai dari mana, dan jawab pertanyaan soal cara kerjanya. **100% read-only** — nggak pernah nyentuh file, nggak nge-launch skill lain; satu-satunya efek = teks jawaban + pointer command.
 

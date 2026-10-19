@@ -5,7 +5,7 @@ description: Use untuk perubahan KECIL berjejak — keputusan/kebijakan kecil (k
 
 # tweak — Jalur ringan berjejak (konduktor)
 
-> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya (satu pengecualian: lihat §Batas). Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
 
 Tujuan: perubahan KECIL yang tetep ninggalin jejak keputusan di `control/`, TANPA `feature→fanout→plan→breakdown→build`. Cepet karena buang **birokrasi**, BUKAN nurunin bar (TDD + anti-yes-man + floor keamanan tetep jalan). Aman jadi **pintu default**: tripwire auto naik-kelas ke `/feature` (gede/bahaya) atau `/fix` (bug).
 

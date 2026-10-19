@@ -7,7 +7,7 @@ description: Use untuk memperbaiki DEFECT — perilaku yang SUDAH ADA ternyata s
 
 # fix — Lane Bugfix (konduktor, dua mode)
 
-> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya (satu pengecualian: lihat §Batas). Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
 
 Tujuan: koreksi perilaku yang **sudah ada** & salah — TANPA menyeret pipeline fitur penuh. `fix` = **KONDUKTOR**; reproduce, root-cause, dan implementasi ditulis subagent (konteks isolasi → sesi `fix` tetap ramping). **Satu mesin, dua pintu:** loop dalam sama; beda hanya entry/artifact/exit.
 

@@ -54,8 +54,8 @@ NDST="$(find "$DST/skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
 # --- 5. injeksi D4 & D5 ---
 [ -f "$DST/rules/kimi-harness.md" ] && grep -q 'explore' "$DST/rules/kimi-harness.md" \
   && ok "rules/kimi-harness.md ada + mapping explore" || bad "rules/kimi-harness.md hilang/kosong"
-grep -q 'AskUserQuestion' "$DST/rules/kimi-harness.md" \
-  && ok "kimi-harness.md mencatat AskUserQuestion" || bad "kimi-harness.md tanpa catatan AskUserQuestion"
+grep -q 'AskUserQuestion' "$DST/rules/kimi-harness.md" && grep -qF 'tanpa tool itu' "$DST/rules/kimi-harness.md" \
+  && ok "kimi-harness.md mencatat AskUserQuestion + fallback" || bad "kimi-harness.md tanpa catatan AskUserQuestion/fallback"
 [ -f "$DST/rules/ask-user.md" ] && grep -qF '${KIMI_SKILL_DIR}/../../rules/ask-user.md' "$DST/skills/build/SKILL.md" \
   && ok "ask-user.md ikut + rujukan SKILL.md ter-rewrite" || bad "ask-user.md / rujukan SKILL.md belum ikut ke plugin-kimi/"
 

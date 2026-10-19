@@ -5,7 +5,7 @@ description: Use untuk nambah SATU shared package baru ke produk yang sudah di-i
 
 # add-package — Nambah Shared Package Baru (declare lalu architect lalu wire mode-package)
 
-> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya (satu pengecualian: lihat §Batas). Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
 
 Tujuan: numbuhin produk yang SUDAH di-`init` dengan SATU shared package baru (kode bareng dipakai >1 app — ui-kit/types/utils/hooks). `add-package` = konduktor tipis: tulis identitas package ke `control/workspace.yaml` `packages[]`, lalu chain `architect` (stack) lalu `wire` mode-package (scaffold + register, gate typecheck). Hasilnya package baru jadi skeleton kosong-tapi-typecheck-hijau, siap dikonsumsi app. Jalankan dari root produk (punya `control/`).
 

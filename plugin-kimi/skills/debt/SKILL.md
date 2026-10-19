@@ -5,7 +5,7 @@ description: Use untuk mengelola UTANG TEKNIS produk — registry control/debt.y
 
 # debt — Steward Utang Teknis (registry control/debt.yaml)
 
-> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya (satu pengecualian: lihat §Batas). Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
 
 Tujuan: kelola registry utang teknis — hal yang secara arsitektur menyusahkan tapi **sekarang masih benar** (bukan defect → `/fix`; bukan kapabilitas baru → `/feature`). `/debt` **tidak** menulis kode & **tidak** memanggil `build` — pelunasan terjadi di host feature/fix (lewat task `kind: debt`). Satu-satunya pemilik schema `control/debt.yaml`.
 

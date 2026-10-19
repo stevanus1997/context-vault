@@ -5,7 +5,7 @@ description: Use untuk bring-up FONDASI visual produk — turunin mockup awal ja
 
 # design-system — Bring-Up Fondasi Visual (tokens + komponen primitif dari mockup)
 
-> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya (satu pengecualian: lihat §Batas). Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
 
 Tujuan: ubah mockup awal jadi fondasi visual yang DURABLE — `control/design-system.md` (tokens + motion vocab + inventory komponen) + KODE token & komponen primitif — biar fitur UI berikutnya tinggal makai, gak nginvent ad-hoc tiap kali. `design-system` = konduktor tipis (kembaran `add-package`/`add-integration`), beda kunci: ia **bangun kode bertampilan** via atom dispatch Spec A, bukan cuma scaffold skeleton kosong. Jalankan dari root produk (punya `control/`).
 

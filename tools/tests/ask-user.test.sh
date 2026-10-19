@@ -24,10 +24,18 @@ grep -qF 'Pengecualian: Q&A kanal notif' "$RULE" && grep -qF 'Q&A SEKALI lewat k
   && ok "R5 Q&A kanal notif build-unattended interaktif = kotak" || bad "R5 Q&A kanal notif build-unattended interaktif belum dikecualikan"
 grep -qF 'TANPA label "(Recommended)" di opsi gate' "$RULE" \
   && ok "R6 gate tanpa label (Recommended)" || bad "R6 gate masih boleh label (Recommended)"
+# temuan review independen: gate digabung · jawaban kata-kata user · >4 hal · larangan unattended build tetap utuh
+for kw in 'satu panggilan per gate' 'Jawaban = kata-kata user sendiri' '> 4 hal' 'Tanpa baris rujukan: `ask` & `render-docs`'; do
+  grep -qF -- "$kw" "$RULE" && ok "R7 aturan memuat: $kw" || bad "R7 aturan tanpa: $kw"
+done
+grep -qF 'satu kotak per gate' "$SRC/skills/build/SKILL.md" \
+  && ok "R8 build step 6: satu kotak per gate" || bad "R8 build step 6 tanpa satu kotak per gate"
+grep -qF 'JANGAN PERNAH nanya interaktif' "$SRC/skills/build/SKILL.md" && grep -qF 'JANGAN PERNAH akhiri turn dengan pertanyaan interaktif' "$SRC/skills/build/reference.md" \
+  && ok "R9 larangan bertanya unattended build masih utuh" || bad "R9 larangan bertanya unattended build hilang"
 
 # --- S. baris rujukan di SKILL.md (tepat sekali, 2 baris di bawah H1) ---
-LINE='> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.'
-EXCL=" discovery init render-docs "   # discovery/init = keputusan user (spec D10); render-docs = tanpa titik tunggu
+LINE='> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya (satu pengecualian: lihat §Batas). Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.'
+EXCL=" ask discovery init render-docs "   # discovery/init = keputusan user (spec D10); ask & render-docs = tanpa titik tunggu
 case "$LINE" in
   *subagent*) bad "S0 baris rujukan memuat 'subagent' (generator kimi bakal nyuntik pointer)";;
   *)          ok  "S0 baris rujukan bebas kata 'subagent'";;
