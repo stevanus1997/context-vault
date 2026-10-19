@@ -128,7 +128,7 @@ plugin/skills/share/
 
 ### 6.1 Alur generate
 
-1. **Baca:** `feature.yaml`, `business.md`, `fanout.md` (bila ada), `plans/*` (bila ada), `mockups/*` (bila ada), `reviews.md` (bila ada). Minimum = `business.md`. Kalau tidak ada, berhenti dan arahkan ke `/intake`. **Revisi** = angka "Revisi N" tertinggi di kepala `business.md` (tak ada → 1).
+1. **Baca:** `feature.yaml`, `business.md`, `fanout.md` (bila ada), `plans/*` (bila ada), `mockups/*` (bila ada), `reviews.md` (bila ada). Minimum = `business.md`. Kalau tidak ada, berhenti dan arahkan ke `/intake`. **Revisi** (`__REV__`, dihitung `assemble.py`) = angka tertinggi dari "Revisi N" di kepala `business.md` dan sesi `reviews.md` (`versi <hash> (revisi N`): sesi yang hash-nya ≠ hash sekarang dihitung N+1, karena rancangan sudah berubah sejak direview. Tak ada keduanya → 1. *(Amandemen 2026-10-19, review akhir eksekusi.)*
 2. **Rencanakan isi** (`reference.md` §isi): pilih skenario cerita, langkah, kasus gagal, keputusan, diagram, dan keputusan terbuka. Untuk tiap langkah, tentukan frame mockup mana yang ditangkap.
 3. **Tangkap layar** dengan `capture.py`. Claude memeriksa struktur mockup dan memilih cara isolasi per frame:
    - **frame statis** (`section#id .frame`, `figure#id .phone`, dll.): selector CSS. Elemen dipindah ke body kosong, sprite `<svg><symbol>` dipertahankan, transform di-reset.
@@ -157,7 +157,7 @@ capture.py --mockup <path> --out <dir> --name <nama> (--select <css> | --hash <f
 assemble.py --feature-dir <control/features/f> --body <body.html> --images <dir> --mode rancangan|dibangun --revision <n> --out <share.html>
 ```
 
-- Menempel body ke slot template. Mengganti `__IMG:x__` → data URI, `__MOCK:x__` → base64 mockup (dibuka lewat `TextDecoder` di tab baru), `__META__` → `{feature, mode, revision, generated, hash}`.
+- Menempel body ke slot template. Mengganti `__IMG:x__` → data URI, `__MOCK:x__` → base64 mockup (dibuka lewat `TextDecoder` di tab baru; nama berkas langsung di `mockups/`, path keluar folder ditolak), `__HASH__`/`__REV__` → hash/revisi, `__META__` → `{feature, mode, revision, generated, hash}`.
 - Menghitung hash sumber (§5).
 - **Validasi (gagal = exit ≠ 0, nggak menulis output):**
   - sisa placeholder `__X:…__`
