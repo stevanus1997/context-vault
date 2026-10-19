@@ -43,6 +43,7 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 | Doc HTML buat stakeholder | `/render-docs` |
 | File review fitur buat rekan + triase feedback-nya | `/share <fitur>` |
 | Susulin produk lama ke template terbaru | `/upgrade` |
+| Dikabarin di HP tiap skill nunggu lo (attended, Remote Control) | sekali: `/config` → **Push when actions required** |
 
 ### `/feature` vs `/fix` vs `/tweak`
 

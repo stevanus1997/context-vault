@@ -13,3 +13,5 @@ system prompt → seluruh isi file agent dimasukkan sebagai bagian PROMPT tugas.
 | reviewer / reader read-only | sub-agent `explore` |
 
 Root plugin = dua level di atas folder skill yang sedang jalan (`${KIMI_SKILL_DIR}/../..`).
+
+**Titik tunggu attended (`rules/ask-user.md`):** Kimi Code punya tool bawaan `AskUserQuestion` (nama sama, pilihan ganda terstruktur, auto-allowed) → pakai apa adanya. Push native Remote Control khusus Claude Code — di Kimi kotaknya tetap jalan, tanpa push HP.

@@ -41,5 +41,11 @@ done
 grep -qF 'Satu gate = satu panggilan `AskUserQuestion`' "$SRC/skills/build/reference.md" \
   && ok "S3 drain pagi: satu gate per panggilan" || bad "S3 drain pagi tanpa aturan satu gate per panggilan"
 
+# --- D. tip setup push di guide + README ---
+grep -qF 'Push when actions required' "$SRC/skills/guide/reference.md" \
+  && ok "D1 guide cheatsheet: tip push" || bad "D1 guide cheatsheet tanpa tip push"
+grep -qF 'Push when actions required' "$ROOT/README.md" \
+  && ok "D2 README: tip push" || bad "D2 README tanpa tip push"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

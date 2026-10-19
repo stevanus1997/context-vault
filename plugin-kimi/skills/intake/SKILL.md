@@ -7,6 +7,8 @@ description: Use untuk fase bisnis sebuah fitur (P2 fase 1) — Q&A level bisnis
 
 # intake — Business Intake (P2 fase 1)
 
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${KIMI_SKILL_DIR}/../../rules/ask-user.md`.
+
 Tujuan: ubah ide fitur jadi spec bisnis yang jelas & selaras domain, SEBELUM menyentuh teknis.
 
 ## Langkah

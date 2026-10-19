@@ -54,6 +54,10 @@ NDST="$(find "$DST/skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
 # --- 5. injeksi D4 & D5 ---
 [ -f "$DST/rules/kimi-harness.md" ] && grep -q 'explore' "$DST/rules/kimi-harness.md" \
   && ok "rules/kimi-harness.md ada + mapping explore" || bad "rules/kimi-harness.md hilang/kosong"
+grep -q 'AskUserQuestion' "$DST/rules/kimi-harness.md" \
+  && ok "kimi-harness.md mencatat AskUserQuestion" || bad "kimi-harness.md tanpa catatan AskUserQuestion"
+[ -f "$DST/rules/ask-user.md" ] && grep -qF '${KIMI_SKILL_DIR}/../../rules/ask-user.md' "$DST/skills/build/SKILL.md" \
+  && ok "ask-user.md ikut + rujukan SKILL.md ter-rewrite" || bad "ask-user.md / rujukan SKILL.md belum ikut ke plugin-kimi/"
 
 # Pointer: presence XOR — skill ber-'subagent' WAJIB punya pointer, yang tidak WAJIB bersih.
 # Daftar diturunkan dari grep atas SOURCE (mirror logika generator), bukan hardcode.

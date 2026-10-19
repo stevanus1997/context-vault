@@ -89,6 +89,9 @@ Sub-skill bisa dipanggil sendiri: `/intake`, `/fanout`, `/plan`. Tiap tahap ada 
 ## Auto-title session
 Session Claude Code otomatis di-judul dari skill kerja yang dipanggil — `/build checkout-v2` → session `build: checkout-v2` di `/resume`. Skill kerja terakhir menang; skill read-only (`/ask`, `/guide`, `/render-docs`, `/debt`) tidak mengubah judul. Butuh Claude Code v2.1.196+ (versi lama: no-op aman). Catatan: nama hasil `/rename` manual bertahan sampai skill kerja berikutnya dipanggil (batasan hook Claude Code saat ini). Mekanisme `sessionTitle` via `UserPromptSubmit` diverifikasi empiris di v2.1.216 — docs resmi baru mencantumkannya untuk `SessionStart`; kalau CLI mendatang berubah, hook jadi no-op aman.
 
+## Notif di HP (mode attended)
+Nyetir sesi dari HP lewat Remote Control? Nyalain sekali di terminal: `/config` → **Push when actions required** (app Claude login di akun yang sama + izin notif OS). Tiap skill nunggu lo — gate approve/revisi, Q&A keputusan, konfirmasi, permission prompt — HP bunyi, karena titik tunggu attended ditanya lewat kotak `AskUserQuestion` (`rules/ask-user.md`; `discovery`/`init` dikecualikan, tetap teks biasa). Push di-skip selama lo fokus di terminal. Mode unattended tetap lewat `notify.sh`.
+
 ## Tanya produk (read-only)
 ```
 /ask <pertanyaan>   # tanya APA PUN soal produk (greenfield/brownfield): knowledge-first, code-fallback
