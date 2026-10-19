@@ -13,7 +13,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import math
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -564,6 +566,19 @@ def _item(root: Path, kind: str, wdir: Path, now: float, quiet_min: int) -> dict
                   if o is not t and o.get('status') != 'done' and reaches(_str(o.get('id')), tid)]
         held.append({'id': tid, 'unit': _str(t.get('unit')), 'status': st, 'reason': reason, 'blocks': blocks})
 
+    blocked = {h['id'] for h in held} | {b for h in held for b in h['blocks']}
+    samples, pre = [], []                  # bahan estimasi: detik per poin bobot + (unit, bobot, elapsed)
+    for t in tasks:
+        tid, st = _str(t.get('id')), _str(t.get('status'))
+        brief = _mtime(scratch / f"task-{tid}-brief.md")
+        if st == 'done':
+            report = _mtime(scratch / f"task-{tid}-report.md")
+            if brief is not None and report is not None and report > brief:
+                samples.append((report - brief) / weight(t))
+        elif tid not in blocked:
+            el = now - brief if st == 'in_progress' and brief is not None else None
+            pre.append((_str(t.get('unit')), weight(t), el))
+
     lanes, out_ms = [], []
     for m in milestones:
         rows = []
@@ -608,6 +623,8 @@ def _item(root: Path, kind: str, wdir: Path, now: float, quiet_min: int) -> dict
         'milestones': out_ms, 'drive_line': '',
         '_show': bool(lanes or hb is not None or gates or held),
         '_mtime': _mtime(wdir / 'tasks.yaml') or 0.0,
+        '_has_tasks': (wdir / 'tasks.yaml').is_file(),
+        '_wdir': wdir, '_eta': (samples, pre),
     }
 
 
@@ -621,20 +638,169 @@ def _active_items(root: Path) -> list[tuple[str, Path]]:
     return out
 
 
+def _lane_keys(root: Path):
+    """unit → kunci lane: '__integration__', toplevel git repo unit (1 task in-flight per repo), atau 'root'."""
+    paths, cache = None, {}
+
+    def key(unit: str) -> str:
+        nonlocal paths
+        if unit == 'integration':
+            return '__integration__'
+        if unit not in cache:
+            if paths is None:
+                ws = _dict(load_yaml(root / 'control' / 'workspace.yaml'))
+                paths = {e['name']: e['path'] for e in _list(ws.get('apps')) + _list(ws.get('packages'))
+                         if isinstance(e, dict) and isinstance(e.get('name'), str) and isinstance(e.get('path'), str)}
+            cache[unit] = 'root'
+            if unit in paths:
+                try:
+                    r = subprocess.run(['git', '-C', str(root / paths[unit]), 'rev-parse', '--show-toplevel'],
+                                       capture_output=True, text=True, timeout=5)
+                    if r.returncode == 0 and r.stdout.strip():
+                        cache[unit] = r.stdout.strip()
+                except (OSError, subprocess.SubprocessError):
+                    pass
+        return cache[unit]
+    return key
+
+
+def estimate(rows: list[tuple[str, int, float | None]], samples: list[float]) -> tuple[float, float] | None:
+    """Rentang sisa (detik): per lane jumlah bobot × laju − elapsed; ambil lane terberat + integration."""
+    if len(samples) < 3 or not rows:
+        return None
+    xs, n = sorted(samples), len(samples)
+
+    def q(p: float) -> float:
+        pos = p * (n - 1)
+        i = int(pos)
+        return xs[i] if i + 1 >= n else xs[i] + (xs[i + 1] - xs[i]) * (pos - i)
+
+    low_rate = q(0.25) * max(0.5, 1 - 1 / n)
+    high_rate = q(0.75) * (1 + 1 / n)
+    lanes = {}
+    for key, w, el in rows:
+        acc = lanes.setdefault(key, [0.0, 0.0])
+        acc[0] += max(0.0, w * low_rate - (el or 0))
+        acc[1] += max(0.0, w * high_rate - (el or 0))
+    integ = lanes.pop('__integration__', [0.0, 0.0])
+    return (max((v[0] for v in lanes.values()), default=0.0) + integ[0],
+            max((v[1] for v in lanes.values()), default=0.0) + integ[1])
+
+
+def eta_text(low_s: float, high_s: float) -> str:
+    lo = max(1, math.floor(low_s / 60 / 5) * 5)
+    hi = max(lo + 5, math.ceil(high_s / 60 / 5) * 5)
+    if hi < 60:
+        return f"~{lo}–{hi}m"
+
+    def mins(m: int) -> str:
+        if m < 60:
+            return f"{m}m"
+        h, r = divmod(m, 60)
+        return f"{h}j{r}m" if r else f"{h}j"
+    return f"~{mins(lo)}–{mins(hi)}"
+
+
+def status_line(item: dict, others: int) -> str:
+    parts = [f"{item['name']} {item['done']}/{item['total']}"]
+    for n, label in ((len(item['lanes']), 'lane'), (len(item['held']), 'ketahan'), (len(item['gates']), 'gate')):
+        if n:
+            parts.append(f"{n} {label}")
+    if item['eta']:
+        parts.append(item['eta']['text'])
+    if others:
+        parts.append(f"+{others} build lain")
+    return ' · '.join(parts)
+
+
+def drive_line(item: dict) -> str:
+    drive, eta = item['drive'], item['eta']
+    no_tasks = item['total'] == 0 and not item.get('_has_tasks', True)
+    parts = [
+        f"putaran {drive['round']}" if drive else '',
+        'tasks.yaml belum ada' if no_tasks else f"{item['done']}/{item['total']}",
+        '▸ ' + ', '.join(f"{ln['id']} {ln['unit']}" for ln in item['lanes']) if item['lanes'] else '',
+        f"⏸ {len(item['held'])}" if item['held'] else '',
+        f"◆ {len(item['gates'])}" if item['gates'] else '',
+        drive['elapsed'] if drive else '',
+        f"sisa {eta['text']}" if eta else '',
+    ]
+    return ' · '.join(p for p in parts if p)
+
+
+def _last_run(path: Path) -> dict | None:
+    """Header mesin last-run.md (baris `key: nilai` teratas); field absen → None."""
+    mt = _mtime(path)
+    if mt is None:
+        return None
+    try:
+        text = path.read_text(encoding='utf-8', errors='replace')
+    except OSError:
+        return None
+    out = {'outcome': None, 'review': None, 'blockers': None, 'reason': None, 'mtime': mt}
+    for line in text.splitlines():
+        m = re.match(r'^([a-z_]+):\s*(.*?)\s*$', line)
+        if not m:
+            break
+        k, v = m.groups()
+        if k == 'reason':
+            out[k] = v
+        elif k in ('outcome', 'review', 'blockers') and v:
+            out[k] = v.split()[0]
+    return out
+
+
+def alerts_for(name: str, dir: str, held: list[dict], gates: list[dict], last_run: dict | None) -> list[dict]:
+    """Kejadian yang butuh perhatian (spec D6); key stabil supaya mod bisa dedup toast."""
+    out = []
+    for h in held:
+        text = f"⏸ {name} · {h['id']} {h['status']}"
+        if h['reason']:
+            text += f" — {h['reason']}"
+        if h['blocks']:
+            text += f", nahan {len(h['blocks'])} task"
+        out.append({'key': f"held|{dir}|{h['id']}|{h['status']}|{h['reason'] or ''}", 'text': text})
+    for g in gates:
+        out.append({'key': f"gate|{dir}|{g['id']}",
+                    'text': f"◆ {name} · gate {g['id']} antri — {g['segment']}: {g['reason']}"})
+    oc = (last_run or {}).get('outcome')
+    if oc in ('done', 'review', 'halt'):
+        if oc == 'done':
+            text = f"✓ {name} · build selesai — siap /ship"
+        elif oc == 'review':
+            rv, bl = last_run['review'] or '?', last_run['blockers'] or '?'
+            text = f"🔔 {name} · build berhenti — {rv} gate + {bl} blocker nunggu lo"
+        else:
+            text = f"⚠ {name} · build halt — {last_run['reason'] or '?'}"
+        out.append({'key': f"stop|{dir}|{oc}|{int(last_run['mtime'])}", 'text': text})
+    return out
+
+
 def snapshot(root: Path, now: float, work_item: str | None = None, quiet_min: int = 30) -> dict:
     root = Path(root).resolve()
     if work_item:
         wdir = Path(work_item)
         wdir = (wdir if wdir.is_absolute() else root / wdir).resolve()
         kind = 'fix' if wdir.parent.name == 'fixes' else 'feature'
-        items = [_item(root, kind, wdir, now, quiet_min)]
+        every = shown = [_item(root, kind, wdir, now, quiet_min)]
     else:
-        items = [_item(root, kind, d, now, quiet_min) for kind, d in _active_items(root)
-                 if (d / 'tasks.yaml').is_file()]
-        items = sorted((it for it in items if it['_show']), key=lambda it: -it['_mtime'])
-    for it in items:
-        del it['_show'], it['_mtime']
-    return {'v': 1, 'items': items, 'alerts': [], 'status_line': None}
+        every = [_item(root, kind, d, now, quiet_min) for kind, d in _active_items(root)]
+        shown = sorted((it for it in every if it['_has_tasks'] and it['_show']), key=lambda it: -it['_mtime'])
+    alerts = [a for it in every
+              for a in alerts_for(it['name'], it['dir'], it['held'], it['gates'], _last_run(it['_wdir'] / 'last-run.md'))]
+    lane = _lane_keys(root)
+    for it in shown:
+        samples, pre = it['_eta']
+        est = estimate([(lane(u), w, el) for u, w, el in pre], samples) if len(samples) >= 3 and pre else None
+        if est is not None:
+            note = '+ ' + ', '.join(h['id'] for h in it['held']) + ' nunggu lo' if it['held'] else None
+            it['eta'] = {'text': eta_text(*est), 'held_note': note}
+        it['drive_line'] = drive_line(it)
+    for it in every:
+        for k in [k for k in it if k.startswith('_')]:
+            del it[k]
+    return {'v': 1, 'items': shown, 'alerts': alerts,
+            'status_line': status_line(shown[0], len(shown) - 1) if shown else None}
 
 
 # --- CLI -----------------------------------------------------------------------------------
@@ -643,7 +809,8 @@ def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog='build_status.py', description='Pembaca status build context-vault (read-only).')
     ap.add_argument('--parse-yaml', metavar='FILE', help='parse FILE dengan parser subset, cetak JSON')
     ap.add_argument('--root', default='.', help='root produk (folder yang punya control/)')
-    ap.add_argument('--format', choices=('json',), help='json = snapshot v1')
+    ap.add_argument('--format', choices=('json', 'status', 'drive'),
+                    help='json = snapshot v1 · status = status line · drive = baris progres drive.sh (item pertama)')
     ap.add_argument('--work-item', metavar='DIR', help='hanya work-item ini (relatif root), mis. control/features/<f>')
     ap.add_argument('--now', type=float, help='epoch "sekarang" (untuk test)')
     ap.add_argument('--quiet-min', type=int, default=30, help='ambang menit "diam" (default 30)')
@@ -658,7 +825,12 @@ def main(argv: list[str]) -> int:
         if args.format:
             now = args.now if args.now is not None else time.time()
             snap = snapshot(Path(args.root), now, args.work_item, args.quiet_min)
-            print(json.dumps(snap, ensure_ascii=False))
+            if args.format == 'json':
+                print(json.dumps(snap, ensure_ascii=False))
+            elif args.format == 'status':
+                print(snap['status_line'] or '')
+            else:
+                print(snap['items'][0]['drive_line'] if snap['items'] else '')
             return 0
     except YamlError as e:
         print(f"build_status: {e}", file=sys.stderr)

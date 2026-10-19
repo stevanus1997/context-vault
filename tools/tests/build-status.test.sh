@@ -96,5 +96,56 @@ cp "$T/tasks.bak" "$CV/tasks.yaml"
 rm -f "$CV/gates.yaml"; J="$(snap)"
 chk "gates.yaml dihapus → gates [] (nggak crash)" '.items[0].gates' '[]'
 
+# === estimasi + teks ringkas: fungsi murni ===
+pyt() { # pyt <label> <ekspresi python; modul = bs, near(a,b) = toleransi float> — lulus kalau True
+  local out
+  out="$($PY -c 'import importlib.util,sys
+s=importlib.util.spec_from_file_location("bs",sys.argv[1]); bs=importlib.util.module_from_spec(s); s.loader.exec_module(bs)
+near=lambda a,b: a is not None and len(a)==len(b) and all(abs(x-y)<1e-6 for x,y in zip(a,b))
+r=eval(sys.argv[2]); print(repr(r)); sys.exit(0 if r is True else 1)' "$BS" "$2" 2>&1)" && ok "$1" || bad "$1" "$2 → $out"
+}
+pyt "estimate: 2 pending satu lane"        'near(bs.estimate([("api",1,None),("api",1,None)], [600,720,840]), (880.0,2080.0))'
+pyt "eta_text(880,2080)"                    'bs.eta_text(880, 2080) == "~10–35m"'
+pyt "estimate: dua lane, elapsed dikurangi" 'near(bs.estimate([("api",1,720.0),("web",1,420.0)], [600,720,840]), (20.0,620.0))'
+pyt "eta_text(20,620)"                      'bs.eta_text(20, 620) == "~1–15m"'
+pyt "estimate: integration ditambah ke lane terberat" 'near(bs.estimate([("api",1,None),("__integration__",3,None)], [600,600,600]), (1600.0,3200.0))'
+pyt "eta_text(1600,3200)"                   'bs.eta_text(1600, 3200) == "~25–55m"'
+pyt "eta_text ≥ 1 jam"                      'bs.eta_text(3000, 6000) == "~50m–1j40m"'
+pyt "estimate: < 3 sampel → None"           'bs.estimate([("api",1,None)], [600,600]) is None'
+pyt "estimate: rows kosong → None"          'bs.estimate([], [600,720,840]) is None'
+pyt "fmt_dur"                               '[bs.fmt_dur(x) for x in (4320,3600,45,720)] == ["1j12m","1j","<1m","12m"]'
+
+# === estimasi + teks ringkas + alert: CLI ===
+mkprod; hb "$SB" $$
+J="$(snap)"
+chk "eta checkout + held_note"              '.items[0].eta' '{"text":"~1–15m","held_note":"+ T9 nunggu lo"}'
+chk "status_line di snapshot"               '.status_line' '"checkout-v2 7/12 · 2 lane · 1 ketahan · 1 gate · ~1–15m · +1 build lain"'
+chk "fix: < 3 sampel → eta null"            '.items[1].eta' 'null'
+out="$($PY "$BS" --root "$P" --format status --now $NOW)"
+[ "$out" = "checkout-v2 7/12 · 2 lane · 1 ketahan · 1 gate · ~1–15m · +1 build lain" ] && ok "--format status" || bad "--format status" "$out"
+out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/checkout-v2)"
+[ "$out" = "putaran 2 · 7/12 · ▸ T8 api, T11 web · ⏸ 1 · ◆ 1 · 1j12m · sisa ~1–15m" ] && ok "--format drive checkout" || bad "--format drive checkout" "$out"
+mkdir -p "$P/control/features/belum-ada"; printf 'status: active\n' > "$P/control/features/belum-ada/feature.yaml"
+hb "$P/.claude/build/belum-ada" $$ 1 30
+out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/belum-ada)"
+[ "$out" = "putaran 1 · tasks.yaml belum ada · <1m" ] && ok "--format drive tanpa tasks.yaml" || bad "--format drive tanpa tasks.yaml" "$out"
+J="$(snap)"
+chk "alert keys held/gate/stop"             '[.alerts[].key | select(. == "held|control/features/checkout-v2|T9|needs_human|migrate destructive — nunggu lo" or . == "gate|control/features/checkout-v2|G3" or . == "stop|control/features/checkout-v2|review|1799999900")] | length' '3'
+chk "alert stop review .text"               '.alerts[] | select(.key|startswith("stop|control/features/checkout-v2|")) | .text' '"🔔 checkout-v2 · build berhenti — 1 gate + 1 blocker nunggu lo"'
+chk "alert held .text"                      '.alerts[] | select(.key|startswith("held|")) | .text' '"⏸ checkout-v2 · T9 needs_human — migrate destructive — nunggu lo, nahan 2 task"'
+chk "alert gate .text"                      '.alerts[] | select(.key|startswith("gate|")) | .text' '"◆ checkout-v2 · gate G3 antri — api×M2: floor-scan T6 (token)"'
+printf 'outcome: done\ndone: 2\npending: 0\nreason: selesai\n' > "$P/control/features/old-done/last-run.md"; setm "$P/control/features/old-done/last-run.md" 50
+J="$(snap)"
+chk "alert juga untuk work-item yang nggak tampil (old-done selesai)" '[.alerts[] | select(.key == "stop|control/features/old-done|done|1799999950") | .text]' '["✓ old-done · build selesai — siap /ship"]'
+printf 'outcome: review\ndone: 7\npending: 5\nreason: gate antri\n' > "$CV/last-run.md"
+J="$(snap)"
+chk "last-run tanpa review:/blockers: → ?"  '[.alerts[] | select(.key|startswith("stop|control/features/checkout-v2|")) | .text | contains("? gate + ? blocker")]' '[true]'
+printf 'outcome: halt\ndone: 7\npending: 5\nreason: allowlist kosong\n' > "$CV/last-run.md"
+J="$(snap)"
+chk "alert halt .text"                      '[.alerts[] | select(.key|startswith("stop|control/features/checkout-v2|halt|")) | .text]' '["⚠ checkout-v2 · build halt — allowlist kosong"]'
+printf 'outcome: continue\ndone: 7\npending: 5\nreason: cap\n' > "$CV/last-run.md"
+J="$(snap)"
+chk "outcome continue → nggak ada alert stop" '[.alerts[] | select(.key|startswith("stop|control/features/checkout-v2|"))] | length' '0'
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
