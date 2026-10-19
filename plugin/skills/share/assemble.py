@@ -55,12 +55,14 @@ def source_hash(feature_dir):
 
 
 def revision_of(feature_dir):
-    """Angka 'Revisi N' tertinggi di kepala business.md (baris #, >, kosong di awal). Tak ada → 1."""
+    """Revisi tertinggi dari: 'Revisi N' di kepala business.md (baris #, >, kosong di awal), dan
+    sesi reviews.md '## … versi <hash> (revisi N, …)' — hash ≠ hash sekarang berarti sumber berubah
+    sejak direview → N+1. Tak ada keduanya → 1."""
     try:
         with open(os.path.join(feature_dir, 'business.md'), encoding='utf-8') as f:
             lines = f.read().splitlines()
     except OSError:
-        return 1
+        lines = []
     head = []
     for line in lines:
         if line.strip() == '' or line.startswith('#') or line.startswith('>'):
@@ -68,6 +70,14 @@ def revision_of(feature_dir):
             continue
         break
     nums = [int(n) for n in re.findall(r'\bRevisi\s+(\d+)', '\n'.join(head), re.I)]
+    try:
+        with open(os.path.join(feature_dir, 'reviews.md'), encoding='utf-8') as f:
+            sessions = re.findall(r'^##\s.*\bversi\s+([0-9a-f]{8})\s*\(revisi\s+(\d+)', f.read(), re.M | re.I)
+    except OSError:
+        sessions = []
+    if sessions:
+        cur = source_hash(feature_dir)
+        nums += [int(n) + (h.lower() != cur) for h, n in sessions]
     return max(nums) if nums else 1
 
 
@@ -109,6 +119,9 @@ def assemble(feature_dir, body, images_dir, mode, revision, generated):
 
     def mock(mt):
         fname = mt.group(1)
+        if '/' in fname or '\\' in fname or fname.startswith('.'):
+            errs.append(f'mockup di luar mockups/: {fname} (pakai nama berkas langsung di mockups/)')
+            return mt.group(0)
         p = os.path.join(feature_dir, 'mockups', fname)
         if not os.path.isfile(p):
             errs.append(f'mockup tak ada: mockups/{fname}')
@@ -119,7 +132,7 @@ def assemble(feature_dir, body, images_dir, mode, revision, generated):
 
     body = re.sub(r'__IMG:([A-Za-z0-9_.-]+?)__', img, body)
     body = re.sub(r'__MOCK:([^"<>]+?)__', mock, body)
-    body = body.replace('__HASH__', h)
+    body = body.replace('__HASH__', h).replace('__REV__', str(revision))
     for ph in sorted(set(UNKNOWN_PH.findall(body))):
         if not (ph.startswith('__IMG:') or ph.startswith('__MOCK:')):
             errs.append(f'placeholder tak dikenal: {ph}')

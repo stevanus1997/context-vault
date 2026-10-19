@@ -77,6 +77,20 @@ mutate 'versi __HASH__' 'versi __FOO__' "$T/b11.html";                          
 mkdir -p "$T/nobiz"; printf 'OLD' > "$T/f.html"
 if $PY "$SK/assemble.py" --feature-dir "$T/nobiz" --body "$FX/body-ok.html" --mode rancangan --out "$T/f.html" 2> "$T/f.err"; then bad "A12 tanpa business.md harusnya gagal"
 else grep -q 'business.md tak ada' "$T/f.err" && ok "A12 tanpa business.md ditolak" || bad "A12 pesan salah" "$(cat "$T/f.err")"; fi
+mutate '__MOCK:demo.html__' '__MOCK:../business.md__' "$T/b13.html";               fails "A13 __MOCK: di luar mockups/ ditolak" "$T/b13.html" "mockup di luar mockups/: ../business.md"
+rev_of() { # rev_of <feature-dir> → angka "revision" di META hasil rakit
+  $PY "$SK/assemble.py" --feature-dir "$1" --body "$FX/body-ok.html" --images "$T/img" --mode rancangan --generated 2026-10-19 --out "$T/rev.html" >/dev/null 2>&1
+  grep -o '"revision": [0-9]*' "$T/rev.html" | awk '{print $2}'; rm -f "$T/rev.html"
+}
+cp -R "$FX/demo" "$T/demo14"
+printf '# Review — demo\n\n## 2026-10-18 · Rina · versi deadbeef (revisi 2, rancangan)\n' > "$T/demo14/reviews.md"
+R14="$(rev_of "$T/demo14")"; [ "$R14" = 3 ] && ok "A14 revisi naik dari sesi reviews.md versi lama (2 → 3)" || bad "A14 revisi $R14, harusnya 3"
+printf '# Review — demo\n\n## 2026-10-19 · Budi · versi %s (revisi 2, rancangan)\n' "$H" > "$T/demo14/reviews.md"
+R15="$(rev_of "$T/demo14")"; [ -n "$H" ] && [ "$R15" = 2 ] && ok "A15 sesi reviews.md versi sekarang tak menaikkan revisi (2)" || bad "A15 revisi $R15, harusnya 2"
+mutate 'sebelum dibangun · revisi 2' 'sebelum dibangun · revisi __REV__' "$T/b16.html"
+printf '# Review — demo\n\n## 2026-10-18 · Rina · versi deadbeef (revisi 2, rancangan)\n' > "$T/demo14/reviews.md"
+$PY "$SK/assemble.py" --feature-dir "$T/demo14" --body "$T/b16.html" --images "$T/img" --mode rancangan --generated 2026-10-19 --out "$T/r16.html" > /dev/null 2> "$T/r16.err" \
+  && grep -q 'sebelum dibangun · revisi 3' "$T/r16.html" && ok "A16 __REV__ di body = revisi META (3)" || bad "A16 __REV__ tak terganti revisi" "$(cat "$T/r16.err")"
 
 # === capture ===
 MOCK="$FX/demo/mockups/demo.html"
@@ -126,6 +140,24 @@ PY
 }
     R1="$(RED "$O1")"; R9="$(RED "$O9")"
     [ "$R1" -gt 50 ] && [ "$R9" -lt 10 ] && ok "C9 --hide menyembunyikan garis (merah $R1 → $R9)" || bad "C9 --hide tak bekerja (merah $R1 → $R9)"
+    imgsz() { $PY -c 'import sys;from PIL import Image;w,h=Image.open(sys.argv[1]).size;print("%dx%d"%(w,h))' "$1"; }
+    mkdir -p "$T/mk"
+    cat > "$T/mk/m.html" <<'HTML'
+<!doctype html><html><head><meta charset="utf-8"><title>m</title><style>.tall{width:600px;height:2000px;background:#a4580f}</style></head><body>
+<style>.frame{width:400px;height:200px;background:#1f6f5c}</style>
+<section id="f1"><div class="frame">Gaya di body</div></section>
+<section id="t1"><div class="tall">Tinggi</div></section>
+</body></html>
+HTML
+    O10="$($PY "$SK/capture.py" --mockup "$T/mk/m.html" --out "$T/cap" --name bstyle --select '#f1 .frame' 2>"$T/c.err")"
+    S10="$([ -s "$O10" ] && imgsz "$O10")"
+    [ "$S10" = 400x200 ] && ok "C10 <style> di body ikut terbawa (400x200)" || bad "C10 frame kehilangan gaya body (ukuran $S10)" "$(cat "$T/c.err")"
+    O11="$($PY "$SK/capture.py" --mockup "$T/mk/m.html" --out "$T/cap" --name tall --select '#t1 .tall' --device tablet 2>"$T/c.err")"
+    S11="$([ -s "$O11" ] && imgsz "$O11")"
+    [ "$S11" = 600x2000 ] && ok "C11 frame lebih tinggi dari jendela tertangkap utuh (600x2000)" || bad "C11 frame tinggi terpotong ($S11)" "$(cat "$T/c.err")"
+    O12="$($PY "$SK/capture.py" --mockup "$T/mk/m.html" --out "$T/cap" --name full --full --device tablet 2>"$T/c.err")"
+    H12="$([ -s "$O12" ] && imgsz "$O12" | cut -dx -f2)"
+    [ "${H12:-0}" -ge 2100 ] && ok "C12 --full menangkap halaman utuh (tinggi $H12)" || bad "C12 --full terpotong (tinggi ${H12:-?})" "$(cat "$T/c.err")"
   else
     skip "C8/C9 butuh Pillow"
   fi
@@ -193,6 +225,22 @@ PY
   if check_page P1 "$T/p1.html" > "$T/p1.res"; then ok "P1 perilaku halaman"; else bad "P1 perilaku halaman" "$(cat "$T/p1.res")"; fi
   page_test "$T/p2.html" 1
   if check_page P2 "$T/p2.html" > "$T/p2.res"; then ok "P2 localStorage diblokir → tetap jalan"; else bad "P2 localStorage diblokir" "$(cat "$T/p2.res")"; fi
+  # Chrome headless tak bisa < 500px → halaman dimuat di iframe 360px (ponsel Android umum), hasil ukur dikirim ke induk via postMessage
+  $PY - "$T/page.html" "$T/p3-in.html" "$T/p3.html" <<'PY'
+import sys
+s=open(sys.argv[1],encoding='utf-8').read()
+T='''<script>window.addEventListener('load',()=>setTimeout(()=>{
+ const r=q=>document.querySelector(q).getBoundingClientRect();
+ parent.postMessage([innerWidth,r('.fbar').left,r('.fbar').right,r('#fb-copy').right].map(Math.round).join(' '),'*');
+},300));</script>'''
+i=s.rfind('</body>');open(sys.argv[2],'w',encoding='utf-8').write(s[:i]+T+s[i:])
+open(sys.argv[3],'w',encoding='utf-8').write('''<!doctype html><html><body style="margin:0"><iframe src="p3-in.html" style="width:360px;height:800px;border:0"></iframe>
+<script>addEventListener('message',e=>{const p=document.createElement('pre');p.id='OUT';p.textContent=e.data;document.body.appendChild(p)})</script></body></html>''')
+PY
+  "$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="$T/prof-P3" --window-size=1000,900 --virtual-time-budget=5000 --dump-dom "file://$T/p3.html" 2>/dev/null > "$T/dom-P3.html"
+  read -r PW PL PR PC <<< "$(sed -n 's/.*<pre id="OUT">\([-0-9 ]*\)<\/pre>.*/\1/p' "$T/dom-P3.html")"
+  [ "${PW:-0}" -gt 0 ] && [ "$PW" -le 420 ] && [ "$PL" -ge 0 ] && [ "$PC" -le "$PR" ] && [ "$PR" -le "$PW" ] \
+    && ok "P3 bar feedback muat di layar ponsel (lebar ${PW}: bar ${PL}–${PR}, Copy s/d ${PC})" || bad "P3 bar feedback kepotong di ponsel (lebar ${PW:-?}: bar ${PL:-?}–${PR:-?}, Copy s/d ${PC:-?})"
 fi
 
 # === statis ===

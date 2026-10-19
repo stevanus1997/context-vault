@@ -8,7 +8,7 @@ Urutan tetap. Bagian tanpa data **dilewati utuh** (tanpa judul kosong, tanpa "TB
 
 | # | Bagian | Sumber | Dilewati bila |
 |---|---|---|---|
-| 1 | Hero + "Yang gw minta" | `feature.yaml` (nama, `risk`), `fanout.md` (app), revisi kepala `business.md` | tak pernah |
+| 1 | Hero + "Yang gw minta" | `feature.yaml` (nama, `risk`), `fanout.md` (app), revisi (`__REV__`, dihitung `assemble.py`: "Revisi N" tertinggi di kepala `business.md`, atau sesi terakhir `reviews.md` +1 bila sumber sudah berubah sejak direview) | tak pernah |
 | — | Hasilnya (mode dibangun) | bukti `ship`, `tasks.yaml` | mode rancangan |
 | 2 | Masukan kemarin → jadinya | butir `terima` di `reviews.md` sesi ber-hash ≠ hash sekarang. Tak ada → kutipan masukan yang tercatat di `business.md`/`fanout.md`/`plans` | belum pernah ada review/masukan |
 | 3 | Apa & kenapa | `business.md` Tujuan, Hasil/Reward, Pengguna | tak pernah (kotak "Sekarang" bisa absen) |
@@ -57,6 +57,7 @@ Periksa struktur mockup dulu (cari `id` frame, kelas bingkai, routing hash, elem
 2. **Elemen dekorasi mockup** (garis "batas layar", label anotasi, toolbar): `--hide '.fold' --hide '.g-cap'`. Contoh venue-tables: `.fold` = garis merah putus-putus batas layar tablet.
 3. **Routing hash** (mockup satu-layar-banyak-state, misalnya `#atur`, `#walkin/rebut/L`): `--hash 'walkin/rebut/L'`. Chrome mockup (header state, catatan) disembunyikan lewat `--clean-css <file>` atau `--hide`.
 4. **Tak bisa diisolasi:** `--full` (halaman penuh, dipangkas).
+   Frame/halaman yang lebih tinggi/lebar dari jendela device: jendela diperbesar otomatis sampai muat (maks 10000px, lebih dari itu ada peringatan).
 5. **Mockup berupa gambar** (`.png/.jpg` di `mockups/`): tidak ditangkap. Salin ke `.claude/share/<f>/img/<nama>.<ext>`.
 6. Nama gambar: `v-<id>` (tablet/venue), `p-<id>` (ponsel/pemain), atau `<app>-<id>`. Pendek dan stabil.
 
@@ -70,14 +71,14 @@ Salin cuplikan apa adanya, lalu ganti isinya. Semua cuplikan di bawah lolos `ass
 ### Hero
 ```html
 <header class="hero">
-  <div class="eyebrow">Review rancangan · sebelum dibangun · revisi 3</div>
+  <div class="eyebrow">Review rancangan · sebelum dibangun · revisi __REV__</div>
   <h1>Papan meja: walk-in &amp; room online satu hitungan</h1>
   <p class="lede">Revisi 3 nambahin jenis meja, room ber-4, dan "Kabari aku", dari masukan kemarin.</p>
   <div class="chips"><span class="chip">venue-tables</span><span class="chip">app pemain + venue + admin + database</span><span class="chip warn">risiko tinggi</span></div>
   <div class="ask">👀 <span><b>Yang gw minta:</b> ① <a href="#pilih">pilih tata letak papan</a> A/B/C ② cek masukan kemarin udah kejawab ③ klik <b>💬</b> di mana aja.</span></div>
 </header>
 ```
-Mode dibangun: eyebrow `Udah dibangun · cek sebelum merge · revisi N`, ask `cek hasilnya sebelum merge`. `chip warn` hanya untuk `risk: high`.
+Mode dibangun: eyebrow `Udah dibangun · cek sebelum merge · revisi __REV__`, ask `cek hasilnya sebelum merge`. `chip warn` hanya untuk `risk: high`.
 
 ### Masukan kemarin → jadinya
 ```html
@@ -259,7 +260,7 @@ sequenceDiagram
 
 ### Footer
 ```html
-<footer>Dibuat otomatis dari <code>control/features/venue-tables/</code> · 13 Okt 2026, revisi 3 · versi __HASH__</footer>
+<footer>Dibuat otomatis dari <code>control/features/venue-tables/</code> · 13 Okt 2026, revisi __REV__ · versi __HASH__</footer>
 ```
 
 ## §6 Mermaid

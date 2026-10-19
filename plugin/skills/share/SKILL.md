@@ -40,7 +40,7 @@ Strategi isolasi: `reference.md` §4.
 - **Exit 3 (Chrome tak ada)** → lanjut TANPA gambar (`reference.md` §4.5) dan sebut terus terang di ringkasan.
 
 ### 4. Tulis body
-Tulis `.claude/share/<f>/body.html` HANYA dari komponen katalog `reference.md` §5. Nol CSS/JS baru. Patuhi §2 (isi & bahasa) dan §6 (Mermaid). Gambar `__IMG:<nama>__`, tombol mockup `__MOCK:<berkas>__`, versi di footer `__HASH__`.
+Tulis `.claude/share/<f>/body.html` HANYA dari komponen katalog `reference.md` §5. Nol CSS/JS baru. Patuhi §2 (isi & bahasa) dan §6 (Mermaid). Gambar `__IMG:<nama>__`, tombol mockup `__MOCK:<berkas>__`, angka revisi `__REV__` (eyebrow, footer), versi di footer `__HASH__`.
 
 ### 5. Rakit
 ```bash

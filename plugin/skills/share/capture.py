@@ -8,6 +8,7 @@ Exit: 0 ok · 1 Chrome gagal / tangkapan kosong · 2 argumen · 3 Chrome tak ada
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -25,14 +26,26 @@ window.addEventListener('load',function(){
 var t=document.querySelector(%s);
 if(!t){document.body.setAttribute('data-capture','missing');return}
 var keep=[].slice.call(document.querySelectorAll('svg')).filter(function(s){return s.querySelector('symbol')});
+var css=[].slice.call(document.querySelectorAll('body style, body link[rel~="stylesheet"]')).filter(function(s){return !t.contains(s)});
 document.body.innerHTML='';
 document.body.style.cssText='margin:0;padding:20px;background:#fff;width:max-content';
-keep.forEach(function(s){document.body.appendChild(s)});
+css.concat(keep).forEach(function(s){document.body.appendChild(s)});
 t.style.transform='none';t.style.margin='0';
 document.body.appendChild(t);
 document.body.setAttribute('data-capture','ok');
 });
 </script>'''
+
+# Ukuran isi (sesudah isolasi) → jendela screenshot diperbesar agar frame/halaman tinggi tak terpotong.
+MEASURE = '''<script>
+window.addEventListener('load',function(){
+var d=document.documentElement,b=document.body;
+if(!b.hasAttribute('data-capture'))b.setAttribute('data-capture','ok');
+b.setAttribute('data-w',Math.ceil(Math.max(d.scrollWidth,b.scrollWidth)));
+b.setAttribute('data-h',Math.ceil(Math.max(d.scrollHeight,b.scrollHeight)));
+});
+</script>'''
+MAX_SIDE = 10000
 
 
 def find_chrome():
@@ -137,7 +150,7 @@ def main(argv=None):
             css += f.read()
     base = 'file://' + quote(os.path.dirname(mockup)) + '/'
     head = f'<base href="{base}">' + (f'<style>{css}</style>' if css else '')
-    body = ISOLATE % json.dumps(a.select).replace('</', '<\\/') if a.select else ''
+    body = (ISOLATE % json.dumps(a.select).replace('</', '<\\/') if a.select else '') + MEASURE
     with open(mockup, encoding='utf-8', errors='replace') as f:
         src = inject(f.read(), head, body)
 
@@ -149,15 +162,21 @@ def main(argv=None):
             f.write(src)
         url = 'file://' + quote(page) + ('#' + a.hash if a.hash is not None else '')
         profile = os.path.join(tmpdir, 'profile')
-        if a.select:
-            dom = subprocess.run(chrome_cmd(chrome, profile, window, ['--dump-dom', url]),
-                                 capture_output=True, text=True, timeout=120)
-            if 'data-capture="missing"' in dom.stdout:
-                print(f'error: selector tak ketemu: {a.select}', file=sys.stderr)
-                return 4
-            if 'data-capture="ok"' not in dom.stdout:
-                print('error: Chrome gagal memuat mockup (isolasi tak jalan)', file=sys.stderr)
-                return 1
+        dom = subprocess.run(chrome_cmd(chrome, profile, window, ['--dump-dom', url]),
+                             capture_output=True, text=True, timeout=120)
+        if 'data-capture="missing"' in dom.stdout:
+            print(f'error: selector tak ketemu: {a.select}', file=sys.stderr)
+            return 4
+        if 'data-capture="ok"' not in dom.stdout:
+            print('error: Chrome gagal memuat mockup (isolasi tak jalan)', file=sys.stderr)
+            return 1
+        tag = re.search(r'<body\b[^>]*>', dom.stdout)
+        size = [re.search(rf'\bdata-{k}="(\d+)"', tag.group(0)) if tag else None for k in 'wh']
+        if all(size):
+            need = [int(m.group(1)) for m in size]
+            if max(need) > MAX_SIDE:
+                print(f'peringatan: isi {need[0]}x{need[1]}px > {MAX_SIDE}px — tangkapan terpotong', file=sys.stderr)
+            window = tuple(min(MAX_SIDE, max(have, n)) for have, n in zip(window, need))
         png = os.path.join(tmpdir, 'shot.png')
         subprocess.run(chrome_cmd(chrome, profile, window, [f'--screenshot={png}', url]),
                        capture_output=True, timeout=120)
