@@ -6,6 +6,9 @@ user — BUKAN ke routing mekanis (mis. triage verba-list tweak/fix). Tujuan:
 keputusan yang MENYETIR hasil diambil sadar oleh user — bukan keborong jadi satu
 tembakan, bukan "asal pilih recommended".
 
+**Penyajian** (kanal tanya `AskUserQuestion`, urutan konten-dulu-kotak-belakangan,
+batas tool) diatur `rules/ask-user.md`; file ini mengatur ISI-nya.
+
 ## Kontrak
 - **Keputusan-bercabang = satu pertanyaan per giliran.** Keputusan yang MENGUBAH
   ARAH hasil (siapa pengguna, flow/skenario, aturan bisnis, reuse-vs-NEW tabel,
