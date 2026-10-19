@@ -2,10 +2,11 @@
 // Read-only: tiap POLL_MS menjalankan template/.claude/build_status.py (pembaca yang sama dengan
 // baris progres drive.sh) lalu menggambar dari JSON-nya. Nol panggilan model; nol op di `claude -p`.
 // Spec: docs/superpowers/specs/2026-10-19-build-status-panel-design.md
-import { atom, update } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
 import { nextAlerts } from './panel/alerts'
+import { paneRows } from './panel/rows'
 import { parseSnapshot } from './panel/snapshot'
 
 export const PANE = 'cv-build'
@@ -66,5 +67,29 @@ export const register: Register = on => {
       })
     })
     return next(e)
+  })
+
+  on('command.run', { command: 'cv-panel' }, async $ => {
+    const shown = (await $.ui.panes()).some(p => p.id === PANE && p.isShown)
+    if (shown) {
+      await $.ui.close({ id: PANE })
+      return { text: 'Panel build ditutup.' }
+    }
+    await $.ui.open({ id: PANE, title: TITLE })
+    return { text: 'Panel build dibuka.' }
+  })
+
+  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
+    const { Box, Text } = $.ui.resolve(e)
+    const rows = paneRows(await read($, snapshot), await read($, error))
+    return (
+      <Box flexDirection="column">
+        {rows.map(r => (
+          <Text wrap="truncate-end" color={r.color} dimColor={r.dim}>
+            {r.text || ' '}
+          </Text>
+        ))}
+      </Box>
+    )
   })
 }

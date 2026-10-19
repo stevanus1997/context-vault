@@ -2,10 +2,13 @@
 // Engine di bawah plugin dijawab hook test (fs.exists, process.run, ui.*, command.register);
 // hook yang manggil $ tanpa jawaban di-skip diam-diam, jadi tiap op yang dipanggil wajib dijawab.
 import { expect, mock, test } from 'claude-code/testing'
+import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
 import type { Alert, SnapItem, Snapshot } from '../../types'
 import { nextAlerts } from '../panel/alerts'
+import { bar, paneRows } from '../panel/rows'
+import { SNAP_MID } from './fixture-snapshot'
 
 const item = (over: Partial<SnapItem> = {}): SnapItem => ({
   kind: 'feature', name: 'checkout-v2', dir: 'control/features/checkout-v2', mode: 'attended', drive: null,
@@ -25,8 +28,8 @@ const START = { cwd: '/p', surface: null, isInteractive: true } as const
 
 // Jawab semua op engine ({ value } atau { deny } = call plugin reject); process.run dijawab
 // berurutan dari antrian (habis → jawaban terakhir diulang).
-function world(on: On, runs: Run[], opts: { exists?: boolean; before?: () => Promise<void> } = {}) {
-  const seen = { argv: [] as (readonly string[])[], status: [] as (string | undefined)[], toasts: [] as string[], opens: 0, registers: [] as string[] }
+function world(on: On, runs: Run[], opts: { exists?: boolean; before?: () => Promise<void>; panes?: { id: string; isShown: boolean }[] } = {}) {
+  const seen = { argv: [] as (readonly string[])[], status: [] as (string | undefined)[], toasts: [] as string[], opens: 0, closes: 0, registers: [] as string[] }
   let last: Run = runs[0] ?? snapA
   on('session.start', async ($, e) => ({ cwd: e.cwd }))
   on('fs.exists', async () => ({ value: opts.exists ?? true }))
@@ -43,6 +46,10 @@ function world(on: On, runs: Run[], opts: { exists?: boolean; before?: () => Pro
   on('ui.status', async ($, e) => { seen.status.push(e.text); return { value: undefined } })
   on('ui.toast', async ($, e) => { seen.toasts.push(e.text); return { value: undefined } })
   on('ui.open', async () => { seen.opens++; return { value: { isPlaced: true } } })
+  on('ui.close', async () => { seen.closes++; return { value: undefined } })
+  on('ui.panes', async () => ({
+    value: (opts.panes ?? []).map(p => ({ ...p, title: 'context-vault · build', isFocused: false, isPlaced: true, plugin: 'context-vault' })),
+  }))
   return seen
 }
 
@@ -148,4 +155,101 @@ test('nextAlerts murni: baseline lalu yang baru saja', async () => {
   expect(nextAlerts(null, [a])).toEqual({ toast: null, seen: ['a'] })
   expect(nextAlerts(['a'], [a, b])).toEqual({ toast: 'B', seen: ['a', 'b'] })
   expect(nextAlerts(['a', 'b'], [a, b])).toEqual({ toast: null, seen: ['a', 'b'] })
+})
+
+// --- Task 7: isi panel + /cv-panel ---
+const texts = (snap: Snapshot | null, err: string | null = null) => paneRows(snap, err).map(r => r.text)
+const MID2: Snapshot = { ...SNAP_MID, items: SNAP_MID.items.slice(0, 2) }
+
+test('paneRows: header, +N build lain, milestone kelar dilipat', async () => {
+  const t = texts(MID2)
+  expect(t).toContain('checkout-v2  unattended · putaran 2')
+  expect(t).toContain('+1 build lain')
+  expect(t.some(x => x.startsWith('✓ M1 Fondasi auth') && x.endsWith('4/4'))).toBe(true)
+  expect(t.some(x => x.includes(' T1 '))).toBe(false)
+})
+
+test('paneRows: progres + ringkasan 3 baris', async () => {
+  const t = texts(MID2)
+  expect(t).toContain('███████░░░░░ 7/12  sisa ~1–15m + T9 nunggu lo')
+  expect(t).toContain('▸ 2 jalan T8 api · T11 web')
+  expect(t).toContain('⏸ T9 ketahan · nahan T12, T13')
+  expect(t).toContain('◆ 1 gate antri')
+})
+
+test('paneRows: baris task — fase, ketahan + alasan, nunggu dep, int', async () => {
+  const t = texts(MID2)
+  expect(t).toContain('M2 Checkout  ███░░░░░  3/8')
+  expect(t).toContain(' ▸ T8   api  checkout endpoint impl 12m')
+  expect(t).toContain(' ▸ T11  web  cart summary UI 7m')
+  expect(t).toContain(' ⏸ T9   api  migrate orders needs_human')
+  expect(t).toContain('          migrate destructive — nunggu lo')
+  expect(t.find(x => x.startsWith(' · T12 '))?.endsWith('nunggu T9, T11')).toBe(true)
+  expect(t.find(x => x.startsWith(' · T13 '))).toContain(' int  ')
+  expect(t).toContain('◆ G3 api×M2  floor-scan T6 (token)')
+  expect(t).toContain('jalan 1j12m / maks 6j')
+})
+
+test('paneRows: task diam → "diam <durasi>", bukan durasi naik', async () => {
+  const it = MID2.items[0]!
+  const ms = it.milestones.map(m => ({ ...m, tasks: m.tasks.map(x => (x.id === 'T8' ? { ...x, quiet: true, quiet_for: '40m' } : x)) }))
+  const t = texts({ ...MID2, items: [{ ...it, milestones: ms }] })
+  expect(t.find(x => x.startsWith(' ▸ T8 '))?.endsWith('diam 40m')).toBe(true)
+})
+
+test('paneRows: error, belum ada data, nggak ada build; bar', async () => {
+  expect(texts(null, 'butuh python3')[0]).toMatch(/^Panel butuh python3/)
+  expect(paneRows(null, null)).toEqual([{ text: 'Nunggu data…', dim: true }])
+  expect(paneRows({ ...SNAP_MID, items: [] }, null)).toEqual([{ text: 'Nggak ada build jalan.', dim: true }])
+  expect(bar(3, 8, 8)).toBe('███░░░░░')
+  expect(bar(0, 0, 4)).toBe('░░░░')
+  expect(bar(9, 8, 4)).toBe('████')
+})
+
+const PANE_PROPS = { title: 'context-vault · build', isFocused: false, bodyColumns: 60, placement: 'inline', scroll: { offset: 0, bodyRows: 30 }, view: {} } as const
+type Surface = 'terminal' | 'desktop'
+const mountPane = ($: Engine, surface: Surface = 'terminal') =>
+  $.ui.mount({ plugin: 'context-vault', surface, component: 'Pane', requestId: 'cv-build', props: PANE_PROPS })
+
+test('pane di-mount (terminal & desktop): menggambar snapshot terakhir', async ($, on) => {
+  world(on, [SNAP_MID])
+  mock.clock(on)
+  await $.session.start(START)
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await mountPane($, surface)
+    expect(await ui.find({ type: 'Text', text: /^checkout-v2  / })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^✓ M1 Fondasi auth/ })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('pane: exit ≠ 0 sesudah data valid → tetap gambar data lama', async ($, on) => {
+  world(on, [SNAP_MID, { exitCode: 2 }])
+  const clock = mock.clock(on)
+  await $.session.start(START)
+  await clock.advance(3000)
+  const ui = await mountPane($)
+  expect(await ui.find({ type: 'Text', text: /^checkout-v2  unattended/ })).toBeDefined()
+})
+
+test('pane: python3 nggak bisa jalan → pesan install', async ($, on) => {
+  world(on, ['reject'])
+  mock.clock(on)
+  await $.session.start(START)
+  const ui = await mountPane($)
+  expect(await ui.find({ type: 'Text', text: /^Panel butuh python3/ })).toBeDefined()
+})
+
+const CV_PANEL = { command: 'cv-panel', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } } as const
+
+test('/cv-panel: buka kalau belum tampil, tutup kalau tampil', async ($, on) => {
+  const panes: { id: string; isShown: boolean }[] = []
+  const w = world(on, [running(false)], { panes })
+  mock.clock(on)
+  await $.session.start(START)
+  expect((await $.command.run(CV_PANEL)).text).toBe('Panel build dibuka.')
+  expect(w.opens).toBe(1)
+  panes.push({ id: 'cv-build', isShown: true })
+  expect((await $.command.run(CV_PANEL)).text).toBe('Panel build ditutup.')
+  expect(w.closes).toBe(1)
 })
