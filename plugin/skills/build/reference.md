@@ -167,7 +167,7 @@ Tujuan: run hands-off TAK berhenti DIAM — manusia dikabari saat dibutuhkan, bu
 
 **Pengiriman notif = HARNESS via hook (deterministik — jalan walau build beku/crash), BUKAN model:**
 - `on-stop.sh` (hook `Stop`, ter-ship di template): tiap turn berakhir → ADA penanda stop? → panggil `notify.sh` + hapus penanda stop + matikan penanda mode. Tak ada penanda → diam (sesi biasa tak ke-spam).
-- `on-permission.sh` (hook `PermissionRequest`, ter-ship): tool minta approval → penanda mode ADA? → kabari "BEKU nunggu approval" (kasus allowlist §D bocor; model tak bisa kabari diri sendiri saat beku). Tanpa penanda mode → diam. **TIDAK** auto-approve/deny — cuma kabari.
+- `on-permission.sh` (hook `PermissionRequest`, ter-ship): tool minta approval → penanda mode ADA? → kabari "BEKU nunggu approval" (kasus allowlist §D bocor; model tak bisa kabari diri sendiri saat beku). Tool `AskUserQuestion` (harness ikut memicu hook ini untuk kotak pertanyaan) → pesan beda "nunggu jawaban (kotak): <header>" — header saja, isi pertanyaan tak dikirim. Tanpa penanda mode → diam. **TIDAK** auto-approve/deny — cuma kabari.
 
 **notify.sh** (`<root>/.claude/notify.sh`) = kanal pilihan USER, diset SEKALI lewat Q&A kanal **di sesi interaktif** (`wire` 5.5 / `upgrade` / `build --unattended` interaktif) — **JANGAN di headless** (`drive.sh`/`/schedule`): di headless, absen → hook no-op + dicatat di `last-run.md`, precheck `drive.sh` yang menjaga di depan — **BUKAN di-ship plugin** (bisa memuat token/topik pribadi → wajib gitignored, di-handle `init`). Q&A: *"mau dikabarin lewat apa? (1) HP via ntfy.sh (2) notif macOS (3) Telegram (4) tak usah"* → tulis baris yang sesuai, `chmod +x`:
 - ntfy: `curl -fsS -d "$1" ntfy.sh/<topik-unik-user>`

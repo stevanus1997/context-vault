@@ -15,6 +15,11 @@ if command -v jq >/dev/null 2>&1; then
   CMD="$(printf '%s' "$PAYLOAD" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
 fi
 CMD="${CMD:0:60}"                                # ringkas: kecilkan paparan ke kanal notif (lihat reference §G)
+MSG="build BEKU nunggu approval: $TOOL ${CMD}"
+if [ "$TOOL" = "AskUserQuestion" ]; then          # harness ikut memicu hook ini untuk kotak pertanyaan — bukan beku, nunggu jawaban
+  HDR="$(printf '%s' "$PAYLOAD" | jq -r '.tool_input.questions[0].header // ""' 2>/dev/null || true)"
+  MSG="build nunggu jawaban (kotak): ${HDR:0:12}"   # header saja — isi pertanyaan tak dikirim ke kanal (reference §G)
+fi
 NOTIFY="$DIR/.claude/notify.sh"
-[ -x "$NOTIFY" ] && "$NOTIFY" "build BEKU nunggu approval: $TOOL ${CMD}" || true
+[ -x "$NOTIFY" ] && "$NOTIFY" "$MSG" || true
 exit 0

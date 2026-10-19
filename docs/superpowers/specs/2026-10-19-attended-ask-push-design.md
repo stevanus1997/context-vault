@@ -46,6 +46,7 @@ Kriteria berhasil:
 | D8 | Aturan **terpusat di satu file** `plugin/rules/ask-user.md` yang dirujuk tiap skill, mengikuti pola rujukan `rules/elicitation.md`. | Keputusan Claude, disetujui di playback |
 | D9 | Versi Kimi: kalau Kimi Code tidak punya tool yang setara, fallback-nya bertanya dengan teks biasa. | Keputusan Claude, disetujui di playback |
 | D10 | **`discovery` dan `init` dikecualikan**: dua skill itu tidak disentuh dan tetap bertanya dengan teks biasa (tanpa push). Alasannya, `discovery` sengaja elicit-first (operator cerita bebas, AI baru mengusulkan isi kalau operator bilang "gak tau/terserah" → `AI-usul`, rombakan 2026-07-22). Sebelum `init` belum ada knowledge atau kode untuk bahan tebakan, jadi opsi akan mengarang dan menyetir jawaban. | User: *"discovery/init di kecualikan aja"* |
+| D11 | **Amandemen pasca-review (2026-10-19): `on-permission.sh` membedakan kotak pertanyaan.** Harness ikut memicu hook `PermissionRequest` untuk `AskUserQuestion` (anthropics/claude-code#15400). Saat penanda `.unattended` ada, kotak dikabari `build nunggu jawaban (kotak): <header>` (header saja, isi pertanyaan tak dikirim), bukan "BEKU nunggu approval". Penanda basi (run unattended yang mati tanpa hook `Stop`) tetap bikin tiap kotak attended bunyi dobel lewat `notify.sh`. Itu diterima sadar; membersihkan penanda basi tidak dikerjakan. Menggantikan non-goal "mengubah hook" untuk hook ini saja. | User memilih "Ping, pesannya beda" |
 
 ## 5. Kontrak aturan `rules/ask-user.md` (draf isi)
 
@@ -87,7 +88,7 @@ Berlaku di **mode attended**, setiap kali skill butuh jawaban atau keputusan use
 ## 7. Non-goals
 
 - Hook `Stop` → `notify.sh` di attended (Plan B, D2).
-- Mengubah hook, `notify.sh`, `drive.sh`, atau perilaku unattended apa pun.
+- Mengubah hook, `notify.sh`, `drive.sh`, atau perilaku unattended apa pun. *(Pengecualian: pesan `on-permission.sh` untuk `AskUserQuestion`, D11.)*
 - Men-ship setting toggle push di template produk. Toggle itu per-user/per-perangkat dan butuh registrasi app. *(Keputusan Claude.)*
 - Skill memanggil `PushNotification` sendiri.
 
