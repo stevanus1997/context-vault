@@ -328,7 +328,7 @@ class _Parser:
         if s[0] in '|>':
             return self.block_scalar(s, pind, j)
         if s[0] in '"\'':
-            return self.quoted(s, j)
+            return self.quoted(s, pind, j)
         if s[0] == '[':
             return self.flow(s, j)
         return self.plain(s, pind)
@@ -389,17 +389,17 @@ class _Parser:
             return text + '\n' * (1 + trailing)
         return text + '\n'
 
-    def quoted(self, s: str, j: int) -> str:
+    def quoted(self, s: str, pind: int, j: int) -> str:
         buf, k = s, self.i
         while (end := _quoted_end(buf)) < 0:
             if k >= len(self.lines):
                 raise YamlError(f"baris {j + 1}: kutip tak ditutup")
             buf += '\n' + self.lines[k]
             k += 1
-        self.i = k
         tail = buf[end:].strip()
         if tail and not tail.startswith('#'):
-            raise YamlError(f"baris {j + 1}: ada teks sesudah kutip penutup")
+            return self.plain(s, pind)     # `"a" + b`: YAML tak valid, tapi ada di tasks.yaml nyata → teks apa adanya
+        self.i = k
         return _unquote(buf[:end])
 
     def flow(self, s: str, j: int) -> list:

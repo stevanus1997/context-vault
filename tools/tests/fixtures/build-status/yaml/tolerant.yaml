@@ -1,0 +1,8 @@
+# YAML TAK valid (PyYAML menolak) tapi muncul di tasks.yaml nyata; build membacanya biasa,
+# jadi pembaca status juga harus jalan: ambil teksnya apa adanya sebagai skalar polos.
+approach: deck=15 (2p: player-0 starts 1); phase 'play'
+desc: "Main" lagi
+test:
+  - "Main lagi" + keluar wired
+  - 'kutip' lalu teks   # komentar
+  - "normal"

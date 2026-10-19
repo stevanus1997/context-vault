@@ -18,6 +18,10 @@ PY="python3 -B"
 out="$($PY "$BS" --parse-yaml "$FX/yaml/constructs.yaml")"
 $PY -c 'import json,sys; sys.exit(0 if json.loads(sys.argv[1])==json.load(open(sys.argv[2])) else 1)' "$out" "$FX/yaml/constructs.json" \
   && ok "parse-yaml konstruksi" || bad "parse-yaml konstruksi" "$out"
+# 1b. YAML tak valid tapi bermakna (kutip lalu teks, ': ' di skalar polos) → skalar polos, bukan error
+out="$($PY "$BS" --parse-yaml "$FX/yaml/tolerant.yaml" 2>&1)"
+$PY -c 'import json,sys; sys.exit(0 if json.loads(sys.argv[1])==json.load(open(sys.argv[2])) else 1)' "$out" "$FX/yaml/tolerant.json" 2>/dev/null \
+  && ok "parse-yaml toleran (kutip + teks sesudahnya)" || bad "parse-yaml toleran" "$out"
 # 2. tab di indentasi → exit 2, stderr sebut nama file
 err="$($PY "$BS" --parse-yaml "$FX/yaml/tab.yaml" 2>&1 >/dev/null)"; rc=$?
 [ "$rc" = 2 ] && grep -q 'tab.yaml' <<<"$err" && ok "tab → exit 2" || bad "tab → exit 2" "rc=$rc $err"
