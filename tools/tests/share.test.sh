@@ -78,6 +78,59 @@ mkdir -p "$T/nobiz"; printf 'OLD' > "$T/f.html"
 if $PY "$SK/assemble.py" --feature-dir "$T/nobiz" --body "$FX/body-ok.html" --mode rancangan --out "$T/f.html" 2> "$T/f.err"; then bad "A12 tanpa business.md harusnya gagal"
 else grep -q 'business.md tak ada' "$T/f.err" && ok "A12 tanpa business.md ditolak" || bad "A12 pesan salah" "$(cat "$T/f.err")"; fi
 
+# === capture ===
+MOCK="$FX/demo/mockups/demo.html"
+SUM0="$(shasum "$MOCK" | awk '{print $1}')"; LS0="$(ls -a "$FX/demo/mockups")"
+SHARE_CHROME=/nonexistent/chrome $PY "$SK/capture.py" --mockup "$MOCK" --out "$T/cap" --name x --select '#f1 .frame' >/dev/null 2>&1
+[ $? -eq 3 ] && ok "C6 Chrome tak ada → exit 3" || bad "C6 exit code bukan 3"
+CHROME="$($PY "$SK/capture.py" --find-chrome 2>/dev/null || true)"
+HAS_PIL="$($PY -c 'import PIL' 2>/dev/null && echo 1 || echo 0)"
+imgw() { $PY - "$1" <<'PY'
+import sys,struct
+p=sys.argv[1]
+try:
+    from PIL import Image; print(Image.open(p).size[0])
+except ImportError:
+    b=open(p,'rb').read(24); print(struct.unpack('>I',b[16:20])[0] if b[:8]==b'\x89PNG\r\n\x1a\n' else 0)
+PY
+}
+if [ -z "$CHROME" ]; then
+  skip "C1–C9 capture (Chrome tak ditemukan)"
+else
+  ok "C7 --find-chrome → $CHROME"
+  O1="$($PY "$SK/capture.py" --mockup "$MOCK" --out "$T/cap" --name f1 --select '#f1 .frame' --device tablet 2>"$T/c.err")"
+  if [ -s "$O1" ]; then
+    ok "C1 selector statis → $(basename "$O1")"
+    if [ "$HAS_PIL" = 1 ]; then W="$(imgw "$O1")"; [ "$W" = 600 ] && ok "C1 dipangkas ke lebar frame (600)" || bad "C1 lebar $W, harusnya 600"; fi
+  else bad "C1 tak ada hasil" "$(cat "$T/c.err")"; fi
+  O2="$($PY "$SK/capture.py" --mockup "$MOCK" --out "$T/cap" --name f2 --select '#f2 .phone' --device phone 2>"$T/c.err")"
+  if [ -s "$O2" ]; then
+    W="$(imgw "$O2")"; [ "$W" -gt 0 ] && [ "$W" -le 420 ] && ok "C2 ponsel lebar $W ≤ 420" || bad "C2 lebar ponsel $W"
+  else bad "C2 tak ada hasil" "$(cat "$T/c.err")"; fi
+  $PY "$SK/capture.py" --mockup "$MOCK" --out "$T/cap" --name nope --select '#nope' >/dev/null 2>"$T/c.err"; RC=$?
+  [ $RC -eq 4 ] && [ ! -e "$T/cap/nope.jpg" ] && [ ! -e "$T/cap/nope.png" ] && ok "C3 selector tak ketemu → exit 4, tanpa berkas" || bad "C3 rc=$RC" "$(cat "$T/c.err")"
+  O4="$($PY "$SK/capture.py" --mockup "$MOCK" --out "$T/cap" --name stb --hash b --device tablet 2>"$T/c.err")"
+  [ -s "$O4" ] && ok "C4 mode hash → berkas ada" || bad "C4 mode hash gagal" "$(cat "$T/c.err")"
+  [ "$(shasum "$MOCK" | awk '{print $1}')" = "$SUM0" ] && [ "$(ls -a "$FX/demo/mockups")" = "$LS0" ] \
+    && ok "C5 mockup asli utuh, nol berkas sementara di folder mockup" || bad "C5 mockup/folder berubah"
+  if [ "$HAS_PIL" = 1 ]; then
+    $PY "$SK/capture.py" --mockup "$MOCK" --out "$T/cap" --name blank --select '#blank' >/dev/null 2>"$T/c.err"; RC=$?
+    [ $RC -eq 1 ] && grep -q 'tangkapan kosong' "$T/c.err" && ok "C8 tangkapan putih → exit 1 'tangkapan kosong'" || bad "C8 rc=$RC" "$(cat "$T/c.err")"
+    O9="$($PY "$SK/capture.py" --mockup "$MOCK" --out "$T/cap" --name f1h --select '#f1 .frame' --hide '.fold' 2>/dev/null)"
+    RED() { $PY - "$1" <<'PY'
+import sys
+from PIL import Image
+im=Image.open(sys.argv[1]).convert('RGB')
+d=im.tobytes(); print(sum(1 for i in range(0,len(d),3) if d[i]>200 and d[i+1]<80 and d[i+2]<80))
+PY
+}
+    R1="$(RED "$O1")"; R9="$(RED "$O9")"
+    [ "$R1" -gt 50 ] && [ "$R9" -lt 10 ] && ok "C9 --hide menyembunyikan garis (merah $R1 → $R9)" || bad "C9 --hide tak bekerja (merah $R1 → $R9)"
+  else
+    skip "C8/C9 butuh Pillow"
+  fi
+fi
+
 # === RINGKASAN ===
 echo "---"; echo "pass=$PASS fail=$FAIL skip=$SKIP"
 [ "$FAIL" -eq 0 ]
