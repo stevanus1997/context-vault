@@ -1,0 +1,40 @@
+<header class="hero">
+  <div class="eyebrow">Review rancangan · sebelum dibangun · revisi 2</div>
+  <h1>Demo: fitur contoh</h1>
+  <p class="lede">Satu kalimat.</p>
+  <div class="ask">👀 <span><b>Yang gw minta:</b> klik <b>💬</b>.</span></div>
+</header>
+<h2 class="h" style="margin-top:28px">Masukan kemarin → jadinya</h2>
+<div class="chg">
+  <div class="chg-row" data-fb="berubah/tombol" data-src="business.md#Keputusan 2"><span class="from">"tombolnya kekecilan"</span><span class="arr">→</span><span class="to">Tombol dibesarin.</span><a href="#s1">lihat ①</a></div>
+</div>
+<h2 class="h">Ceritanya</h2>
+<div class="story">
+  <div class="step" id="s1" data-fb="cerita/1-mulai" data-src="business.md#Flow 1">
+    <div class="txt"><span class="num">1</span><span class="time">10.00</span><h3>Pengguna mulai</h3><p>Keterangan.</p></div>
+    <img class="shot" src="__IMG:shot__" alt="Layar">
+  </div>
+</div>
+<h2 class="h" id="pilih">Pilih satu: tata letak</h2>
+<div class="opts" data-choice="pilihan/layout" data-fb="pilihan/layout" data-title="Tata letak (A/B)" data-src="plans/app.md#Layout">
+  <div class="opt" data-val="A"><img class="shot" src="__IMG:shot__" alt="A"><h3>A · Kartu</h3><p class="pro">Plus</p><p class="con">Minus</p><button class="btn pick">Pilih A</button></div>
+  <div class="opt" data-val="B"><img class="shot" src="__IMG:shot__" alt="B"><h3>B · Daftar</h3><p class="pro">Plus</p><p class="con">Minus</p><button class="btn pick">Pilih B</button></div>
+</div>
+<h2 class="h">Keputusan yang udah diambil</h2>
+<div class="decs"><div class="dec" data-fb="keputusan/1" data-src="business.md#Keputusan 1"><span class="q">Siapa yang nyalain?</span><span class="a">Owner</span><span class="tag">baru</span></div></div>
+<h2 class="h">Di balik layar</h2>
+<div class="tabs" role="tablist"><button data-tab="seq-1" aria-selected="true">Alur</button></div>
+<div class="diagram" id="seq-1" data-panel data-fb="balik-layar/alur" data-src="plans/app.md#Alur">
+<pre class="mermaid">
+sequenceDiagram
+  actor U as Pengguna
+  participant A as App
+  U->>A: buka
+  A-->>U: "Meja #35;1 siap"
+</pre>
+</div>
+<details class="detail"><summary>Mockup interaktif lengkap</summary><div class="body">
+  <button class="btn" data-mock="__MOCK:demo.html__">Demo ↗</button>
+  <button class="btn" data-mock="__MOCK:Second Screen.html__">Kedua ↗</button>
+</div></details>
+<footer>Dibuat otomatis dari <code>control/features/demo/</code> · versi __HASH__</footer>

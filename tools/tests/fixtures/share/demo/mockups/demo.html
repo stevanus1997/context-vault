@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><title>demo mockup</title>
+<style>
+body{margin:0;background:#f5f2ea;font:14px sans-serif}
+.pg{padding:30px}
+.frame{width:600px;height:300px;background:#1f6f5c;color:#fff;position:relative}
+.phone{width:300px;height:500px;background:#a4580f;color:#fff}
+.fold{position:absolute;left:0;right:0;top:250px;border-top:3px dashed #ff0000}
+.state{display:none;width:400px;height:200px;background:#333;color:#fff}
+.state.on{display:block}
+#blank{width:100px;height:100px;background:#fff}
+</style></head><body>
+<svg style="display:none"><symbol id="i-dot" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></symbol></svg>
+<div class="pg">
+<h1>Demo mockup</h1>
+<section id="f1"><div class="frame">Frame satu <svg width="20" height="20"><use href="#i-dot"/></svg><div class="fold"></div></div></section>
+<figure id="f2"><div class="phone">Ponsel dua</div></figure>
+<div id="blank"></div>
+<div class="state" id="st-a">State A</div><div class="state" id="st-b">State B</div>
+</div>
+<script>
+function route(){document.querySelectorAll('.state').forEach(function(s){s.classList.toggle('on','#'+s.id.slice(3)===location.hash)})}
+window.addEventListener('hashchange',route);route();
+</script>
+</body></html>
