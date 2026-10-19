@@ -131,6 +131,70 @@ PY
   fi
 fi
 
+# === halaman ===
+if [ -z "${CHROME:-}" ]; then
+  skip "P1–P2 halaman (Chrome tak ditemukan)"
+else
+  asm "$FX/body-ok.html" "$T/page.html" > "$T/pg.out" 2>&1 || bad "P0 rakit halaman gagal" "$(cat "$T/pg.out")"
+  HP="$(awk '{print $2}' "$T/pg.out")"
+  page_test() { # page_test <out-html> <blokir-storage 0|1>
+    $PY - "$T/page.html" "$1" "$2" <<'PY'
+import sys
+s=open(sys.argv[1],encoding='utf-8').read()
+block = sys.argv[3]=='1'
+pre = "<script>Object.defineProperty(window,'localStorage',{get(){throw new Error('blocked')}});</script>" if block else ''
+T = '''<script>
+window.addEventListener('load',()=>setTimeout(()=>{
+ const R={};
+ const pick=v=>document.querySelector('.opt[data-val="'+v+'"] .pick').click();
+ const comment=(id,text,act)=>{const b=[...document.querySelectorAll('.fb-btn')].find(x=>x.dataset.for===id);b.click();const box=document.querySelector('.fb-box.open');box.querySelector('textarea').value=text;box.querySelector('[data-act="'+(act||'ok')+'"]').click();};
+ pick('A');pick('B');R.radio=[...document.querySelectorAll('.opt.sel')].map(o=>o.dataset.val).join(',');
+ comment('pilihan/layout','B lebih enak');
+ comment('cerita/1-mulai','Langkah ini jelas\\nTapi <b>tombol</b> "kecil" | ya');
+ comment('keputusan/1','hapus nanti');comment('keputusan/1','','del');
+ document.getElementById('fb-name').value='Tester';
+ R.count=document.getElementById('fb-count').textContent;
+ R.key=window.__shareKey;
+ R.text=window.__shareBuildText();
+ R.injected=!!document.querySelector('.fb-box b');
+ comment('pilihan/layout','','del');
+ const t2=window.__shareBuildText();R.afterDel=t2.includes('pilih: B')&&!t2.includes('B lebih enak');
+ pick('B');R.unpick=document.querySelectorAll('.opt.sel').length;
+ const pre=document.createElement('pre');pre.id='OUT';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
+},300));
+</script>'''
+s=s.replace('<head>','<head>'+pre,1)
+i=s.rfind('</body>');open(sys.argv[2],'w',encoding='utf-8').write(s[:i]+T+s[i:])
+PY
+  }
+  check_page() { # check_page <nama> <html>
+    "$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="$T/prof-$1" --virtual-time-budget=5000 --dump-dom "file://$2" 2>/dev/null > "$T/dom-$1.html"
+    $PY - "$T/dom-$1.html" "$HP" "$1" <<'PY'
+import sys,re,json,html
+d=open(sys.argv[1],encoding='utf-8').read(); h=sys.argv[2]; name=sys.argv[3]
+m=re.search(r'<pre id="OUT">(.*?)</pre>',d,re.S)
+if not m: print('FAIL - %s: hasil uji tak muncul (JS error?)'%name); sys.exit(1)
+R=json.loads(html.unescape(m.group(1)))
+exp='\n'.join(['=== FEEDBACK share:demo ===','versi: rancangan · revisi 2 · 2026-10-19 · '+h,'reviewer: Tester','---',
+ '[pilihan/layout] Tata letak (A/B)','sumber: plans/app.md#Layout','pilih: B','> B lebih enak','---',
+ '[cerita/1-mulai] Pengguna mulai','sumber: business.md#Flow 1','> Langkah ini jelas','> Tapi <b>tombol</b> "kecil" | ya','=== END ==='])
+checks=[('radio: A lalu B → cuma B',R['radio']=='B'),('jumlah komentar 2',R['count']=='2'),
+ ('kunci storage memuat hash',R['key']=='share-fb:demo:'+h),('blok feedback persis format',R['text']==exp),
+ ('komentar tak jadi HTML',not R['injected']),('hapus komentar grup, pilihan tetap',R['afterDel']),
+ ('klik pilihan yang sama = batal',R['unpick']==0)]
+bad=0
+for n,c in checks:
+    print(('ok   - ' if c else 'FAIL - ')+name+' '+n); bad+=0 if c else 1
+if R['text']!=exp: print('      dapat:\n'+R['text'])
+sys.exit(1 if bad else 0)
+PY
+  }
+  page_test "$T/p1.html" 0
+  if check_page P1 "$T/p1.html" > "$T/p1.res"; then ok "P1 perilaku halaman"; else bad "P1 perilaku halaman" "$(cat "$T/p1.res")"; fi
+  page_test "$T/p2.html" 1
+  if check_page P2 "$T/p2.html" > "$T/p2.res"; then ok "P2 localStorage diblokir → tetap jalan"; else bad "P2 localStorage diblokir" "$(cat "$T/p2.res")"; fi
+fi
+
 # === RINGKASAN ===
 echo "---"; echo "pass=$PASS fail=$FAIL skip=$SKIP"
 [ "$FAIL" -eq 0 ]
