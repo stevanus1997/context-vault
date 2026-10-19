@@ -195,6 +195,30 @@ PY
   if check_page P2 "$T/p2.html" > "$T/p2.res"; then ok "P2 localStorage diblokir → tetap jalan"; else bad "P2 localStorage diblokir" "$(cat "$T/p2.res")"; fi
 fi
 
+# === statis ===
+SKMD="$SK/SKILL.md"
+if [ -f "$SKMD" ] && [ "$(head -1 "$SKMD")" = "---" ] && sed -n '2,5p' "$SKMD" | grep -qx 'name: share' \
+   && sed -n '2,6p' "$SKMD" | grep -q '^description: .\{40,\}'; then ok "S1 frontmatter SKILL.md"; else bad "S1 frontmatter SKILL.md (name: share + description)"; fi
+grep -qi 'subagent' "$SKMD" 2>/dev/null && bad "S2 SKILL.md memuat 'subagent' (memicu pointer kimi)" || ok "S2 SKILL.md tanpa 'subagent'"
+grep -l 'CLAUDE_PLUGIN_ROOT' "$SK"/*.py "$SK"/*.html 2>/dev/null | grep -q . && bad "S3 residu CLAUDE_PLUGIN_ROOT di .py/.html" || ok "S3 nol CLAUDE_PLUGIN_ROOT di .py/.html"
+for f in assemble capture; do $PY -c 'import ast,sys;ast.parse(open(sys.argv[1]).read())' "$SK/$f.py" && ok "S4 $f.py sintaks valid" || bad "S4 $f.py sintaks"; done
+for slot in '__TITLE__' '__META__' '<!-- BODY -->' '<!-- MOCKS -->'; do
+  n="$(grep -o -F "$slot" "$SK/template.html" | wc -l | tr -d ' ')"; [ "$n" = 1 ] && ok "S5 slot $slot tepat 1x" || bad "S5 slot $slot muncul ${n}x"; done
+for f in reference.md template.html capture.py assemble.py; do
+  grep -q "$f" "$SKMD" 2>/dev/null && ok "S6 SKILL.md menyebut $f" || bad "S6 SKILL.md tak menyebut $f"; done
+find "$ROOT/plugin" -name __pycache__ | grep -q . && bad "S7 ada __pycache__ di plugin/" || ok "S7 nol __pycache__ di plugin/"
+# Cuplikan katalog reference.md (blok ```html … ```) dirakit bareng harus lolos validasi
+$PY - "$SK/reference.md" "$T/ref-body.html" <<'PY'
+import re,sys
+s=open(sys.argv[1],encoding='utf-8').read()
+blocks=re.findall(r'```html\n(.*?)```',s,re.S)
+body='\n'.join(blocks)
+body=re.sub(r'__MOCK:[^"<>]+?__','__MOCK:demo.html__',body)
+open(sys.argv[2],'w',encoding='utf-8').write(body)
+PY
+for n in $(grep -o '__IMG:[A-Za-z0-9_.-]*__' "$T/ref-body.html" | sed 's/__IMG:\(.*\)__/\1/' | sort -u); do cp "$T/img/shot.png" "$T/img/$n.png"; done
+if asm "$T/ref-body.html" "$T/ref.html" > /dev/null 2> "$T/ref.err"; then ok "S8 semua cuplikan katalog reference.md lolos validasi"; else bad "S8 cuplikan reference.md gagal validasi" "$(cat "$T/ref.err")"; fi
+
 # === RINGKASAN ===
 echo "---"; echo "pass=$PASS fail=$FAIL skip=$SKIP"
 [ "$FAIL" -eq 0 ]
