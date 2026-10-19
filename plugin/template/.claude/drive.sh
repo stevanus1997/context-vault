@@ -101,8 +101,14 @@ ticker() {     # jalan di subshell latar; TERM → bunuh sleep anaknya dulu supa
   local line last=""
   TSLEEP=""
   trap '[ -n "$TSLEEP" ] && kill "$TSLEEP" 2>/dev/null; exit 0' TERM
-  while :; do
-    line="$("$PY" "$BS" --root "$ROOT" --work-item "control/features/$FITUR" --format drive 2>/dev/null)" || line=""
+  exec 3>&1                            # stdout asli (TTY?) — di dalam $(…) stdout jadi pipe
+  while kill -0 "$$" 2>/dev/null; do   # $$ = PID drive.sh (subshell mewarisinya); induk di-kill -9 → berhenti sendiri
+    width=""                             # TTY: potong ke lebar terminal — baris yang wrap tak bisa ditimpa \r
+    if [ -t 1 ]; then
+      cols="$(stty size <&3 2>/dev/null | awk '{print $2}')"; case "$cols" in ''|*[!0-9]*|0) cols="${COLUMNS:-80}" ;; esac
+      width="--width $(( cols > 20 ? cols - 10 : 10 ))"
+    fi
+    line="$("$PY" "$BS" --root "$ROOT" --work-item "control/features/$FITUR" --format drive $width 2>/dev/null)" || line=""
     if [ -n "$line" ]; then
       if [ -t 1 ]; then printf '\r\033[K[drive] %s' "$line"
       elif [ "$line" != "$last" ]; then printf '[drive] %s\n' "$line"; fi

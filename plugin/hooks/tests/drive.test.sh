@@ -123,10 +123,33 @@ if [ "$dur" -lt 5 ]; then ok "\$(drive) nggak nunggu sleep ticker (dur=${dur}s)"
 # 14. dibunuh (TERM) di tengah putaran → exit 130, heartbeat dihapus, nol proses sisa
 setup $'slow:continue:1\ndone:2'
 PATH="$HOME/bin:$PATH" DRIVE_TICK=6.17 bash "$PROD/.claude/drive.sh" fitur-x 1 > "$PROD/drive.out" 2>&1 & dpid=$!
-sleep 0.5; kill -TERM "$dpid"; wait "$dpid"; rc=$?; sleep 0.3; left="$(dleft)"
+for _ in $(seq 50); do [ "$(calls)" = 1 ] && break; sleep 0.1; done   # tunggu claude benar-benar jalan (precheck kadang > 0.5 dtk)
+sleep 0.2; kill -TERM "$dpid"; wait "$dpid"; rc=$?; sleep 0.3; left="$(dleft)"
 if [ "$rc" = 130 ] && [ ! -e "$PROD/.claude/build/fitur-x/drive.json" ] && [ -z "$left" ] && [ "$(calls)" = 1 ]; then
   ok "TERM → exit 130, heartbeat hilang, ticker mati"
 else bad "TERM di tengah putaran" "rc=$rc calls=$(calls) sisa=[$left] hb=$(ls "$PROD/.claude/build/fitur-x" 2>&1)"; fi
+
+# 14b. dibunuh kill -9 (trap tak jalan) → ticker sadar induknya mati & berhenti sendiri
+setup $'slow:done:2'
+PATH="$HOME/bin:$PATH" DRIVE_TICK=0.3 bash "$PROD/.claude/drive.sh" fitur-x 1 > "$PROD/drive.out" 2>&1 & dpid=$!
+sleep 0.5; kill -9 "$dpid"; wait "$dpid" 2>/dev/null; sleep 1.5; left="$(pgrep -f "$PROD/.claude/drive.sh")"
+if [ -z "$left" ]; then ok "kill -9 → ticker ikut berhenti (nol proses sisa)"; else bad "kill -9: ticker yatim masih jalan" "sisa=[$left]"; pkill -f "$PROD/.claude/drive.sh"; fi
+
+# 14c. TTY sempit: baris progres dipotong ke lebar terminal (kalau wrap, \r\033[K cuma hapus baris terakhir)
+# (stdin dari /dev/null: `script` BSD gagal tcgetattr kalau stdin-nya socket/pipe)
+if script -q /dev/null true </dev/null >/dev/null 2>&1; then tty_run() { script -q /dev/null bash -c "$1" </dev/null; }        # BSD/macOS
+elif script -qec true /dev/null </dev/null >/dev/null 2>&1; then tty_run() { script -qec "bash -c '$1'" /dev/null </dev/null; }  # util-linux
+else tty_run() { return 99; }; fi
+setup $'slow:done:2'
+out="$(tty_run "stty cols 20 2>/dev/null; cd '$PROD' && PATH='$HOME/bin:$PATH' DRIVE_TICK=0.3 bash .claude/drive.sh fitur-x 1" 2>&1)"; rc=$?
+if [ "$rc" = 99 ]; then echo "skip - TTY sempit (perintah script tak tersedia)"
+else
+  long="$(python3 -c 'import re,sys
+segs=[re.sub(r"\x1b\[K","",x) for x in re.split(r"[\r\n]",sys.argv[1])]
+print("\n".join(x for x in segs if x.startswith("[drive] putaran 1") and len(x) > 19))' "$out")"   # muat di 20 kolom tanpa wrap
+  seen="$(printf '%s' "$out" | tr '\r' '\n' | grep -c '\[drive\] putaran 1')"
+  if [ -z "$long" ] && [ "$seen" -ge 1 ]; then ok "TTY 20 kolom: baris progres ≤ lebar terminal"; else bad "TTY sempit: baris progres kepanjangan" "panjang=[$long] seen=$seen"; fi
+fi
 
 # 15. precheck python3 → STOP + instruksi, nol putaran
 setup $'done:1'; out="$(DRIVE_PYTHON=/nonexistent drive)"; rc=$?

@@ -91,11 +91,23 @@ chk "--work-item tanpa tasks.yaml → total 0, milestones []" '.items[0] | [.tot
 J="$(snap)"
 chk "fitur tanpa tasks.yaml nggak ikut scan" '[.items[].name]' '["checkout-v2","2026-10-01-null-guard"]'
 
-cp "$CV/tasks.yaml" "$T/tasks.bak"; printf 'milestones:\n\t- id: M9\n' >> "$CV/tasks.yaml"
+cp "$CV/tasks.yaml" "$T/tasks.bak"; printf 'milestones:\n\t- id: M9\n' >> "$CV/tasks.yaml"; setm "$CV/tasks.yaml" 5
 out="$(snap 2>"$T/err")"; rc=$?
-[ "$rc" = 2 ] && grep -q 'checkout-v2/tasks.yaml' "$T/err" && [ -z "$out" ] && ok "tasks.yaml rusak → exit 2, path di stderr, stdout kosong" \
-  || bad "tasks.yaml rusak → exit 2" "rc=$rc out=$out err=$(cat "$T/err")"
-cp "$T/tasks.bak" "$CV/tasks.yaml"
+[ "$rc" = 2 ] && grep -q 'checkout-v2/tasks.yaml' "$T/err" && [ -z "$out" ] && ok "tasks.yaml rusak & baru ditulis (≤60 dtk) → exit 2, path di stderr, stdout kosong" \
+  || bad "tasks.yaml rusak baru → exit 2" "rc=$rc out=$out err=$(cat "$T/err")"
+cp "$T/tasks.bak" "$CV/tasks.yaml"; setm "$CV/tasks.yaml" 60
+J="$(snap)"
+chk "normal: errors []"                     '.errors' '[]'
+printf '%s\n' 'feature: old-done' 'milestones:' '  - id: M1' '    title: X' '    tasks:' '      - id: T1' '        desc: x' '       status: done' \
+  > "$P/control/features/old-done/tasks.yaml"; setm "$P/control/features/old-done/tasks.yaml" 3600
+printf 'status:\tshipped\n\tx: 1\n' > "$P/control/features/shipped-x/feature.yaml"; setm "$P/control/features/shipped-x/feature.yaml" 3600
+J="$(snap 2>"$T/err")"; rc=$?
+[ "$rc" = 0 ] && ok "file rusak LAMA di work-item lain → exit 0 (bukan gelapkan semua)" || bad "file rusak lama → exit 0" "rc=$rc $(cat "$T/err")"
+chk "file rusak lama: item sehat tetap tampil" '[.items[].name]' '["checkout-v2","2026-10-01-null-guard"]'
+chk "file rusak lama: dilaporkan di errors"  '[.errors[] | .dir] | sort' '["control/features/old-done","control/features/shipped-x"]'
+chk "errors.message relatif root + baris"    '.errors[] | select(.dir == "control/features/old-done") | .message' '"control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga"'
+cp "$FX/prod/control/features/old-done/tasks.yaml" "$P/control/features/old-done/tasks.yaml"
+cp "$FX/prod/control/features/shipped-x/feature.yaml" "$P/control/features/shipped-x/feature.yaml"
 
 rm -f "$CV/gates.yaml"; J="$(snap)"
 chk "gates.yaml dihapus → gates [] (nggak crash)" '.items[0].gates' '[]'
@@ -127,8 +139,17 @@ chk "status_line di snapshot"               '.status_line' '"checkout-v2 7/12 ·
 chk "fix: < 3 sampel → eta null"            '.items[1].eta' 'null'
 out="$($PY "$BS" --root "$P" --format status --now $NOW)"
 [ "$out" = "checkout-v2 7/12 · 2 lane · 1 ketahan · 1 gate · ~1–15m · +1 build lain" ] && ok "--format status" || bad "--format status" "$out"
+rm -f "$SB/drive.json"
+out="$($PY "$BS" --root "$P" --format status --now $NOW --quiet-min 0)"
+[ "$out" = "checkout-v2 7/12 · 2 diam · 1 ketahan · 1 gate · ~5–20m · +1 build lain" ] \
+  && ok "build diam (crash): '2 diam', ETA tanpa mengurangi elapsed basi" || bad "build diam: status_line" "$out"
+hb "$SB" $$
 out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/checkout-v2)"
 [ "$out" = "putaran 2 · 7/12 · ▸ T8 api, T11 web · ⏸ 1 · ◆ 1 · 1j12m · sisa ~1–15m" ] && ok "--format drive checkout" || bad "--format drive checkout" "$out"
+out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/checkout-v2 --width 30)"
+[ "$out" = "putaran 2 · 7/12 · ▸ T8 api, …" ] && ok "--width 30 → dipotong + '…' (muat satu baris terminal)" || bad "--width 30" "$out"
+out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/checkout-v2 --width 200)"
+[ "$out" = "putaran 2 · 7/12 · ▸ T8 api, T11 web · ⏸ 1 · ◆ 1 · 1j12m · sisa ~1–15m" ] && ok "--width lebar → utuh" || bad "--width 200" "$out"
 mkdir -p "$P/control/features/belum-ada"; printf 'status: active\n' > "$P/control/features/belum-ada/feature.yaml"
 hb "$P/.claude/build/belum-ada" $$ 1 30
 out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/belum-ada)"

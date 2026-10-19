@@ -32,7 +32,8 @@ export function paneRows(snap: Snapshot | null, error: string | null): Row[] {
   if (error !== null) return [{ text: 'Panel butuh python3 — install dulu (macOS: xcode-select --install).', color: 'warning' }]
   if (snap === null) return [{ text: 'Nunggu data…', dim: true }]
   const it = snap.items[0]
-  if (!it) return [{ text: 'Nggak ada build jalan.', dim: true }]
+  const errs: Row[] = (snap.errors ?? []).map(e => ({ text: `⚠ ${e.message}`, color: 'warning' }))
+  if (!it) return [{ text: 'Nggak ada build jalan.', dim: true }, ...errs]
 
   const rows: Row[] = [{ text: `${it.name}  ${it.drive ? `unattended · putaran ${it.drive.round}` : 'attended'}` }]
   if (snap.items.length > 1) rows.push({ text: `+${snap.items.length - 1} build lain`, dim: true })
@@ -40,7 +41,10 @@ export function paneRows(snap: Snapshot | null, error: string | null): Row[] {
     text: `${bar(it.done, it.total, 12)} ${it.done}/${it.total}` +
       (it.eta ? `  sisa ${it.eta.text}` : '') + (it.eta?.held_note ? ` ${it.eta.held_note}` : ''),
   })
-  if (it.lanes.length) rows.push({ text: `▸ ${it.lanes.length} jalan ${it.lanes.map(l => `${l.id} ${l.unit}`).join(' · ')}`, color: 'suggestion' })
+  if (it.lanes.length) {
+    const label = it.lanes.some(l => !l.quiet) ? 'jalan' : 'diam'   // diam = in_progress tanpa aktivitas (crash / nunggu jawaban)
+    rows.push({ text: `▸ ${it.lanes.length} ${label} ${it.lanes.map(l => `${l.id} ${l.unit}`).join(' · ')}`, color: 'suggestion' })
+  }
   for (const h of it.held) {
     rows.push({ text: `⏸ ${h.id} ketahan` + (h.blocks.length ? ` · nahan ${h.blocks.join(', ')}` : ''), color: 'warning' })
   }
@@ -59,6 +63,7 @@ export function paneRows(snap: Snapshot | null, error: string | null): Row[] {
     rows.push({ text: '' })
     for (const g of it.gates) rows.push({ text: `◆ ${g.id} ${g.segment}  ${g.reason}`, color: 'permission' })
   }
+  if (errs.length) rows.push({ text: '' }, ...errs)
   if (it.drive) rows.push({ text: `jalan ${it.drive.elapsed} / maks ${it.drive.max}`, dim: true })
   return rows
 }

@@ -27,7 +27,7 @@ from pathlib import Path
 # tetap string; key tanpa nilai dan tanpa blok → None. Nilai yang diawali '{' = string mentah.
 
 class YamlError(Exception):
-    pass
+    path: Path | None = None               # file yang rusak (diisi load_yaml)
 
 
 _BLOCK_HEADER = re.compile(r'^([|>])([+-]?)([1-9]?)([+-]?)\s*(#.*)?$')
@@ -443,21 +443,20 @@ def load_yaml(path: Path):
     """None kalau file nggak ada; YamlError (memuat path) kalau rusak/nggak kebaca."""
     path = Path(path)
     try:
-        text = path.read_text(encoding='utf-8')
+        return parse_yaml(path.read_text(encoding='utf-8'))
     except FileNotFoundError:
         return None
-    except (OSError, UnicodeDecodeError) as e:
-        raise YamlError(f"{path}: {e}") from None
-    try:
-        return parse_yaml(text)
-    except YamlError as e:
-        raise YamlError(f"{path}: {e}") from None
+    except (OSError, UnicodeDecodeError, YamlError) as e:
+        err = YamlError(f"{path}: {e}")
+        err.path = path
+        raise err from None
 
 
 # --- Snapshot v1 ---------------------------------------------------------------------------
 # Skema dikunci (dicerminkan plugin/types/index.d.ts). Aturan: spec §5.
 
 HELD = ('blocked', 'needs_human')
+FRESH_ERROR_S = 60     # file rusak yang baru diubah = mungkin setengah tertulis → exit 2 (mod pakai hasil terakhir)
 
 
 def _dict(x) -> dict:
@@ -576,7 +575,8 @@ def _item(root: Path, kind: str, wdir: Path, now: float, quiet_min: int) -> dict
             if brief is not None and report is not None and report > brief:
                 samples.append((report - brief) / weight(t))
         elif tid not in blocked:
-            el = now - brief if st == 'in_progress' and brief is not None else None
+            # task diam (sesi crash / nunggu jawaban): elapsed-nya basi → hitung bobot penuh, jangan dikurangi
+            el = now - brief if st == 'in_progress' and brief is not None and not quiet else None
             pre.append((_str(t.get('unit')), weight(t), el))
 
     lanes, out_ms = [], []
@@ -628,17 +628,17 @@ def _item(root: Path, kind: str, wdir: Path, now: float, quiet_min: int) -> dict
     }
 
 
-def _active_items(root: Path) -> list[tuple[str, Path]]:
+def _active_items(root: Path, guard) -> list[tuple[str, Path]]:
     out = []
     for kind, sub, manifest, ok in (('feature', 'features', 'feature.yaml', ('active',)),
                                     ('fix', 'fixes', 'fix.yaml', ('open', 'diagnosed'))):
         for mf in sorted((root / 'control' / sub).glob(f'*/{manifest}')):
-            if _dict(load_yaml(mf)).get('status') in ok:
+            if _dict(guard(lambda: load_yaml(mf), mf.parent)).get('status') in ok:
                 out.append((kind, mf.parent))
     return out
 
 
-def _lane_keys(root: Path):
+def _lane_keys(root: Path, guard):
     """unit → kunci lane: '__integration__', toplevel git repo unit (1 task in-flight per repo), atau 'root'."""
     paths, cache = None, {}
 
@@ -648,7 +648,7 @@ def _lane_keys(root: Path):
             return '__integration__'
         if unit not in cache:
             if paths is None:
-                ws = _dict(load_yaml(root / 'control' / 'workspace.yaml'))
+                ws = _dict(guard(lambda: load_yaml(root / 'control' / 'workspace.yaml'), root / 'control'))
                 paths = {e['name']: e['path'] for e in _list(ws.get('apps')) + _list(ws.get('packages'))
                          if isinstance(e, dict) and isinstance(e.get('name'), str) and isinstance(e.get('path'), str)}
             cache[unit] = 'root'
@@ -703,7 +703,8 @@ def eta_text(low_s: float, high_s: float) -> str:
 
 def status_line(item: dict, others: int) -> str:
     parts = [f"{item['name']} {item['done']}/{item['total']}"]
-    for n, label in ((len(item['lanes']), 'lane'), (len(item['held']), 'ketahan'), (len(item['gates']), 'gate')):
+    lane = 'lane' if any(not ln['quiet'] for ln in item['lanes']) else 'diam'
+    for n, label in ((len(item['lanes']), lane), (len(item['held']), 'ketahan'), (len(item['gates']), 'gate')):
         if n:
             parts.append(f"{n} {label}")
     if item['eta']:
@@ -778,17 +779,32 @@ def alerts_for(name: str, dir: str, held: list[dict], gates: list[dict], last_ru
 
 def snapshot(root: Path, now: float, work_item: str | None = None, quiet_min: int = 30) -> dict:
     root = Path(root).resolve()
+    errors = []
+
+    def guard(load, wdir: Path):
+        """File rusak di satu work-item tak boleh menggelapkan yang lain: rusak & LAMA → lewati + catat;
+        rusak & baru diubah (mungkin setengah tertulis) → YamlError → exit 2, mod pakai hasil terakhir."""
+        try:
+            return load()
+        except YamlError as e:
+            mt = _mtime(e.path) if e.path else None
+            if work_item or mt is None or now - mt <= FRESH_ERROR_S:
+                raise
+            errors.append({'dir': wdir.relative_to(root).as_posix(), 'message': str(e).replace(f"{root}/", '')})
+            return None
+
     if work_item:
         wdir = Path(work_item)
         wdir = (wdir if wdir.is_absolute() else root / wdir).resolve()
         kind = 'fix' if wdir.parent.name == 'fixes' else 'feature'
         every = shown = [_item(root, kind, wdir, now, quiet_min)]
     else:
-        every = [_item(root, kind, d, now, quiet_min) for kind, d in _active_items(root)]
+        every = [it for kind, d in _active_items(root, guard)
+                 if (it := guard(lambda: _item(root, kind, d, now, quiet_min), d)) is not None]
         shown = sorted((it for it in every if it['_has_tasks'] and it['_show']), key=lambda it: -it['_mtime'])
     alerts = [a for it in every
               for a in alerts_for(it['name'], it['dir'], it['held'], it['gates'], _last_run(it['_wdir'] / 'last-run.md'))]
-    lane = _lane_keys(root)
+    lane = _lane_keys(root, guard)
     for it in shown:
         samples, pre = it['_eta']
         est = estimate([(lane(u), w, el) for u, w, el in pre], samples) if len(samples) >= 3 and pre else None
@@ -800,7 +816,7 @@ def snapshot(root: Path, now: float, work_item: str | None = None, quiet_min: in
         for k in [k for k in it if k.startswith('_')]:
             del it[k]
     return {'v': 1, 'items': shown, 'alerts': alerts,
-            'status_line': status_line(shown[0], len(shown) - 1) if shown else None}
+            'status_line': status_line(shown[0], len(shown) - 1) if shown else None, 'errors': errors}
 
 
 # --- CLI -----------------------------------------------------------------------------------
@@ -814,6 +830,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument('--work-item', metavar='DIR', help='hanya work-item ini (relatif root), mis. control/features/<f>')
     ap.add_argument('--now', type=float, help='epoch "sekarang" (untuk test)')
     ap.add_argument('--quiet-min', type=int, default=30, help='ambang menit "diam" (default 30)')
+    ap.add_argument('--width', type=int, help='status/drive: potong teks ke N karakter (+ "…") supaya muat satu baris')
     args = ap.parse_args(argv)
     try:
         if args.parse_yaml:
@@ -827,10 +844,14 @@ def main(argv: list[str]) -> int:
             snap = snapshot(Path(args.root), now, args.work_item, args.quiet_min)
             if args.format == 'json':
                 print(json.dumps(snap, ensure_ascii=False))
-            elif args.format == 'status':
-                print(snap['status_line'] or '')
+                return 0
+            if args.format == 'status':
+                line = snap['status_line'] or ''
             else:
-                print(snap['items'][0]['drive_line'] if snap['items'] else '')
+                line = snap['items'][0]['drive_line'] if snap['items'] else ''
+            if args.width and len(line) > args.width:
+                line = line[:max(0, args.width - 1)] + '…'
+            print(line)
             return 0
     except YamlError as e:
         print(f"build_status: {e}", file=sys.stderr)

@@ -17,6 +17,7 @@ const snapshot = atom({ plugin: 'context-vault', key: 'snapshot' } as const, nul
 const error = atom({ plugin: 'context-vault', key: 'error' } as const, null)
 const seen = atom({ plugin: 'context-vault', key: 'seen' } as const, null)
 const wasRunning = atom({ plugin: 'context-vault', key: 'wasRunning' } as const, false)
+const autoOpened = atom({ plugin: 'context-vault', key: 'autoOpened' } as const, [])
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
@@ -48,13 +49,22 @@ export const register: Register = on => {
       })
       if (toast) $.ui.toast(toast, { timeoutMs: 8000 })
 
-      const isRunning = snap.items[0]?.running ?? false
-      let opens = false
+      // Auto-open sekali per work-item per sesi: jeda antar-task (running sempat false) tak membuka
+      // ulang panel yang sudah ditutup user; buka manual tetap lewat /cv-panel.
+      const top = snap.items[0]
+      const isRunning = top?.running ?? false
+      let starts = false
       await update($, wasRunning, was => {
-        opens = isRunning && !was
+        starts = isRunning && !was
         return isRunning
       })
-      if (opens) await $.ui.open({ id: PANE, title: TITLE })
+      if (!starts || !top) return
+      let fresh = false
+      await update($, autoOpened, dirs => {
+        fresh = !dirs.includes(top.dir)
+        return fresh ? [...dirs, top.dir] : dirs
+      })
+      if (fresh) await $.ui.open({ id: PANE, title: TITLE })
     }
 
     await poll()

@@ -55,7 +55,10 @@ export type SnapItem = {
 
 export type Alert = { key: string; text: string }
 
-export type Snapshot = { v: 1; items: SnapItem[]; alerts: Alert[]; status_line: string | null }
+// File rusak (dan sudah lama, bukan setengah tertulis) di satu work-item: item itu dilewati.
+export type SnapError = { dir: string; message: string }
+
+export type Snapshot = { v: 1; items: SnapItem[]; alerts: Alert[]; status_line: string | null; errors: SnapError[] }
 
 declare module 'claude-code' {
   interface PluginState {
@@ -64,6 +67,7 @@ declare module 'claude-code' {
       error: string | null
       seen: string[] | null
       wasRunning: boolean
+      autoOpened: string[]
     }
   }
 }

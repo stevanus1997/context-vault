@@ -18,7 +18,7 @@ const item = (over: Partial<SnapItem> = {}): SnapItem => ({
 const gateG3: Alert = { key: 'gate|control/features/checkout-v2|G3', text: '◆ checkout-v2 · gate G3 antri — api×M2: floor-scan T6 (token)' }
 const heldT9: Alert = { key: 'held|control/features/checkout-v2|T9|needs_human|', text: '⏸ checkout-v2 · T9 needs_human' }
 const stop: Alert = { key: 'stop|control/features/checkout-v2|review|1799999900', text: '🔔 checkout-v2 · build berhenti — 1 gate + 1 blocker nunggu lo' }
-const snapA: Snapshot = { v: 1, items: [item()], alerts: [gateG3], status_line: 'checkout-v2 7/12 · 1 gate' }
+const snapA: Snapshot = { v: 1, items: [item()], alerts: [gateG3], status_line: 'checkout-v2 7/12 · 1 gate', errors: [] }
 const snapB: Snapshot = { ...snapA, alerts: [gateG3, heldT9], status_line: 'checkout-v2 7/12 · 1 ketahan · 1 gate' }
 const snapC: Snapshot = { ...snapA, alerts: [gateG3, heldT9, stop] }
 const running = (r: boolean): Snapshot => ({ ...snapA, items: [item({ running: r })] })
@@ -123,15 +123,18 @@ test('python3 nggak bisa jalan → status dikosongkan; pulih di poll berikut tan
   expect(w.toasts).toEqual([])
 })
 
-test('auto-open hanya saat running berubah false → true', async ($, on) => {
-  const w = world(on, [running(true), running(true), running(false), running(true)])
+test('auto-open sekali per work-item: jeda antar-task nggak buka ulang panel yang ditutup user', async ($, on) => {
+  const other: Snapshot = { ...snapA, items: [item({ name: 'login', dir: 'control/features/login', running: true })] }
+  const w = world(on, [running(true), running(true), running(false), running(true), running(false), other])
   const clock = mock.clock(on)
   await $.session.start(START)
   expect(w.opens).toBe(1)
-  await clock.advance(3000)
+  await clock.advance(3000)                  // masih jalan
+  await clock.advance(3000)                  // jeda: task lama done, task baru belum in_progress
+  await clock.advance(3000)                  // task berikut jalan — fitur sama
   expect(w.opens).toBe(1)
   await clock.advance(3000)
-  await clock.advance(3000)
+  await clock.advance(3000)                  // build lain mulai → buka sekali untuk dia
   expect(w.opens).toBe(2)
 })
 
@@ -195,6 +198,20 @@ test('paneRows: task diam → "diam <durasi>", bukan durasi naik', async () => {
   const ms = it.milestones.map(m => ({ ...m, tasks: m.tasks.map(x => (x.id === 'T8' ? { ...x, quiet: true, quiet_for: '40m' } : x)) }))
   const t = texts({ ...MID2, items: [{ ...it, milestones: ms }] })
   expect(t.find(x => x.startsWith(' ▸ T8 '))?.endsWith('diam 40m')).toBe(true)
+})
+
+test('paneRows: lane diam (sesi crash) → ringkasan "diam", bukan "jalan"', async () => {
+  const it = MID2.items[0]!
+  const t = texts({ ...MID2, items: [{ ...it, running: false, lanes: it.lanes.map(l => ({ ...l, quiet: true, quiet_for: '2j' })) }] })
+  expect(t).toContain('▸ 2 diam T8 api · T11 web')
+})
+
+test('paneRows: file rusak di work-item lain → baris peringatan, item sehat tetap tampil', async () => {
+  const err = { dir: 'control/features/old-done', message: 'control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga' }
+  const t = texts({ ...MID2, errors: [err] })
+  expect(t[0]).toBe('checkout-v2  unattended · putaran 2')
+  expect(t).toContain('⚠ control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga')
+  expect(texts({ ...MID2, items: [], errors: [err] })).toEqual(['Nggak ada build jalan.', '⚠ control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga'])
 })
 
 test('paneRows: error, belum ada data, nggak ada build; bar', async () => {
