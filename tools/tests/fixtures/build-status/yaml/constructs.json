@@ -1,0 +1,6 @@
+{"feature":"demo","kosong":null,"quoted":"a: {b} # bukan komentar","single":"it's",
+ "flow":["T1","a, b","c"],"flow_empty":[],"mentah":"{x: 1}",
+ "nested":{"child":{"leaf":"v"}},
+ "items":[{"create":"src/a.ts"},{"modify":"src/b.ts"}],
+ "tasks":[{"id":"T1","deps":["T0"],"approach":"baris satu: ada titik dua\nbaris dua - [bukan list]\n","note":"dilipat jadi satu"},
+          {"id":"T2","manual":["langkah satu"]}]}
