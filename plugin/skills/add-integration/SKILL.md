@@ -5,6 +5,8 @@ description: Use untuk nambah SATU vendor eksternal (pembayaran/email/kurir/paja
 
 # add-integration — Nambah Vendor Eksternal (declare lalu wire mode-integration bila inbound)
 
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
+
 Tujuan: numbuhin produk yang SUDAH di-`init` dengan SATU vendor eksternal (layanan pihak-ketiga — pembayaran/email/kurir/pajak). `add-integration` = konduktor tipis: tulis kontrak SHAPE vendor ke `control/integrations.md`, lalu (HANYA bila vendor punya arah inbound) chain `wire` mode-integration buat scaffold stub webhook-receiver + rekam SHAPE env. Jalankan dari root produk (punya `control/`).
 
 `add-integration` = **kembaran `add-app`/`add-package`** (lihat spec `2026-06-01-m5-integrations-design.md`), beda penting: vendor TAK punya stack → **TIDAK** chain `architect`; vendor outbound-only → cukup rekam SHAPE env, **TANPA** `wire`.

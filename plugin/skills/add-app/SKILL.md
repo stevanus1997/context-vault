@@ -5,6 +5,8 @@ description: Use untuk nambah SATU app baru ke produk yang sudah di-init — tul
 
 # add-app — Nambah App Baru (declare lalu architect lalu wire)
 
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
+
 Tujuan: numbuhin produk yang SUDAH di-`init` dengan SATU app baru. `add-app` = konduktor tipis: tulis identitas app ke `control/workspace.yaml`, lalu chain `architect` (stack) lalu `wire` (bring-up). Hasilnya app baru jadi skeleton kosong-tapi-jalan, siap di-`feature`. Jalankan dari root produk (punya `control/`).
 
 `add-app` **satu-satunya penulis entri app baru pasca-`init`**. Ia TIDAK mutusin stack (jatah `architect`) & TIDAK scaffold/DB/wiring sendiri (jatah `wire`) — ia delegasi. Berat-beratnya tetap di skill yang dipanggil.

@@ -5,6 +5,8 @@ description: Use untuk fase teknis per-app sebuah fitur (P2 fase 2) — baca kod
 
 # plan — Technical Plan per-app (P2 fase 2)
 
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
+
 Tujuan: untuk tiap app yang kena fitur, susun plan implementasi konkret berbasis kode & konvensi yang ADA.
 
 > Detail **UI-Contract**, slot `Mockup:` 3-jalur, cross-check, dispatch generate, & round-trip ada di `${CLAUDE_PLUGIN_ROOT}/skills/plan/reference.md` — baca itu saat app menyentuh permukaan UI.

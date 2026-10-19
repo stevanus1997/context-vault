@@ -5,6 +5,8 @@ description: Use untuk menyusun / me-re-plan BACKLOG produk — jembatan konsep�
 
 # roadmap — Jembatan Konsep → Backlog
 
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
+
 Tujuan: mengubah konsep produk jadi backlog fitur terurut yang bisa langsung dikonsumsi `feature` — flow produk + daftar fitur (tujuan · epic · depends_on · target), semua level BISNIS. Penulis tunggal `control/roadmap.md`. Re-runnable kapan pun untuk re-plan.
 
 > Q&A ikuti `${CLAUDE_PLUGIN_ROOT}/rules/elicitation.md` (keputusan-bercabang satu per giliran, opsi bawa konsekuensi). Status fitur TIDAK pernah ditulis ke `roadmap.md` — selalu diturunkan dari `control/features/*/feature.yaml` saat dibaca (nol dual-write).

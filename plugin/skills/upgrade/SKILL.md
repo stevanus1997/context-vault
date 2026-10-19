@@ -5,6 +5,8 @@ description: Use untuk menyusulin produk LAMA (di-init pakai versi plugin sebelu
 
 # upgrade — Susulin produk ke template terbaru (migrasi versi)
 
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
+
 Tujuan: produk yang di-`init` pakai plugin versi LAMA ketinggalan file scaffolding yang ditambah versi baru (mis. `.claude/hooks/`, `drive.sh`, blok `hooks` di `settings.json`, file `control/` baru seperti `invariants.md`/`risks.md`). `upgrade` menyusulinnya — **hanya file kubu-plugin**, **tanpa pernah menyentuh knowledge/customisasi produk**. Produk BARU tak perlu ini (`init` terbaru sudah menyalin semua).
 
 > `init` = bikin produk (sekali). `upgrade` = susulin produk yang SUDAH ada ke template terkini (kapan saja, idempoten). BUKAN re-init / re-wire.
