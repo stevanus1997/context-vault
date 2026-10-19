@@ -25,6 +25,8 @@ file ini mengatur PENYAJIAN-nya (lewat apa & urutannya).
   tiap opsi = konsekuensinya (mis. "Approve → tulis business.md, lanjut
   fanout"). Catatan revisi lewat "Other" (disediakan otomatis oleh tool). Opsi
   khas skill (Drop/Regen/…) boleh, total tetap 2–4.
+  TANPA label "(Recommended)" di opsi gate — approve sekali-tap dari HP jadi
+  stempel karet (`anti-yes-man.md`).
 - **Q&A keputusan** (isi tetap `elicitation.md`): satu keputusan-bercabang =
   satu panggilan, satu pertanyaan; 2–4 opsi, `description` = 1 baris
   konsekuensi; "Other" = jalan keluar menu ("ceritain versimu sendiri"); TANPA
@@ -47,7 +49,13 @@ file ini mengatur PENYAJIAN-nya (lewat apa & urutannya).
 ## Batas
 - **Unattended/headless: DILARANG.** Tetap berlaku aturan "JANGAN PERNAH nanya
   interaktif" (`build`): pertanyaan jadi entri `queued`/`hold:`, notif lewat
-  hook + `notify.sh` seperti biasa.
+  hook + `notify.sh` seperti biasa. Larangan ini berlaku untuk run tanpa
+  pengawasan itu sendiri & semua run headless (`claude -p` / `drive.sh` /
+  `/schedule`).
+- **Pengecualian: Q&A kanal notif di AWAL `build <fitur> unattended` dari sesi
+  INTERAKTIF** (`build` step 1 "Lapor-keluar", `reference.md` §G) — user masih
+  di sesi, jadi itu titik tunggu attended → kotak `AskUserQuestion`. Headless +
+  `notify.sh` absen tetap JANGAN tanya.
 - **Subagent tidak memanggil `AskUserQuestion`** — implementer/reviewer/critic
   mengembalikan pertanyaan ke controller (pola existing); controller yang
   bertanya ke user lewat kotak.

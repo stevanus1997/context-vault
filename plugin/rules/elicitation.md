@@ -7,7 +7,8 @@ keputusan yang MENYETIR hasil diambil sadar oleh user — bukan keborong jadi sa
 tembakan, bukan "asal pilih recommended".
 
 **Penyajian** (kanal tanya `AskUserQuestion`, urutan konten-dulu-kotak-belakangan,
-batas tool) diatur `rules/ask-user.md`; file ini mengatur ISI-nya.
+batas tool) diatur `rules/ask-user.md`; file ini mengatur ISI-nya. Pengecualian:
+`discovery` & `init` TIDAK pakai kotak — tetap tanya teks biasa (`ask-user.md` §Batas).
 
 ## Kontrak
 - **Keputusan-bercabang = satu pertanyaan per giliran.** Keputusan yang MENGUBAH

@@ -17,6 +17,13 @@ for kw in 'AskUserQuestion' 'Konten dulu, kotak belakangan' 'Push when actions r
 done
 grep -qF 'rules/ask-user.md' "$SRC/rules/elicitation.md" \
   && ok "R3 elicitation.md menunjuk ask-user.md" || bad "R3 elicitation.md tanpa pointer ask-user.md"
+# temuan review akhir: pointer elicitation.md bocor ke discovery (D10) · Q&A kanal notif build-unattended interaktif · (Recommended) di gate
+grep -qF '`discovery` & `init` TIDAK pakai kotak' "$SRC/rules/elicitation.md" \
+  && ok "R4 pointer elicitation.md menyebut pengecualian discovery/init" || bad "R4 pointer elicitation.md tanpa pengecualian discovery/init"
+grep -qF 'Pengecualian: Q&A kanal notif' "$RULE" && grep -qF 'Q&A SEKALI lewat kotak `AskUserQuestion`' "$SRC/skills/build/SKILL.md" \
+  && ok "R5 Q&A kanal notif build-unattended interaktif = kotak" || bad "R5 Q&A kanal notif build-unattended interaktif belum dikecualikan"
+grep -qF 'TANPA label "(Recommended)" di opsi gate' "$RULE" \
+  && ok "R6 gate tanpa label (Recommended)" || bad "R6 gate masih boleh label (Recommended)"
 
 # --- S. baris rujukan di SKILL.md (tepat sekali, 2 baris di bawah H1) ---
 LINE='> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.'
