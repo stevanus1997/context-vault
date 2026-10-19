@@ -23,12 +23,12 @@ const snapB: Snapshot = { ...snapA, alerts: [gateG3, heldT9], status_line: 'chec
 const snapC: Snapshot = { ...snapA, alerts: [gateG3, heldT9, stop] }
 const running = (r: boolean): Snapshot => ({ ...snapA, items: [item({ running: r })] })
 
-type Run = Snapshot | { exitCode: number; stdout?: string } | 'reject'
+type Run = Snapshot | { exitCode: number; stdout?: string; stderr?: string } | 'reject'
 const START = { cwd: '/p', surface: null, isInteractive: true } as const
 
 // Jawab semua op engine ({ value } atau { deny } = call plugin reject); process.run dijawab
 // berurutan dari antrian (habis → jawaban terakhir diulang).
-function world(on: On, runs: Run[], opts: { exists?: boolean; before?: () => Promise<void>; panes?: { id: string; isShown: boolean }[] } = {}) {
+function world(on: On, runs: Run[], opts: { exists?: boolean; before?: () => Promise<void>; panes?: { id: string; isShown: boolean }[]; openDeny?: boolean } = {}) {
   const seen = { argv: [] as (readonly string[])[], status: [] as (string | undefined)[], toasts: [] as string[], opens: 0, closes: 0, registers: [] as string[] }
   let last: Run = runs[0] ?? snapA
   on('session.start', async ($, e) => ({ cwd: e.cwd }))
@@ -41,11 +41,11 @@ function world(on: On, runs: Run[], opts: { exists?: boolean; before?: () => Pro
     last = r
     if (r === 'reject') return { deny: 'spawn python3 ENOENT' }
     if ('v' in r) return { value: { exitCode: 0, stdout: JSON.stringify(r), stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
-    return { value: { exitCode: r.exitCode, stdout: r.stdout ?? '', stderr: 'boom', isStdoutTruncated: false, isStderrTruncated: false } }
+    return { value: { exitCode: r.exitCode, stdout: r.stdout ?? '', stderr: r.stderr ?? 'boom', isStdoutTruncated: false, isStderrTruncated: false } }
   })
   on('ui.status', async ($, e) => { seen.status.push(e.text); return { value: undefined } })
   on('ui.toast', async ($, e) => { seen.toasts.push(e.text); return { value: undefined } })
-  on('ui.open', async () => { seen.opens++; return { value: { isPlaced: true } } })
+  on('ui.open', async () => { seen.opens++; return opts.openDeny ? { deny: 'ui.open ditolak' } : { value: { isPlaced: true } } })
   on('ui.close', async () => { seen.closes++; return { value: undefined } })
   on('ui.panes', async () => ({
     value: (opts.panes ?? []).map(p => ({ ...p, title: 'context-vault · build', isFocused: false, isPlaced: true, plugin: 'context-vault' })),
@@ -113,14 +113,81 @@ test('exit ≠ 0 / JSON setengah jadi → status lama dipertahankan, baseline al
   expect(w.toasts).toEqual([heldT9.text])    // gateG3 tetap dianggap sudah dilihat
 })
 
-test('python3 nggak bisa jalan → status dikosongkan; pulih di poll berikut tanpa toast', async ($, on) => {
+test('python3 nggak bisa jalan → status dikosongkan; jeda 60 dtk (nggak spawn tiap 3 dtk), lalu pulih tanpa toast', async ($, on) => {
   const w = world(on, ['reject', snapA])
   const clock = mock.clock(on)
   await $.session.start(START)
   expect(w.status).toEqual([undefined])
-  await clock.advance(3000)
+  for (let i = 0; i < 5; i++) await clock.advance(3000)
+  expect(w.argv.length).toBe(1)              // t=15000: masih jeda
+  await clock.advance(45_000)                // t=60000: jeda habis → coba lagi
+  expect(w.argv.length).toBe(2)
   expect(w.status.at(-1)).toBe('checkout-v2 7/12 · 1 gate')
   expect(w.toasts).toEqual([])
+})
+
+test('exit 2 (setengah tertulis) terus > 90 dtk → data lama berhenti dipajang: peringatan + status kosong', async ($, on) => {
+  const w = world(on, [snapA, { exitCode: 2, stderr: 'build_status: control/features/x/tasks.yaml: kosong' }])
+  const clock = mock.clock(on)
+  await $.session.start(START)
+  await clock.advance(87_000)                // gagal sejak t=3000 → 84 dtk: masih wajar
+  expect(w.status.at(-1)).toBe('checkout-v2 7/12 · 1 gate')
+  await clock.advance(9_000)                 // t=96000 → 93 dtk
+  expect(w.status.at(-1)).toBeUndefined()
+  const ui = await mountPane($)
+  expect(await ui.find({ type: 'Text', text: /^Panel: data basi/ })).toBeDefined()
+})
+
+test('pembaca crash (exit 1) → baris error dari stderr + status kosong, bukan "Nunggu data…" diam-diam', async ($, on) => {
+  const w = world(on, [{ exitCode: 1, stderr: 'Traceback (most recent call last):\n  File "x", line 1\nValueError: boom\n' }])
+  mock.clock(on)
+  await $.session.start(START)
+  expect(w.status).toEqual([undefined])
+  const ui = await mountPane($)
+  expect(await ui.find({ type: 'Text', text: /^Panel: pembaca status gagal \(exit 1\): ValueError: boom$/ })).toBeDefined()
+})
+
+test('python3 stub macOS (Command Line Tools belum ada) → pesan install; python3 lama (SyntaxError) → pesan versi', async ($, on) => {
+  world(on, [
+    { exitCode: 1, stderr: 'xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun\n' },
+    { exitCode: 1, stderr: '  File "build_status.py", line 394\nSyntaxError: invalid syntax\n' },
+  ])
+  const clock = mock.clock(on)
+  await $.session.start(START)
+  let ui = await mountPane($)
+  expect(await ui.find({ type: 'Text', text: /^Panel butuh python3/ })).toBeDefined()
+  await ui.unmount()
+  await clock.advance(60_000)
+  ui = await mountPane($)
+  expect(await ui.find({ type: 'Text', text: /^Panel: python3 terlalu lama/ })).toBeDefined()
+})
+
+test('auto-open: build yang jalan bukan item teratas tetap membuka panel', async ($, on) => {
+  const snap: Snapshot = { ...snapA, items: [item({ running: false }), item({ name: 'login', dir: 'control/features/login', running: true })] }
+  const w = world(on, [snap])
+  mock.clock(on)
+  await $.session.start(START)
+  expect(w.opens).toBe(1)
+})
+
+test('poll pertama melempar (ui.open ditolak) → interval tetap hidup', async ($, on) => {
+  const w = world(on, [running(true), snapA], { openDeny: true })
+  const clock = mock.clock(on)
+  await $.session.start(START)
+  await clock.advance(3000)
+  expect(w.argv.length).toBe(2)
+  expect(w.status.at(-1)).toBe('checkout-v2 7/12 · 1 gate')
+})
+
+test('reload mod (session.start jalan lagi, $.state tetap): alert lama nggak di-toast, panel nggak dibuka ulang', async ($, on) => {
+  const w = world(on, [running(true), running(true)])
+  mock.clock(on)
+  await $.session.start(START)
+  expect(w.opens).toBe(1)
+  await $.session.start(START)
+  expect(w.argv.length).toBe(2)
+  expect(w.toasts).toEqual([])
+  expect(w.opens).toBe(1)
 })
 
 test('auto-open sekali per work-item: jeda antar-task nggak buka ulang panel yang ditutup user', async ($, on) => {
@@ -214,8 +281,15 @@ test('paneRows: file rusak di work-item lain → baris peringatan, item sehat te
   expect(texts({ ...MID2, items: [], errors: [err] })).toEqual(['Nggak ada build jalan.', '⚠ control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga'])
 })
 
+test('paneRows: ETA lewat estimasi → tanpa "sisa"', async () => {
+  const it = MID2.items[0]!
+  const t = texts({ ...MID2, items: [{ ...it, eta: { text: 'lewat estimasi', held_note: null } }] })
+  expect(t).toContain('███████░░░░░ 7/12  lewat estimasi')
+})
+
 test('paneRows: error, belum ada data, nggak ada build; bar', async () => {
   expect(texts(null, 'butuh python3')[0]).toMatch(/^Panel butuh python3/)
+  expect(texts(SNAP_MID, 'data basi — x')).toEqual(['Panel: data basi — x'])
   expect(paneRows(null, null)).toEqual([{ text: 'Nunggu data…', dim: true }])
   expect(paneRows({ ...SNAP_MID, items: [] }, null)).toEqual([{ text: 'Nggak ada build jalan.', dim: true }])
   expect(bar(3, 8, 8)).toBe('███░░░░░')

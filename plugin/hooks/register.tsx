@@ -12,6 +12,19 @@ import { parseSnapshot } from './panel/snapshot'
 export const PANE = 'cv-build'
 export const TITLE = 'context-vault · build'
 export const POLL_MS = 3000
+export const STALE_MS = 90_000      // exit 2 (file setengah tertulis) selama ini → data lama berhenti dipajang
+export const BACKOFF_MS = 60_000    // gagal keras (python3 tak ada / crash) → coba lagi sesudah jeda ini, bukan tiap tick
+
+// Baris stderr terakhir yang berisi — di traceback Python itu baris "XxxError: …".
+const lastLine = (s: string): string => (s.trim().split('\n').at(-1) ?? '').trim().slice(0, 160)
+
+// Kegagalan keras pembaca → teks error panel.
+function describe(exitCode: number, stderr: string): string {
+  if (/xcrun|CommandLineTools|developer tools/i.test(stderr)) return 'butuh python3'   // stub /usr/bin/python3 macOS
+  if (/SyntaxError/.test(stderr)) return 'python3 terlalu lama (butuh ≥ 3.9)'
+  const msg = lastLine(stderr)
+  return `pembaca status gagal (exit ${exitCode})${msg ? `: ${msg}` : ''}`
+}
 
 const snapshot = atom({ plugin: 'context-vault', key: 'snapshot' } as const, null)
 const error = atom({ plugin: 'context-vault', key: 'error' } as const, null)
@@ -26,17 +39,37 @@ export const register: Register = on => {
     await $.command.register({ name: 'cv-panel', description: 'context-vault: buka/tutup panel status build' })
     const script = `${$.plugin.root}/template/.claude/build_status.py`
 
+    let badSince: number | null = null     // awal rentetan exit 2 (setengah tertulis); reload → mulai lagi
+    let holdUntil = 0                      // jeda sesudah gagal keras: jangan spawn python3 (stub macOS!) tiap 3 dtk
+
+    const fail = async (msg: string, now: number): Promise<void> => {
+      await update($, error, () => msg)
+      $.ui.status(undefined)
+      holdUntil = now + BACKOFF_MS
+    }
+
     const poll = async (): Promise<void> => {
+      const t0 = await $.clock.now()
+      if (t0 < holdUntil) return
       let res
       try {
         res = await $.process.run(['python3', script, '--root', e.cwd, '--format', 'json'], { cwd: e.cwd, timeoutMs: 5000 })
       } catch {
-        await update($, error, () => 'butuh python3')
-        $.ui.status(undefined)
+        const slow = (await $.clock.now()) - t0 >= 4500
+        return fail(slow ? 'pembaca status kelamaan (> 5 dtk)' : 'butuh python3', t0)
+      }
+      if (res.exitCode !== 0 && res.exitCode !== 2) return fail(describe(res.exitCode, res.stderr), t0)
+      const snap = res.exitCode === 0 ? parseSnapshot(res.stdout) : null
+      if (!snap) {
+        // exit 2 / JSON terpotong = file setengah tertulis: pakai hasil terakhir — tapi jangan selamanya
+        if (badSince === null) badSince = t0
+        if (t0 - badSince > STALE_MS) {
+          await update($, error, () => `data basi — ${lastLine(res.stderr) || 'pembaca status gagal terus'}`)
+          $.ui.status(undefined)
+        }
         return
       }
-      const snap = res.exitCode === 0 ? parseSnapshot(res.stdout) : null
-      if (!snap) return                    // file setengah tertulis / rusak: pakai hasil terakhir yang valid
+      badSince = null
       await update($, snapshot, () => snap)
       await update($, error, () => null)
       $.ui.status(snap.status_line ?? undefined)
@@ -50,32 +83,39 @@ export const register: Register = on => {
       if (toast) $.ui.toast(toast, { timeoutMs: 8000 })
 
       // Auto-open sekali per work-item per sesi: jeda antar-task (running sempat false) tak membuka
-      // ulang panel yang sudah ditutup user; buka manual tetap lewat /cv-panel.
-      const top = snap.items[0]
-      const isRunning = top?.running ?? false
+      // ulang panel yang sudah ditutup user; buka manual tetap lewat /cv-panel. Build mana pun yang
+      // jalan dihitung, bukan cuma item teratas (urutan item = mtime tasks.yaml, bukan "yang jalan").
+      const run = snap.items.find(it => it.running)
       let starts = false
       await update($, wasRunning, was => {
-        starts = isRunning && !was
-        return isRunning
+        starts = run !== undefined && !was
+        return run !== undefined
       })
-      if (!starts || !top) return
+      if (!starts || !run) return
       let fresh = false
       await update($, autoOpened, dirs => {
-        fresh = !dirs.includes(top.dir)
-        return fresh ? [...dirs, top.dir] : dirs
+        fresh = !dirs.includes(run.dir)
+        return fresh ? [...dirs, run.dir] : dirs
       })
       if (fresh) await $.ui.open({ id: PANE, title: TITLE })
     }
 
-    await poll()
     let busy = false
-    $.clock.every(POLL_MS, () => {
+    const tick = async (): Promise<void> => {
       if (busy) return                     // poll sebelumnya belum selesai: lewati tick ini
       busy = true
-      void poll().finally(() => {
+      try {
+        await poll()
+      } catch {
+        // op engine ditolak (ui.open/state): jangan sampai interval ikut mati — coba lagi tick berikut
+      } finally {
         busy = false
-      })
+      }
+    }
+    $.clock.every(POLL_MS, () => {
+      void tick()
     })
+    await tick()
     return next(e)
   })
 

@@ -457,6 +457,9 @@ def load_yaml(path: Path):
 
 HELD = ('blocked', 'needs_human')
 FRESH_ERROR_S = 60     # file rusak yang baru diubah = mungkin setengah tertulis → exit 2 (mod pakai hasil terakhir)
+HB_FRESH_S = 120       # ticker drive.sh men-touch drive.json tiap tick; lebih lama dari ini = basi (crash/reboot, PID bisa kepakai ulang)
+QUIET_MIN = 90         # menit tanpa aktivitas file sebelum task in_progress dianggap diam — implementer attended baru
+                       # nulis report saat selesai; 30 mnt menandai ~14% task nyata yang masih jalan sebagai diam
 
 
 def _dict(x) -> dict:
@@ -498,8 +501,11 @@ def weight(task: dict) -> int:
     return 2 if nfiles >= 3 else 1
 
 
-def _heartbeat(scratch: Path):
-    """drive.json hidup → dict-nya; file absen/rusak/PID mati → None."""
+def _heartbeat(scratch: Path, now: float):
+    """drive.json hidup → dict-nya; file absen/rusak/basi/PID mati → None."""
+    mt = _mtime(scratch / 'drive.json')
+    if mt is None or now - mt > HB_FRESH_S:
+        return None
     try:
         hb = json.loads((scratch / 'drive.json').read_text(encoding='utf-8'))
         pid = int(hb['pid'])
@@ -522,10 +528,18 @@ def _scratch(root: Path, kind: str, name: str) -> Path:
 
 def _item(root: Path, kind: str, wdir: Path, now: float, quiet_min: int) -> dict:
     name = wdir.name
-    doc = _dict(load_yaml(wdir / 'tasks.yaml'))
+    tasks_path = wdir / 'tasks.yaml'
+    raw = load_yaml(tasks_path)
+    mt = _mtime(tasks_path)
+    if mt is not None and now - mt <= FRESH_ERROR_S and not isinstance(_dict(raw).get('milestones'), list):
+        # baru ditulis tapi kosong / tanpa milestones = kemungkinan besar setengah tertulis (parse-nya "valid")
+        err = YamlError(f"{tasks_path}: kosong / tanpa milestones — mungkin setengah tertulis")
+        err.path = tasks_path
+        raise err
+    doc = _dict(raw)
     gates_doc = _dict(load_yaml(wdir / 'gates.yaml'))
     scratch = _scratch(root, kind, name)
-    hb = _heartbeat(scratch) if kind == 'feature' else None
+    hb = _heartbeat(scratch, now) if kind == 'feature' else None
 
     stamps = [_mtime(wdir / f) for f in ('tasks.yaml', 'gates.yaml', 'last-run.md')]
     if scratch.is_dir():
@@ -724,7 +738,7 @@ def drive_line(item: dict) -> str:
         f"⏸ {len(item['held'])}" if item['held'] else '',
         f"◆ {len(item['gates'])}" if item['gates'] else '',
         drive['elapsed'] if drive else '',
-        f"sisa {eta['text']}" if eta else '',
+        (f"sisa {eta['text']}" if eta['text'].startswith('~') else eta['text']) if eta else '',
     ]
     return ' · '.join(p for p in parts if p)
 
@@ -777,7 +791,7 @@ def alerts_for(name: str, dir: str, held: list[dict], gates: list[dict], last_ru
     return out
 
 
-def snapshot(root: Path, now: float, work_item: str | None = None, quiet_min: int = 30) -> dict:
+def snapshot(root: Path, now: float, work_item: str | None = None, quiet_min: int = QUIET_MIN) -> dict:
     root = Path(root).resolve()
     errors = []
 
@@ -810,7 +824,8 @@ def snapshot(root: Path, now: float, work_item: str | None = None, quiet_min: in
         est = estimate([(lane(u), w, el) for u, w, el in pre], samples) if len(samples) >= 3 and pre else None
         if est is not None:
             note = '+ ' + ', '.join(h['id'] for h in it['held']) + ' nunggu lo' if it['held'] else None
-            it['eta'] = {'text': eta_text(*est), 'held_note': note}
+            # batas atas 0 = yang tersisa cuma task jalan yang sudah lewat estimasi → jangan nyangkut di "~1–6m"
+            it['eta'] = {'text': eta_text(*est) if est[1] > 0 else 'lewat estimasi', 'held_note': note}
         it['drive_line'] = drive_line(it)
     for it in every:
         for k in [k for k in it if k.startswith('_')]:
@@ -829,7 +844,7 @@ def main(argv: list[str]) -> int:
                     help='json = snapshot v1 · status = status line · drive = baris progres drive.sh (item pertama)')
     ap.add_argument('--work-item', metavar='DIR', help='hanya work-item ini (relatif root), mis. control/features/<f>')
     ap.add_argument('--now', type=float, help='epoch "sekarang" (untuk test)')
-    ap.add_argument('--quiet-min', type=int, default=30, help='ambang menit "diam" (default 30)')
+    ap.add_argument('--quiet-min', type=int, default=QUIET_MIN, help=f'ambang menit "diam" (default {QUIET_MIN})')
     ap.add_argument('--width', type=int, help='status/drive: potong teks ke N karakter (+ "…") supaya muat satu baris')
     args = ap.parse_args(argv)
     try:

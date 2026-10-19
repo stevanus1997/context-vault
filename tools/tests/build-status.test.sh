@@ -44,9 +44,10 @@ mkprod() {
   setm "$FIXD/tasks.yaml" 3000
   setm "$P/.claude/build/fixes/2026-10-01-null-guard/task-fix-null-guard-brief.md" 3000
 }
-hb() { # hb <dir-scratch> <pid> [round] [started-detik-sebelum-NOW] — heartbeat drive.sh
+hb() { # hb <dir-scratch> <pid> [round] [started-detik-sebelum-NOW] [mtime-detik-sebelum-NOW] — heartbeat drive.sh
   mkdir -p "$1"
   printf '{"round":%s,"started":%s,"round_started":%s,"max_hours":6,"pid":%s}\n' "${3:-2}" "$((NOW - ${4:-4320}))" "$((NOW - 600))" "$2" > "$1/drive.json"
+  setm "$1/drive.json" "${5:-10}"          # ticker drive.sh men-touch tiap tick → heartbeat hidup = baru di-touch
 }
 snap() { $PY "$BS" --root "$P" --format json --now $NOW "$@"; }
 J=""
@@ -76,10 +77,14 @@ chk "heartbeat hidup → running"             '.items[0].running' 'true'
 
 hb "$SB" 999999; J="$(snap)"
 chk "heartbeat PID mati → attended, drive null" '.items[0] | [.mode,.drive]' '["attended",null]'
+hb "$SB" $$ 2 4320 600; J="$(snap)"
+chk "heartbeat basi (PID hidup tapi nggak di-touch 10 mnt — PID bisa kepakai ulang) → attended" '.items[0] | [.mode,.drive]' '["attended",null]'
 
-rm -f "$SB/drive.json"; J="$(snap)"
-chk "tanpa drive.json: fix diam 50m, running false" '.items[1] | [.lanes[0].quiet,.lanes[0].quiet_for,.running]' '[true,"50m",false]'
+rm -f "$SB/drive.json"; J="$(snap --quiet-min 30)"
+chk "tanpa drive.json, --quiet-min 30: fix diam 50m, running false" '.items[1] | [.lanes[0].quiet,.lanes[0].quiet_for,.running]' '[true,"50m",false]'
 chk "tanpa drive.json: checkout tetap running (aktivitas 1m lalu)" '.items[0] | [.lanes[0].quiet,.running]' '[false,true]'
+J="$(snap)"
+chk "ambang diam default 90 mnt: jeda 50m (implementer attended yang lama) belum diam" '.items[1] | [.lanes[0].quiet,.running]' '[false,true]'
 chk "fix-cleanup tanpa unit/desc, dep tak dikenal" '.items[1].milestones[0].tasks[] | select(.id=="fix-cleanup") | [.unit,.desc,.waiting_on]' '["","",["T99"]]'
 chk "fix tanpa gates.yaml → gates []"       '.items[1].gates' '[]'
 
@@ -95,6 +100,17 @@ cp "$CV/tasks.yaml" "$T/tasks.bak"; printf 'milestones:\n\t- id: M9\n' >> "$CV/t
 out="$(snap 2>"$T/err")"; rc=$?
 [ "$rc" = 2 ] && grep -q 'checkout-v2/tasks.yaml' "$T/err" && [ -z "$out" ] && ok "tasks.yaml rusak & baru ditulis (≤60 dtk) → exit 2, path di stderr, stdout kosong" \
   || bad "tasks.yaml rusak baru → exit 2" "rc=$rc out=$out err=$(cat "$T/err")"
+cp "$T/tasks.bak" "$CV/tasks.yaml"; setm "$CV/tasks.yaml" 60
+: > "$CV/tasks.yaml"; setm "$CV/tasks.yaml" 5
+out="$(snap 2>"$T/err")"; rc=$?
+[ "$rc" = 2 ] && grep -q 'checkout-v2/tasks.yaml' "$T/err" && ok "tasks.yaml kosong & baru ditulis → exit 2 (setengah tertulis, mod pakai hasil terakhir)" \
+  || bad "tasks.yaml kosong baru → exit 2" "rc=$rc err=$(cat "$T/err")"
+printf 'feature: checkout-v2\n' > "$CV/tasks.yaml"; setm "$CV/tasks.yaml" 5
+out="$(snap 2>"$T/err")"; rc=$?
+[ "$rc" = 2 ] && ok "tasks.yaml tanpa milestones & baru ditulis → exit 2" || bad "tasks.yaml tanpa milestones baru → exit 2" "rc=$rc"
+: > "$CV/tasks.yaml"; setm "$CV/tasks.yaml" 3600
+out="$(snap 2>"$T/err")"; rc=$?
+[ "$rc" = 0 ] && ok "tasks.yaml kosong & lama → exit 0 (memang kosong, bukan setengah tertulis)" || bad "tasks.yaml kosong lama" "rc=$rc err=$(cat "$T/err")"
 cp "$T/tasks.bak" "$CV/tasks.yaml"; setm "$CV/tasks.yaml" 60
 J="$(snap)"
 chk "normal: errors []"                     '.errors' '[]'
@@ -150,6 +166,12 @@ out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/featu
 [ "$out" = "putaran 2 · 7/12 · ▸ T8 api, …" ] && ok "--width 30 → dipotong + '…' (muat satu baris terminal)" || bad "--width 30" "$out"
 out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/checkout-v2 --width 200)"
 [ "$out" = "putaran 2 · 7/12 · ▸ T8 api, T11 web · ⏸ 1 · ◆ 1 · 1j12m · sisa ~1–15m" ] && ok "--width lebar → utuh" || bad "--width 200" "$out"
+setm "$SB/task-T8-brief.md" 3000; setm "$SB/task-T11-brief.md" 3000   # keduanya jalan 50m > estimasi atas (~17m)
+J="$(snap)"
+chk "ETA: sisa cuma task jalan yang lewat estimasi → 'lewat estimasi', bukan ~1–6m selamanya" '.items[0].eta.text' '"lewat estimasi"'
+out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/checkout-v2)"
+[ "$out" = "putaran 2 · 7/12 · ▸ T8 api, T11 web · ⏸ 1 · ◆ 1 · 1j12m · lewat estimasi" ] && ok "--format drive: 'lewat estimasi' tanpa 'sisa'" || bad "drive lewat estimasi" "$out"
+mkprod; hb "$SB" $$
 mkdir -p "$P/control/features/belum-ada"; printf 'status: active\n' > "$P/control/features/belum-ada/feature.yaml"
 hb "$P/.claude/build/belum-ada" $$ 1 30
 out="$($PY "$BS" --root "$P" --format drive --now $NOW --work-item control/features/belum-ada)"

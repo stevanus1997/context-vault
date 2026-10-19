@@ -18,3 +18,6 @@ build/
 
 # Logs
 *.log
+
+# Dibuat Claude Code saat plugin/ dimuat lewat --plugin-dir (extends .claude-plugin/types/ yang juga di-ignore)
+plugin/tsconfig.json

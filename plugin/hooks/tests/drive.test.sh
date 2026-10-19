@@ -41,6 +41,10 @@ tok="$(sed -n "${n}p" "$DIR/.claude/scenario")"
 case "$tok" in
   slow:*) tok="${tok#slow:}"; sleep 1.2
           HB="$DIR/.claude/build/fitur-x/drive.json"; [ -f "$HB" ] && cp "$HB" "$DIR/.claude/hb-seen" ;;
+  hbtouch:*) tok="${tok#hbtouch:}"; HB="$DIR/.claude/build/fitur-x/drive.json"   # catat mtime heartbeat awal & akhir
+          mt() { python3 -c 'import os,sys; print(int(os.stat(sys.argv[1]).st_mtime))' "$HB" 2>/dev/null || echo 0; }
+          a="$(mt)"; sleep 2.3; echo "$a $(mt)" > "$DIR/.claude/hb-mtimes" ;;
+  long:*) exec sleep 20.37 ;;   # putaran panjang (exec → PID claude = PID sleep, gampang dicek sisa/nggak)
 esac
 case "$tok" in
   nofile)  rm -f "$REPORT"; exit 0 ;;
@@ -110,6 +114,11 @@ if [ -f "$HBS" ] && [ "$(jq .round "$HBS")" = 1 ] && [ "$(jq .max_hours "$HBS")"
 else bad "heartbeat drive.json" "hb-seen=$(cat "$HBS" 2>&1) sisa=$(ls "$PROD/.claude/build/fitur-x" 2>&1)"; fi
 if [ "$(grep -c '^\[drive\] putaran 1 · 1/2' <<<"$out")" = 1 ]; then ok "non-TTY: baris sama nggak diulang tiap tick"; else bad "non-TTY: baris diulang" "$out"; fi
 
+# 12b. ticker men-touch drive.json tiap tick (pembaca: heartbeat > 2 mnt tanpa touch = basi, PID bisa kepakai ulang)
+setup $'hbtouch:done:2'; out="$(DRIVE_TICK=0.3 drive)"
+read -r m1 m2 < "$PROD/.claude/hb-mtimes" 2>/dev/null
+if [ -n "${m2:-}" ] && [ "$m1" -gt 0 ] && [ "$m2" -gt "$m1" ]; then ok "ticker men-touch drive.json selama claude jalan"; else bad "heartbeat nggak di-touch" "mtimes=$(cat "$PROD/.claude/hb-mtimes" 2>&1)"; fi
+
 # 13. sesudah drive keluar: ticker + sleep anaknya mati, stdout nggak ditahan (tick panjang = sleep lama)
 dleft() { pgrep -f "$PROD/.claude/drive.sh"; pgrep -f 'sleep 6.17'; }
 setup $'slow:done:2'; SECONDS=0
@@ -128,6 +137,15 @@ sleep 0.2; kill -TERM "$dpid"; wait "$dpid"; rc=$?; sleep 0.3; left="$(dleft)"
 if [ "$rc" = 130 ] && [ ! -e "$PROD/.claude/build/fitur-x/drive.json" ] && [ -z "$left" ] && [ "$(calls)" = 1 ]; then
   ok "TERM → exit 130, heartbeat hilang, ticker mati"
 else bad "TERM di tengah putaran" "rc=$rc calls=$(calls) sisa=[$left] hb=$(ls "$PROD/.claude/build/fitur-x" 2>&1)"; fi
+
+# 14a. TERM di putaran PANJANG → berhenti saat itu juga (bukan nunggu putaran selesai), claude ikut dihentikan
+setup $'long:done:2'
+PATH="$HOME/bin:$PATH" DRIVE_TICK=0.3 bash "$PROD/.claude/drive.sh" fitur-x 1 > "$PROD/drive.out" 2>&1 & dpid=$!
+for _ in $(seq 50); do [ "$(calls)" = 1 ] && break; sleep 0.1; done
+sleep 0.3; SECONDS=0; kill -TERM "$dpid"; wait "$dpid"; rc=$?; dur=$SECONDS; sleep 0.3; left="$(pgrep -f 'sleep 20.37')"
+if [ "$rc" = 130 ] && [ "$dur" -lt 3 ] && [ -z "$left" ] && [ ! -e "$PROD/.claude/build/fitur-x/drive.json" ]; then
+  ok "TERM di putaran panjang → keluar < 3 dtk, claude ikut dihentikan, heartbeat hilang"
+else bad "TERM di putaran panjang" "rc=$rc dur=${dur}s sisa=[$left] hb=$(ls "$PROD/.claude/build/fitur-x" 2>&1)"; pkill -f 'sleep 20.37'; fi
 
 # 14b. dibunuh kill -9 (trap tak jalan) → ticker sadar induknya mati & berhenti sendiri
 setup $'slow:done:2'
@@ -154,6 +172,12 @@ fi
 # 15. precheck python3 → STOP + instruksi, nol putaran
 setup $'done:1'; out="$(DRIVE_PYTHON=/nonexistent drive)"; rc=$?
 if [ "$rc" != 0 ] && grep -q 'butuh python3' <<<"$out" && grep -q 'xcode-select --install' <<<"$out" && [ "$(calls)" = 0 ]; then ok "precheck python3 absen → STOP"; else bad "precheck python3" "rc=$rc $out"; fi
+
+# 15b. python3 ada tapi nggak bisa jalanin build_status.py (mis. versi lama: SyntaxError) → STOP, jangan jalan tanpa baris progres
+setup $'done:1'
+printf '#!/usr/bin/env bash\n[ "$1" = -c ] && exit 0\necho "SyntaxError: invalid syntax" >&2; exit 1\n' > "$HOME/bin/oldpy"; chmod +x "$HOME/bin/oldpy"
+out="$(DRIVE_PYTHON="$HOME/bin/oldpy" drive)"; rc=$?
+if [ "$rc" != 0 ] && grep -q 'gagal jalan' <<<"$out" && grep -q 'SyntaxError' <<<"$out" && [ "$(calls)" = 0 ]; then ok "precheck: pembaca gagal jalan (python lama) → STOP"; else bad "precheck pembaca gagal jalan" "rc=$rc $out"; fi
 
 # 16. precheck build_status.py absen → STOP, arahkan upgrade
 setup $'done:1'; rm -f "$PROD/.claude/build_status.py"; out="$(drive)"; rc=$?

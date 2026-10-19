@@ -77,15 +77,20 @@ fi
 PY="${DRIVE_PYTHON:-python3}"
 TICK="${DRIVE_TICK:-5}"
 BS="$ROOT/.claude/build_status.py"
-if ! "$PY" -c 'import json' >/dev/null 2>&1; then
-  echo "[drive] STOP — butuh python3 buat baris progres (.claude/build_status.py)." >&2
-  echo "        Install python3 (macOS: xcode-select --install), lalu ulang drive.sh." >&2
-  exit 1
-fi
 if [ ! -f "$BS" ]; then
   echo "[drive] STOP — .claude/build_status.py belum ada; jalankan 'upgrade' dulu." >&2
   exit 1
 fi
+if ! "$PY" -c '' >/dev/null 2>&1; then
+  echo "[drive] STOP — butuh python3 buat baris progres (.claude/build_status.py)." >&2
+  echo "        Install python3 (macOS: xcode-select --install), lalu ulang drive.sh." >&2
+  exit 1
+fi
+if ! bs_err="$("$PY" "$BS" --help 2>&1 >/dev/null)"; then   # jalankan pembacanya sungguhan: python3 lama → SyntaxError
+  echo "[drive] STOP — .claude/build_status.py gagal jalan di '$PY' (butuh python3 ≥ 3.9): $(printf '%s\n' "$bs_err" | tail -1)" >&2
+  exit 1
+fi
+cd "$ROOT" || exit 1   # claude dijalankan langsung (bukan subshell) → PID-nya bisa dihentikan trap
 
 # --- Heartbeat + ticker baris progres ---
 HB_DIR="$ROOT/.claude/build/$FITUR"
@@ -103,6 +108,7 @@ ticker() {     # jalan di subshell latar; TERM → bunuh sleep anaknya dulu supa
   trap '[ -n "$TSLEEP" ] && kill "$TSLEEP" 2>/dev/null; exit 0' TERM
   exec 3>&1                            # stdout asli (TTY?) — di dalam $(…) stdout jadi pipe
   while kill -0 "$$" 2>/dev/null; do   # $$ = PID drive.sh (subshell mewarisinya); induk di-kill -9 → berhenti sendiri
+    touch -c "$HB" 2>/dev/null           # heartbeat hidup = baru di-touch (pembaca: > 2 mnt = basi, PID bisa kepakai ulang)
     width=""                             # TTY: potong ke lebar terminal — baris yang wrap tak bisa ditimpa \r
     if [ -t 1 ]; then
       cols="$(stty size <&3 2>/dev/null | awk '{print $2}')"; case "$cols" in ''|*[!0-9]*|0) cols="${COLUMNS:-80}" ;; esac
@@ -123,7 +129,8 @@ stop_ticker() {
   kill "$TICKER_PID" 2>/dev/null; wait "$TICKER_PID" 2>/dev/null; TICKER_PID=""
   if [ -t 1 ]; then printf '\n'; fi
 }
-trap 'stop_ticker; rm -f "$HB" "$HB.tmp"' EXIT
+CLAUDE_PID=""; OUT=""
+trap 'stop_ticker; [ -n "$CLAUDE_PID" ] && kill "$CLAUDE_PID" 2>/dev/null; rm -f "$HB" "$HB.tmp" ${OUT:+"$OUT"}' EXIT
 trap 'exit 130' INT TERM
 
 prev_done=-1
@@ -133,9 +140,16 @@ while :; do
   echo "[drive] putaran $ronde — build $FITUR (proses fresh)…"
   write_hb
   ticker & TICKER_PID=$!
-  out="$(cd "$ROOT" && claude -p "build $FITUR --unattended" --permission-mode acceptEdits)" || true   # proses BARU; auto file-edit, Bash tetap allowlist; resume dari tasks.yaml
+  # proses BARU; auto file-edit, Bash tetap allowlist; resume dari tasks.yaml. Jalan di latar + `wait` supaya
+  # INT/TERM langsung ditangani trap (bash menunda trap sampai perintah foreground selesai = sepanjang putaran);
+  # trap EXIT ikut menghentikan claude.
+  OUT="$(mktemp "${TMPDIR:-/tmp}/drive-claude.XXXXXX")"
+  claude -p "build $FITUR --unattended" --permission-mode acceptEdits > "$OUT" & CLAUDE_PID=$!
+  wait "$CLAUDE_PID" || true
+  CLAUDE_PID=""
   stop_ticker
-  [ -n "$out" ] && printf '%s\n' "$out"   # dicetak sesudah ticker berhenti — tak tabrakan dengan baris \r
+  [ -s "$OUT" ] && cat "$OUT"             # dicetak sesudah ticker berhenti — tak tabrakan dengan baris \r
+  rm -f "$OUT"; OUT=""
 
   if [ ! -f "$REPORT" ]; then
     echo "[drive] last-run.md tak ada — build tak lapor; STOP (cek manual)"; break
