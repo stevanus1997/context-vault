@@ -297,8 +297,8 @@ TY="$LN/$LX/tasks.yaml"
   && [ "$(sed -n "$((e3+1))p" "$TY")" = "      - id: T4" ] && ok "task: line/end_line = blok task (Read offset/limit + Edit)" || bad "task: line/end_line" "$J"
 [ "$e10" = "$(wc -l < "$TY" | tr -d ' ')" ] && ok "task terakhir: end_line = baris terakhir file" || bad "task terakhir: end_line" "$e10"
 J="$(lean --format carry --for T3 --work-item $LX)"
-lc="$(jq -r '.notes[0].line' <<<"$J")"
-[ "$(sed -n "${lc}p" "$LN/$LX/carry.yaml")" = "  - id: C1" ] && ok "carry: line = baris '- id:' entri" || bad "carry: line" "$J"
+lc="$(jq -r '.notes[0].line_no' <<<"$J")"
+[ "$(sed -n "${lc}p" "$LN/$LX/carry.yaml")" = "  - id: C1" ] && ok "carry: line_no = baris '- id:' entri (beda dari .line teks legacy)" || bad "carry: line_no" "$J"
 $PY - "$LN/$LX/carry.yaml" <<'PY2'
 import sys; p = sys.argv[1]; s = open(p).read()
 add = ('notes:\n'
@@ -324,6 +324,8 @@ new = old + ("        manual:\n          - set env FOO\n"
              "        actions:\n          - migrate: add col total\n            kind: additive\n          - install: zod\n"
              "        mockup: mockups/totals.html\n")
 assert s.count(old) == 1; s = s.replace(old, new)
+s = s.replace("        desc: orders page\n", "        desc: orders page\n        actions: [install: zod]\n", 1)
+s = s.replace("        desc: orders endpoint\n", "        desc: orders endpoint\n        actions: [migrate: drop col]\n", 1)
 for t in ("flaky seed", "tambah endpoint"):
     i = s.index(t); j = s.index("status: ", i); k = s.index("\n", j)
     s = s[:j] + "status: in_progress" + s[k:]
@@ -331,6 +333,8 @@ open(p, 'w').write(s)
 PY2
 out="$(line $LX '/^    T5 /p')"; [ "$out" = "    T5 api pending deps T3 [manual] [migrate:additive] [actions] [mockup] · orders totals" ] \
   && ok "peta: penanda manual/migrate/actions/mockup" || bad "peta: penanda" "$out"
+out="$(line $LX '/^    T[34] /p')"; [ "$out" = $'    T3 api pending deps T1 [migrate:?] · orders endpoint\n    T4 web pending deps T2 [actions] · orders page' ] \
+  && ok "peta: actions bentuk flow ([install: zod]) ikut ditandai" || bad "peta: actions flow" "$out"
 out="$(line $LX '/^korup:/p')"; [ "$out" = "korup: T10 deps T99 (tak dikenal) · api in_progress ganda T8,T9" ] \
   && ok "korup: deps tak dikenal + in_progress ganda satu repo" || bad "korup" "$out"
 

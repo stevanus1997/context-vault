@@ -174,7 +174,9 @@ def analyze_session(path: Path) -> dict | None:
         'brief_writer_dispatches': sum(d['kind'] == 'brief_writer' for d in dispatches),
         'needs_context_tasks': len({d['task'] for d in impl if NEEDS_CONTEXT_RE.search(d['result'])}),
         # brief-writer menangkap ambiguitas SEBELUM implementer jalan → bandingkan (needs_ctx + ambigu) vs baseline needs_ctx
-        'ambiguity_tasks': len({d['task'] for d in dispatches if d['kind'] == 'brief_writer' and AMBIGU_RE.search(d['result'])}),
+        'ambiguity_tasks': len({d['task'] for d in dispatches
+                                if d['kind'] == 'brief_writer' and d['task'] and AMBIGU_RE.search(d['result'])}),
+        'brief_tasks': len({d['task'] for d in dispatches if d['kind'] == 'brief_writer' and d['task']}),
         'blocked_tasks': len({d['task'] for d in impl if BLOCKED_RE.search(d['result'])}),
         'cannot_verify': cannot,
         'attribution': attribution,
@@ -197,7 +199,7 @@ def summarize(sessions: list[dict]) -> dict:
         'median_growth': _median([s['growth_median'] for s in sessions if s['growth_median'] is not None]),
         'review_rounds_per_task': _ratio(tot('review_dispatches'), tot('tasks')),
         'needs_context_per_task': _ratio(tot('needs_context_tasks'), tot('tasks')),
-        'ambiguity_per_task': _ratio(tot('ambiguity_tasks'), tot('tasks')),
+        'ambiguity_per_task': _ratio(tot('ambiguity_tasks'), tot('brief_tasks')),   # per task yang di-brief
         'blocked_per_task': _ratio(tot('blocked_tasks'), tot('tasks')),
         'cannot_verify_per_review': _ratio(tot('cannot_verify'), tot('review_dispatches')),
     }

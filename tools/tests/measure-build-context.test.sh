@@ -48,6 +48,8 @@ recs += call(81000, 'u8', 'Agent', {'subagent_type': 'context-vault:brief-writer
 recs += call(82000, 'u9', 'Agent', {'subagent_type': 'context-vault:brief-writer',
              'prompt': 'Rakit brief task T4\nTulis brief ke: .claude/build/x/task-T4-brief.md'},
              'brief: y\nambigu: tabel orders atau order?')
+recs += call(82500, 'u11', 'Agent', {'subagent_type': 'context-vault:brief-writer', 'prompt': 'Rakit brief tanpa path'},
+             'ambigu: tanpa id task')
 recs += call(83000, 'u10', 'Agent', {'subagent_type': 'context-vault:critic', 'prompt': 'Pre-flight sweep build x'},
              'Async agent launched successfully.\nagentId: ccc9 (internal)')
 recs += [{'type': 'user', 'message': {'role': 'user', 'content':
@@ -71,7 +73,8 @@ eq '.sessions[0].growth_median' 10000
 eq '.sessions[0].impl_dispatches' 3
 eq '.sessions[0].tasks' 2
 eq '.sessions[0].review_dispatches' 1
-eq '.sessions[0].brief_writer_dispatches' 2
+eq '.sessions[0].brief_writer_dispatches' 3
+eq '.sessions[0].brief_tasks' 2
 eq '.sessions[0].ambiguity_tasks' 1
 eq '.sessions[0].attribution.agent >= 5000' true
 eq '.sessions[0].needs_context_tasks' 1
