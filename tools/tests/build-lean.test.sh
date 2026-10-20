@@ -21,7 +21,7 @@ done
 A="$ROOT/plugin/agents/brief-writer.md"
 has "$A" "name: brief-writer" "agent: name"
 has "$A" "model: inherit" "agent: model inherit (D5)"
-has "$A" "tools: Read, Grep, Glob, Bash, Write" "agent: tools"
+has "$A" "tools: Read, Bash, Write" "agent: tools tanpa Grep/Glob (CC tak punya)"
 for k in "brief:" "rules:" "titipan:" "deps:" "ambigu:" "tier:"; do has "$A" "$k" "agent: kunci balikan $k"; done
 has "$A" "Jangan menebak." "agent: lapor ambigu, bukan nebak"
 K="$B/reference/k-prompt-dispatch.md"
@@ -67,8 +67,7 @@ n="$(grep -rlF 'scripts/review-package' "$B" | grep -v 'a-pinjam-sdd.md' | wc -l
 hasnt "$B/reference/e-status-resume.md" 'diff via `review-package`' "§E: paket review via git"
 
 # === T10: fallback headless (probe 2026-10-20: Read/Glob plugin-cache dari subagent ditolak di claude -p) ===
-has "$K" '**Unattended:** jangan resolve `<sdd>`' "§K: unattended tanpa template plugin-cache"
-has "$S" '(c) mode unattended → rakit brief SENDIRI (cara lama)' "SKILL step 1: unattended rakit brief sendiri, bukan brief-writer"
+has "$S" '(c) mode unattended DAN allowlist tak memuat `Read(~/.claude/plugins/**)`' "SKILL degrade (c): hanya bila allowlist Read plugin absen"
 
 # === final review C-1: legacy tetap dibaca sampai legacy_converted ===
 has "$J" "legacy_converted:" "§J: penanda konversi legacy"
@@ -77,14 +76,38 @@ has "$S" "SEBELUM titipan pre-flight ditulis" "SKILL step 1: konversi legacy dul
 has "$ROOT/plugin/skills/ship/SKILL.md" "legacy_converted:" "ship: fallback baca legacy sampai dikonversi"
 
 # === final review I-1/I-2/I-4/I-6: harness tanpa Glob, degrade lengkap, kontrak unattended mandiri ===
-has "$K" ".claude/build/_sdd" "§K: template superpowers disalin ke dalam root produk (I-1)"
 hasnt "$K" "pakai tool **Glob**" "§K: <sdd> tak bergantung tool Glob (main session tak punya)"
 hasnt "$S" "tanpa titipan resmi" "SKILL degrade: titipan tetap dibaca (I-2)"
 has "$S" "titipan dibaca sendiri: \`<work-item>/carry.yaml\`" "SKILL degrade: fallback baca carry.yaml + legacy (I-2)"
 has "$S" "(a) ATAU (b) → **cara lama penuh**" "SKILL degrade (a) juga cara lama + WARN (I-6)"
-has "$S" "(unattended: controller merakit sendiri, step 1 degrade (c))" "SKILL step 3: pengecualian unattended (I-4)"
-has "$K" "unattended: controller merakit sendiri" "§K brief-writer: attended saja (I-4)"
+has "$S" "(degrade (c) step 1: controller merakit sendiri)" "SKILL step 3: pengecualian degrade (c)"
 has "$S" "berlaku walau §J tak terbaca" "SKILL step 2: kontrak minimum carry.yaml inline (I-4)"
+
+# === review independen sesi desain 2026-10-20: Read plugin di headless, tanpa Grep/Glob, catatan reviewer, penanda peta ===
+TS="$ROOT/plugin/template/.claude/settings.json"
+has "$TS" '"Read(~/.claude/plugins/**)"' "template: allowlist Read plugin (probe headless: tanpa ini ditolak)"
+has "$ROOT/plugin/skills/upgrade/SKILL.md" 'Read(~/.claude/plugins/**)' "upgrade: susulin allowlist Read plugin"
+has "$S" 'stderr `invalid choice`' "SKILL degrade (b): salinan lama dibedakan dari file rusak"
+has "$S" '`.claude/settings.local.json`' "SKILL degrade (a): cek dua file settings"
+has "$S" "**Sebelum dispatch, ambil entri lengkap task terpilih**" "SKILL step 2: manual/actions/mockup dari entri lengkap"
+has "$S" '(penanda peta `[migrate:additive]`)' "SKILL step 1: WARN migrate dari penanda peta"
+has "$S" "≤5 baris \`catatan:\`" "SKILL step 4: catatan reviewer dirutekan controller"
+has "$S" "Read rentang file, atau grep/sed bila Bash-nya di-allowlist" "SKILL step 4: bukti ⚠️ tanpa grep di unattended"
+has "$K" "installed_plugins.json" "§K: <sdd> dari installed_plugins.json"
+hasnt "$K" ".claude/build/_sdd" "§K: tanpa salinan _sdd"
+has "$K" "catatan: n" "§K: verdict reviewer bawa catatan Minor/Important"
+has "$K" "Maks 2 kali dispatch ulang" "§K: batas loop ambigu"
+has "$K" "<root>/<wi>/task-<id>-brief.md" "§K: placeholder <wi> = folder scratch"
+hasnt "$K" "<root>/.claude/build/<work-item>/" "§K: tak ada path scratch dua-makna"
+hasnt "$A" "Glob" "agent: tak menyuruh Glob"
+hasnt "$A" "Grep" "agent: tak menyuruh Grep"
+has "$A" "show HEAD:./<dir>/" "agent: listing dir via git show (sudah di-allowlist)"
+has "$A" "titipan: GAGAL" "agent: error titipan tak jadi none"
+has "$A" "Tulis ulang SETIAP kali" "agent: _rules selalu ditulis ulang (mtime tak terbaca)"
+for f in "$J" "$B/reference/e-status-resume.md"; do hasnt "$f" "Grep -n" "$(basename "$f"): tanpa Grep -n"; done
+has "$B/reference/e-status-resume.md" "end_line" "§E: blok task dari line/end_line"
+has "$J" "korup:" "§J: baris korup"
+has "$J" "boleh list" "§J: for: multi-target"
 
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

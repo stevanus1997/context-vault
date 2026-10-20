@@ -15,7 +15,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git checkout:*)",
-      "Bash(python3 .claude/build_status.py:*)"
+      "Bash(python3 .claude/build_status.py:*)",
+      "Read(~/.claude/plugins/**)"
     ],
     "deny": [
       "Bash(git push --force:*)",
