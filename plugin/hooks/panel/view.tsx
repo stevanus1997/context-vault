@@ -5,7 +5,7 @@ import type { SnapItem, SnapMilestone, SnapTask, Snapshot } from '../../types'
 // Snapshot → pohon panel. Layout spec §4 (D4/D4a) — kartu header (nama, chip mode, progres, ringkasan),
 // pohon per milestone (yang kelar dilipat satu baris), gate antri, footer drive.sh.
 // Ikon = emoji satu code point (tanpa VS16/ZWJ) supaya lebarnya pasti 2 sel di terminal mana pun.
-// Ekor kanan yang nggak pernah turun baris diawali spasi: jarak minimum ke deskripsi yang terpotong;
+// Ekor kanan yang nggak pernah turun baris diawali spasi: jarak minimum ke deskripsi (terpotong / turun baris);
 // baris yang boleh turun (head, progress) pakai columnGap biar baris keduanya tetap rata kiri.
 // Jangan namai variabel `h`: itu factory JSX global.
 type Els = Pick<ElementTable, 'Box' | 'Text'>
@@ -120,16 +120,24 @@ function Task(els: Els, t: SnapTask) {
   const unit = t.unit === 'integration' ? 'int' : t.unit
   const done = t.status === 'done'
   const tail = taskTail(t)
+  // Deskripsi di kolom sendiri: yang belum kelar turun baris rata di bawah awal deskripsi,
+  // yang kelar (riwayat) tetap satu baris biar task yang jalan nggak kedorong ke bawah.
   return (
     <Box flexDirection="column">
-      <Box key={`task-${t.id}`} justifyContent="space-between">
-        <Text wrap="truncate-end" dimColor={done}>
-          {`${taskIcon(t)} ${t.id.padEnd(4)} `}<Text dimColor>{`${unit.padEnd(4)} `}</Text>{t.desc}
-        </Text>
+      <Box key={`task-${t.id}`}>
+        <Box flexShrink={0}>
+          <Text dimColor={done}>{`${taskIcon(t)} ${t.id.padEnd(4)} `}<Text dimColor>{`${unit.padEnd(4)} `}</Text></Text>
+        </Box>
+        <Box key={`desc-${t.id}`} flexGrow={1} flexShrink={1}>
+          <Text wrap={done ? 'truncate-end' : 'wrap'} dimColor={done}>{t.desc}</Text>
+        </Box>
         {tail && <Box flexShrink={0}><Text color={tail.color} dimColor={tail.dim}>{tail.text}</Text></Box>}
       </Box>
       {HELD.includes(t.status) && t.reason && (
-        <Box key={`why-${t.id}`} paddingLeft={13}><Text dimColor italic wrap="truncate-end">{`↳ ${t.reason}`}</Text></Box>
+        <Box key={`why-${t.id}`} paddingLeft={13}>
+          <Box flexShrink={0}><Text dimColor italic>{'↳ '}</Text></Box>
+          <Text dimColor italic wrap="wrap">{t.reason}</Text>
+        </Box>
       )}
     </Box>
   )
@@ -148,8 +156,9 @@ function Milestone(els: Els, m: SnapMilestone) {
   const [on, off] = bar(m.done, m.total, 8)
   return (
     <Box flexDirection="column">
-      <Box key={`ms-${m.id}`} justifyContent="space-between">
-        <Text bold wrap="truncate-end">{`${ICON.open} ${m.id} ${m.title}`}</Text>
+      <Box key={`ms-${m.id}`}>
+        <Box flexShrink={0}><Text bold>{`${ICON.open} ${m.id} `}</Text></Box>
+        <Box flexGrow={1} flexShrink={1}><Text bold wrap="wrap">{m.title}</Text></Box>
         <Box flexShrink={0}>
           <Text>{' '}<Text color="claude">{on}</Text><Text dimColor>{off}</Text>{` ${m.done}/${m.total}`}</Text>
         </Box>

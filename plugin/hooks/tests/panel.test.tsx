@@ -303,6 +303,17 @@ test('panel: baris task — ikon status, unit, fase/durasi, alasan ketahan, nung
   expect(await row(ui, 'task-T13')).toBe('⏳ T13  int  checkout roundtrip nunggu T8, T12')
 })
 
+test('panel: judul panjang — task belum kelar & milestone 📂 turun baris, task ✅ tetap satu baris', async ($, on) => {
+  const ui = await paneOf($, on, MID2)
+  const wrapOf = async (text: RegExp) => (await ui.find({ type: 'Text', text }))?.props.wrap
+  expect(await wrapOf(/^checkout button$/)).toBe('wrap')                  // ⏳ T12
+  expect(await wrapOf(/^checkout endpoint$/)).toBe('wrap')                // 🔄 T8
+  expect(await wrapOf(/^migrate destructive — nunggu lo$/)).toBe('wrap')  // ↳ alasan T9
+  expect(await wrapOf(/^cart totals service$/)).toBe('truncate-end')      // ✅ T5
+  expect(await wrapOf(/^Checkout$/)).toBe('wrap')                         // 📂 M2
+  expect(await wrapOf(/^✅ M1 Fondasi auth$/)).toBe('truncate-end')        // milestone kelar dilipat
+})
+
 test('panel: task diam → 💤 "diam <durasi>", bukan durasi naik', async ($, on) => {
   const it = MID2.items[0]!
   const ms = it.milestones.map(m => ({ ...m, tasks: m.tasks.map(x => (x.id === 'T8' ? { ...x, quiet: true, quiet_for: '40m' } : x)) }))
