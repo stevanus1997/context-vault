@@ -1010,10 +1010,24 @@ def controller_text(root: Path, work_item: str) -> str:
     st = {tid(t): _str(t.get('status')) for t in tasks}
     deps = lambda t: [d for d in _list(t.get('deps')) if isinstance(d, str)]  # noqa: E731
     lane = _lane_keys(root, lambda load, _wdir: load())
+    root_repo = []                                 # lazy: toplevel git root produk (monorepo) — dihitung sekali
 
     def label(u: str) -> str:
+        """Nama repo = lane dispatch (1 task in-flight per repo). Unit tanpa path git sendiri tinggal di repo
+        root produk kalau root itu git (monorepo) — jangan jadi lane 'root' terpisah dari app di repo yang sama."""
         k = lane(u)
-        return 'integration' if k == '__integration__' else 'root' if k == 'root' else Path(k).name
+        if k == '__integration__':
+            return 'integration'
+        if k != 'root':
+            return Path(k).name
+        if not root_repo:
+            try:
+                r = subprocess.run(['git', '-C', str(root), 'rev-parse', '--show-toplevel'],
+                                   capture_output=True, text=True, timeout=5)
+                root_repo.append(Path(r.stdout.strip()).name if r.returncode == 0 and r.stdout.strip() else 'root')
+            except (OSError, subprocess.SubprocessError):
+                root_repo.append('root')
+        return root_repo[0]
 
     def join(items: list) -> str:
         return ' · '.join(items) or '—'

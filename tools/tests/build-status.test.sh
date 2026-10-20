@@ -273,6 +273,14 @@ PY
 J="$(lean --format carry --for F1 --work-item $LF)"
 chk "legacy_converted → legacy berhenti dibaca" '[.source,.notes]' '["carry.yaml",[]]'
 out="$(line $LF '/^carry:/p')"; [ "$out" = "carry: ship×1 · next C2" ] && ok "controller: legacy_converted → tanpa penanda legacy" || bad "controller: legacy_converted" "$out"
+# monorepo: unit tanpa path = repo root produk, bukan lane 'root' terpisah (2 task sekaligus di 1 repo) — final review I-5
+MO="$T/mono"; rm -rf "$MO"; mkdir -p "$MO/control/features/m" "$MO/apps/web"
+printf '%s\n' 'topology: monorepo' 'apps:' '  - name: web' '    path: apps/web' 'packages:' '  - name: shared' > "$MO/control/workspace.yaml"
+printf '%s\n' 'milestones:' '  - id: M1' '    title: X' '    tasks:' '      - id: T1' '        unit: web' '        status: pending' \
+  '      - id: T2' '        unit: shared' '        status: pending' > "$MO/control/features/m/tasks.yaml"
+git -C "$MO" init -q
+out="$($PY "$BS" --root "$MO" --format controller --work-item control/features/m 2>&1 | sed -n '3,4p')"
+[ "$out" = $'repos: web=mono · shared=mono\nREADY: mono T1 T2' ] && ok "monorepo: unit tanpa path satu lane dengan repo root" || bad "monorepo: lane unit tanpa path" "$out"
 err="$(lean --format controller 2>&1 >/dev/null)"; rc=$?
 [ "$rc" = 2 ] && grep -qF 'butuh --work-item' <<<"$err" && ok "controller tanpa --work-item → exit 2" || bad "controller tanpa --work-item → exit 2" "rc=$rc $err"
 mkprod
