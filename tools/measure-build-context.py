@@ -27,8 +27,10 @@ CODE_RE = re.compile(r'/src/|migrations|mockups/|\.tsx?\b|\.sql\b|\.html\b|\.css
 IMPL_RE = re.compile(r'task-([A-Za-z0-9_.-]+)-brief\.md')
 AGENT_ID_RE = re.compile(r'agentId:\s*([A-Za-z0-9_-]+)')
 AGENT_MSG_RE = re.compile(r'<agent-message from="([^"]+)">')
-NEEDS_CONTEXT_RE = re.compile(r'(?m)^\s*(?:Status:\s*)?NEEDS_CONTEXT\b')
-BLOCKED_RE = re.compile(r'(?m)^\s*(?:Status:\s*)?BLOCKED\b')
+# Status implementer di awal baris; kata "status" boleh huruf apa pun + markdown (`STATUS: BLOCKED`,
+# `**Status: NEEDS_CONTEXT.**`). Token status tetap HURUF BESAR — "Blocked: none" bukan BLOCKED.
+NEEDS_CONTEXT_RE = re.compile(r'(?m)^\W*(?:[Ss][Tt][Aa][Tt][Uu][Ss]\W*)?NEEDS_CONTEXT\b')
+BLOCKED_RE = re.compile(r'(?m)^\W*(?:[Ss][Tt][Aa][Tt][Uu][Ss]\W*)?BLOCKED\b')
 WARN_COUNT_RE = re.compile(r'(?m)^\s*⚠️:\s*(\d+)')
 
 
@@ -81,8 +83,8 @@ def _dispatch_kind(tool_input: dict):
     if tool_input.get('subagent_type') == 'context-vault:brief-writer':
         return 'brief_writer', None
     prompt = tool_input.get('prompt') if isinstance(tool_input.get('prompt'), str) else ''
-    if '.diff' in prompt and '-brief.md' in prompt:
-        return 'reviewer', None
+    if '.diff' in prompt and '-brief.md' in prompt and '-report.md' in prompt:
+        return 'reviewer', None                   # subagent bukti ⚠️ (brief + diff, tanpa report) bukan reviewer
     m = IMPL_RE.search(prompt)
     if m and '-report.md' in prompt:
         return 'implementer', m.group(1)

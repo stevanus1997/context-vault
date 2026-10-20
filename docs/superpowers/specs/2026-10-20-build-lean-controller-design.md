@@ -321,5 +321,5 @@ Kalau angka kualitas lebih buruk, periksa brief yang dihasilkan brief-writer dul
 | Median context dispatch pertama | 181.5K (49 sesi ber-implementer dari 51 sesi build, measure-build-context 2026-10-20) | |
 | Median pertumbuhan per dispatch | 27.6K (42 sesi ber-≥2 implementer, measure-build-context 2026-10-20) | |
 | Ronde review / task | 0.97 (391 task, measure-build-context 2026-10-20) | |
-| NEEDS_CONTEXT / task | 0.02 (8 task dari 391, measure-build-context 2026-10-20) | |
-| Rasio `blocked` | 0.00 (0 task dari 391, measure-build-context 2026-10-20) · ⚠️/review 0.25 | |
+| NEEDS_CONTEXT / task | 0.04 (14 task dari 391, measure-build-context 2026-10-20 — regex status toleran huruf/markdown) | |
+| Rasio `blocked` | 0.0026 (1 task dari 391, measure-build-context 2026-10-20) · ⚠️/review 0.25 | |

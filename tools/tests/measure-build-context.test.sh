@@ -81,5 +81,31 @@ out="$($PY "$MB" "$T" 2>&1)"
 grep -qF 'ctx@impl1=60K' <<<"$out" && grep -qF 'sessions=1' <<<"$out" \
   && ok "teks: ctx@impl1=60K + sessions=1" || bad "teks: ctx@impl1=60K + sessions=1" "$out"
 
+# === bentuk balikan nyata + subagent bukti ⚠️ (final review I-3) ===
+T2="$T/variants"; mkdir -p "$T2"
+$PY - "$T2" <<'PY'
+import json, sys
+from pathlib import Path
+u = lambda n: {'input_tokens': 0, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': n}
+def call(n, uid, inp, result):
+    return [{'type': 'assistant', 'message': {'role': 'assistant', 'usage': u(n),
+             'content': [{'type': 'tool_use', 'id': uid, 'name': 'Agent', 'input': inp}]}},
+            {'type': 'user', 'message': {'role': 'user', 'content': [{'type': 'tool_result', 'tool_use_id': uid, 'content': result}]}}]
+b = lambda i: f".claude/build/x/task-{i}-brief.md"
+r = lambda i: f".claude/build/x/task-{i}-report.md"
+recs = [{'type': 'user', 'message': {'role': 'user', 'content': '<command-name>/context-vault:build</command-name>'}}]
+recs += call(10000, 'v1', {'prompt': f"{b('T1')} {r('T1')}"}, 'STATUS: BLOCKED\nrepo kotor')
+recs += call(20000, 'v2', {'prompt': f"{b('T2')} {r('T2')}"}, '**Status: NEEDS_CONTEXT.** butuh nama kolom')
+recs += call(30000, 'v3', {'prompt': f"{b('T3')} {r('T3')}"}, 'Status: DONE\nBlocked: none')
+recs += call(40000, 'v4', {'prompt': f"{b('T3')} {r('T3')} .claude/build/x/review-a1..b2.diff"}, 'spec: ✅\n⚠️: 1\nreview: r.md')
+recs += call(50000, 'v5', {'subagent_type': 'Explore', 'prompt':
+             f"Task T3. Item ⚠️ dari reviewer:\n  - x\nBrief: {b('T3')}   Diff: .claude/build/x/review-a1..b2.diff"}, 'x → aman — bukti a.ts:1')
+(Path(sys.argv[1]) / 'v.jsonl').write_text('\n'.join(json.dumps(x, ensure_ascii=False) for x in recs) + '\n', encoding='utf-8')
+PY
+J="$($PY "$MB" --json "$T2" 2>&1)"
+eq '.sessions[0].review_dispatches' 1
+eq '.sessions[0].blocked_tasks' 1
+eq '.sessions[0].needs_context_tasks' 1
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
