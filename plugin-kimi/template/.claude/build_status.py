@@ -894,18 +894,22 @@ def _legacy_token(target: str, done: set):
 
 
 def _carry_doc(root: Path, work_item: str):
-    """(rel, wdir, done-ids, sumber, isi): isi = list entri carry.yaml / baris legacy / []."""
+    """(rel, done-ids, entri carry.yaml | None, baris legacy | None). Legacy tetap dibaca selama carry.yaml
+    belum ber-`legacy_converted:` — titipan pertama yang ditulis sebelum konversi tak boleh menggelapkannya."""
     root = Path(root).resolve()
     kind, wdir = _work_item(root, work_item)
     done = {_str(t.get('id')) for _, t in _tasks(_dict(load_yaml(wdir / 'tasks.yaml'))) if t.get('status') == 'done'}
+    entries, converted = None, False
     if (wdir / 'carry.yaml').is_file():
-        notes = [n for n in _list(_dict(load_yaml(wdir / 'carry.yaml')).get('notes')) if isinstance(n, dict)]
-        return _rel(root, wdir), wdir, done, 'carry.yaml', notes
+        doc = _dict(load_yaml(wdir / 'carry.yaml'))
+        entries = [n for n in _list(doc.get('notes')) if isinstance(n, dict)]
+        converted = bool(doc.get('legacy_converted'))
+    lines = None
     legacy = _scratch(root, kind, wdir.name) / LEGACY_CARRY
-    if legacy.is_file():
-        lines = [ln.rstrip() for ln in legacy.read_text(encoding='utf-8', errors='replace').splitlines()]
-        return _rel(root, wdir), wdir, done, 'legacy', [ln for ln in lines if ln.strip() and not ln.lstrip().startswith('#')]
-    return _rel(root, wdir), wdir, done, 'none', []
+    if not converted and legacy.is_file():
+        raw = [ln.rstrip() for ln in legacy.read_text(encoding='utf-8', errors='replace').splitlines()]
+        lines = [ln for ln in raw if ln.strip() and not ln.lstrip().startswith('#')]
+    return _rel(root, wdir), done, entries, lines
 
 
 def _active(note: dict, done: set) -> bool:
@@ -913,12 +917,11 @@ def _active(note: dict, done: set) -> bool:
 
 
 def carry_notes(root: Path, work_item: str, targets: list[str]) -> dict:
-    rel, _, done, source, items = _carry_doc(root, work_item)
-    if source == 'carry.yaml':
-        notes = [n for n in items if _active(n, done) and any(_carry_hits(_str(n.get('for')), t) for t in targets)]
-    else:
-        toks = [tok for tok in (_legacy_token(t, done) for t in targets) if tok is not None]
-        notes = [{'line': ln} for ln in items if any(tok.search(ln) for tok in toks)]
+    rel, done, entries, lines = _carry_doc(root, work_item)
+    notes = [n for n in entries or [] if _active(n, done) and any(_carry_hits(_str(n.get('for')), t) for t in targets)]
+    toks = [tok for tok in (_legacy_token(t, done) for t in targets) if tok is not None]
+    notes += [{'line': ln} for ln in lines or [] if any(tok.search(ln) for tok in toks)]
+    source = '+'.join(s for s, x in (('carry.yaml', entries), ('legacy', lines)) if x is not None) or 'none'
     return {'work_item': rel, 'source': source, 'notes': notes}
 
 
@@ -1007,10 +1010,24 @@ def controller_text(root: Path, work_item: str) -> str:
     st = {tid(t): _str(t.get('status')) for t in tasks}
     deps = lambda t: [d for d in _list(t.get('deps')) if isinstance(d, str)]  # noqa: E731
     lane = _lane_keys(root, lambda load, _wdir: load())
+    root_repo = []                                 # lazy: toplevel git root produk (monorepo) — dihitung sekali
 
     def label(u: str) -> str:
+        """Nama repo = lane dispatch (1 task in-flight per repo). Unit tanpa path git sendiri tinggal di repo
+        root produk kalau root itu git (monorepo) — jangan jadi lane 'root' terpisah dari app di repo yang sama."""
         k = lane(u)
-        return 'integration' if k == '__integration__' else 'root' if k == 'root' else Path(k).name
+        if k == '__integration__':
+            return 'integration'
+        if k != 'root':
+            return Path(k).name
+        if not root_repo:
+            try:
+                r = subprocess.run(['git', '-C', str(root), 'rev-parse', '--show-toplevel'],
+                                   capture_output=True, text=True, timeout=5)
+                root_repo.append(Path(r.stdout.strip()).name if r.returncode == 0 and r.stdout.strip() else 'root')
+            except (OSError, subprocess.SubprocessError):
+                root_repo.append('root')
+        return root_repo[0]
 
     def join(items: list) -> str:
         return ' · '.join(items) or '—'
@@ -1065,16 +1082,17 @@ def controller_text(root: Path, work_item: str) -> str:
                 stale.append(f"{tid(t)} file {f}")
     lines.append('reuse basi: ' + join(stale))
 
-    _, _, done, source, items = _carry_doc(root, work_item)
-    if source == 'carry.yaml':
+    _, done, entries, legacy = _carry_doc(root, work_item)
+    if entries is not None:
         counts = {}
-        for n in items:
+        for n in entries:
             if _active(n, done) and _str(n.get('for')):
                 counts[_str(n.get('for'))] = counts.get(_str(n.get('for')), 0) + 1
-        nums = [int(m.group(1)) for n in items if (m := re.fullmatch(r'C(\d+)', _str(n.get('id'))))]
-        lines.append(f"carry: {join([f'{k}×{v}' for k, v in counts.items()])} · next C{max(nums, default=0) + 1}")
-    elif source == 'legacy':
-        lines.append(f"carry: legacy {LEGACY_CARRY} ({len(items)} baris) · next C1")
+        nums = [int(m.group(1)) for n in entries if (m := re.fullmatch(r'C(\d+)', _str(n.get('id'))))]
+        carry = f"carry: {join([f'{k}×{v}' for k, v in counts.items()])} · next C{max(nums, default=0) + 1}"
+        lines.append(carry + (f" · legacy {LEGACY_CARRY} aktif ({len(legacy)} baris)" if legacy is not None else ''))
+    elif legacy is not None:
+        lines.append(f"carry: legacy {LEGACY_CARRY} ({len(legacy)} baris) · next C1")
     else:
         lines.append('carry: — · next C1')
 

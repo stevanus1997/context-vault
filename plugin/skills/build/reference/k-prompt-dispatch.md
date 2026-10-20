@@ -2,9 +2,9 @@
 
 Controller TIDAK membaca isi template superpowers maupun §B. Path-nya diserahkan ke subagent yang butuh. Artefak bulky lewat file di `<root>/.claude/build/<work-item>/`. Tiap subagent membalas sesuai kontrak di bawah.
 
-**`<sdd>`** = folder `skills/subagent-driven-development` superpowers terpasang. Resolve SEKALI per run pakai tool **Glob** (bukan Bash, karena path plugin-cache bernomor versi tak bisa di-allowlist): `path` = `~/.claude/plugins/cache` (HOME user), pattern `*/superpowers/*/skills/subagent-driven-development/implementer-prompt.md`, lalu ambil versi tertinggi. Tidak ketemu (atau harness tanpa tool Glob) → hapus baris "Ikuti template" dari prompt. **Unattended:** jangan resolve `<sdd>`; hapus baris "Ikuti template" dari prompt (probe 2026-10-20: Read & Glob plugin-cache dari subagent ditolak di `claude -p` headless). Kontrak ringkas di bawah tetap lengkap tanpanya. **`<abs>`** = `${CLAUDE_PLUGIN_ROOT}` (absolut).
+**`<sdd>`** = `<root>/.claude/build/_sdd` — salinan dua template `subagent-driven-development` superpowers (`implementer-prompt.md`, `task-reviewer-prompt.md`) di DALAM root produk, supaya implementer/reviewer membacanya tanpa izin baca di luar root. Siapkan SEKALI per run attended lewat Bash (main session tak punya tool Glob; path plugin-cache bernomor versi tak bisa di-allowlist → paling banyak satu izin): `mkdir -p .claude/build/_sdd && cp "$(ls -d ~/.claude/plugins/cache/*/superpowers/*/skills/subagent-driven-development | sort -V | tail -1)"/{implementer,task-reviewer}-prompt.md .claude/build/_sdd/`. Gagal → hapus baris "Ikuti template" dari prompt. **Unattended:** jangan resolve `<sdd>` (jangan `ls`/`cp` di luar root); pakai `.claude/build/_sdd/` hanya kalau sudah ada dari run attended, selainnya hapus baris "Ikuti template" (probe 2026-10-20: Read & Glob plugin-cache dari subagent ditolak di `claude -p` headless). Kontrak ringkas di bawah tetap lengkap tanpanya. **`<abs>`** = `${CLAUDE_PLUGIN_ROOT}` (absolut).
 
-### Brief-writer (step 3) — `subagent_type: context-vault:brief-writer`
+### Brief-writer (step 3, attended — unattended: controller merakit sendiri per §B, SKILL step 1 degrade (c)) — `subagent_type: context-vault:brief-writer`
 ```
 Rakit brief task <id> (work-item <work-item>, root <root>).
 Aturan isi brief: <abs>/skills/build/reference/b-brief.md

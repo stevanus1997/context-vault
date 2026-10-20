@@ -2,9 +2,11 @@
 
 Controller TIDAK membaca isi template superpowers maupun §B. Path-nya diserahkan ke subagent yang butuh. Artefak bulky lewat file di `<root>/.claude/build/<work-item>/`. Tiap subagent membalas sesuai kontrak di bawah.
 
-**`<sdd>`** = folder `skills/subagent-driven-development` superpowers terpasang. Resolve SEKALI per run pakai tool **Glob** (bukan Bash, karena path plugin-cache bernomor versi tak bisa di-allowlist): `path` = `~/.claude/plugins/cache` (HOME user), pattern `*/superpowers/*/skills/subagent-driven-development/implementer-prompt.md`, lalu ambil versi tertinggi. Tidak ketemu (atau harness tanpa tool Glob) → hapus baris "Ikuti template" dari prompt. **Unattended:** jangan resolve `<sdd>`; hapus baris "Ikuti template" dari prompt (probe 2026-10-20: Read & Glob plugin-cache dari subagent ditolak di `claude -p` headless). Kontrak ringkas di bawah tetap lengkap tanpanya. **`<abs>`** = `${KIMI_SKILL_DIR}/../..` (absolut).
+**`<sdd>`** = `<root>/.claude/build/_sdd` — salinan dua template `subagent-driven-development` superpowers (`implementer-prompt.md`, `task-reviewer-prompt.md`) di DALAM root produk, supaya implementer/reviewer membacanya tanpa izin baca di luar root. Siapkan SEKALI per run attended lewat Bash (main session tak punya tool Glob; path plugin-cache bernomor versi tak bisa di-allowlist → paling banyak satu izin): `mkdir -p .claude/build/_sdd && cp "$(ls -d ~/.claude/plugins/cache/*/superpowers/*/skills/subagent-driven-development | sort -V | tail -1)"/{implementer,task-reviewer}-prompt.md .claude/build/_sdd/`. Gagal → hapus baris "Ikuti template" dari prompt. **Unattended:** jangan resolve `<sdd>` (jangan `ls`/`cp` di luar root); pakai `.claude/build/_sdd/` hanya kalau sudah ada dari run attended, selainnya hapus baris "Ikuti template" (probe 2026-10-20: Read & Glob plugin-cache dari subagent ditolak di `claude -p` headless). Kontrak ringkas di bawah tetap lengkap tanpanya. **`<abs>`** = `${KIMI_SKILL_DIR}/../..` (absolut).
 
-### Brief-writer (step 3) — `subagent_type: context-vault:brief-writer`
+### Brief-writer (step 3, attended — unattended: controller merakit sendiri per §B, SKILL step 1 degrade (c)) — `subagent_type: context-vault:brief-writer`
+
+> ⛔ **Harness Kimi Code:** bagian unattended di file ini BELUM berlaku di Kimi — lihat banner di `SKILL.md` (fase 2).
 ```
 Rakit brief task <id> (work-item <work-item>, root <root>).
 Aturan isi brief: <abs>/skills/build/reference/b-brief.md
@@ -62,6 +64,6 @@ Balikan: satu baris per konflik — <task> · <invarian/package> · <1 baris>; a
 ### Konversi legacy `_carry-notes.md` (step 1, attended, sekali) — general-purpose
 ```
 Konversi <root>/.claude/build/<work-item>/_carry-notes.md → <work-item>/carry.yaml (format: <abs>/skills/build/reference/j-state-titipan.md).
-Task belum-done: <daftar id dari ringkasan state>. Ambil HANYA baris yang menyebut task itu atau agenda gate/ship/simplify yang belum lewat. Satu entri per titipan: from: legacy, at: <hari ini>, id C1.. (terbaru di atas). Jangan ubah _carry-notes.md.
+Task belum-done: <daftar id dari ringkasan state>. Ambil HANYA baris yang menyebut task itu atau agenda gate/ship/simplify yang belum lewat. Satu entri per titipan: from: legacy, at: <hari ini>, id mulai <next dari baris carry: ringkasan state> (terbaru di atas). carry.yaml sudah ada → TAMBAH di atas entri yang ada, jangan timpa. Lalu set key legacy_converted: <hari ini> tepat di bawah header (tanpa itu legacy tetap dibaca). Jangan ubah _carry-notes.md.
 Balikan: jumlah entri per target (mis. T75×2 · gate:M6×1 · ship×3).
 ```

@@ -76,5 +76,15 @@ has "$K" "legacy_converted:" "§K: subagent konversi set penanda + tak menimpa"
 has "$S" "SEBELUM titipan pre-flight ditulis" "SKILL step 1: konversi legacy dulu"
 has "$ROOT/plugin/skills/ship/SKILL.md" "legacy_converted:" "ship: fallback baca legacy sampai dikonversi"
 
+# === final review I-1/I-2/I-4/I-6: harness tanpa Glob, degrade lengkap, kontrak unattended mandiri ===
+has "$K" ".claude/build/_sdd" "§K: template superpowers disalin ke dalam root produk (I-1)"
+hasnt "$K" "pakai tool **Glob**" "§K: <sdd> tak bergantung tool Glob (main session tak punya)"
+hasnt "$S" "tanpa titipan resmi" "SKILL degrade: titipan tetap dibaca (I-2)"
+has "$S" "titipan dibaca sendiri: \`<work-item>/carry.yaml\`" "SKILL degrade: fallback baca carry.yaml + legacy (I-2)"
+has "$S" "(a) ATAU (b) → **cara lama penuh**" "SKILL degrade (a) juga cara lama + WARN (I-6)"
+has "$S" "(unattended: controller merakit sendiri, step 1 degrade (c))" "SKILL step 3: pengecualian unattended (I-4)"
+has "$K" "unattended: controller merakit sendiri" "§K brief-writer: attended saja (I-4)"
+has "$S" "berlaku walau §J tak terbaca" "SKILL step 2: kontrak minimum carry.yaml inline (I-4)"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
