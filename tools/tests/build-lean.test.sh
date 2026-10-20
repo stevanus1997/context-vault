@@ -55,5 +55,16 @@ hasnt "$S" "Rakit **BRIEF** LENGKAP dari task" "SKILL: controller tak merakit br
 has "$S" "dispatch SATU subagent \`context-vault:critic\`" "SKILL step 1: pre-flight via subagent"
 has "$B/reference/e-status-resume.md" "**Tanpa membaca file utuh**" "§E: tulis status tanpa baca utuh"
 
+# === T8: jalur review ===
+has "$S" "SELALU lewat git di SEMUA mode" "SKILL step 4: paket diff via git (D11)"
+has "$S" "**override format balikan**" "SKILL step 4: override format reviewer"
+has "$S" 'path file review `task-<id>-review-r<n>.md`' "SKILL step 4: re-dispatch tunjuk file review"
+has "$S" "controller MEMUTUSKAN tiap item ⚠️ sendiri" "SKILL step 4: keputusan ⚠️ tetap controller"
+has "$S" "**Cap maksimal 3 ronde**" "SKILL step 4: cap 3 ronde tak berubah (D12)"
+has "$B/reference/a-pinjam-sdd.md" "cap 3 ronde = keputusan desain user" "§A: re-review scoped/resume tidak diadopsi"
+n="$(grep -rlF 'scripts/review-package' "$B" | grep -v 'a-pinjam-sdd.md' | wc -l | tr -d ' ')"
+[ "$n" = 0 ] && ok "review-package hanya disebut di §A (tidak dipakai)" || bad "review-package masih dipanggil di luar §A ($n file)"
+hasnt "$B/reference/e-status-resume.md" 'diff via `review-package`' "§E: paket review via git"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
