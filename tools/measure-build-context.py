@@ -27,6 +27,7 @@ CODE_RE = re.compile(r'/src/|migrations|mockups/|\.tsx?\b|\.sql\b|\.html\b|\.css
 IMPL_RE = re.compile(r'task-([A-Za-z0-9_.-]+)-brief\.md')
 AGENT_ID_RE = re.compile(r'agentId:\s*([A-Za-z0-9_-]+)')
 AGENT_MSG_RE = re.compile(r'<agent-message from="([^"]+)">')
+AMBIGU_RE = re.compile(r'(?mi)^\s*ambigu:\s*(?!none\b)\S')
 # Status implementer di awal baris; kata "status" boleh huruf apa pun + markdown (`STATUS: BLOCKED`,
 # `**Status: NEEDS_CONTEXT.**`). Token status tetap HURUF BESAR — "Blocked: none" bukan BLOCKED.
 NEEDS_CONTEXT_RE = re.compile(r'(?m)^\W*(?:[Ss][Tt][Aa][Tt][Uu][Ss]\W*)?NEEDS_CONTEXT\b')
@@ -80,15 +81,16 @@ def _ctx(usage) -> int:
 
 def _dispatch_kind(tool_input: dict):
     """(kind, task_id) untuk tool_use Agent: brief_writer | reviewer | implementer | None."""
-    if tool_input.get('subagent_type') == 'context-vault:brief-writer':
-        return 'brief_writer', None
     prompt = tool_input.get('prompt') if isinstance(tool_input.get('prompt'), str) else ''
+    if tool_input.get('subagent_type') == 'context-vault:brief-writer':
+        m = IMPL_RE.search(prompt)
+        return 'brief_writer', m.group(1) if m else None
     if '.diff' in prompt and '-brief.md' in prompt and '-report.md' in prompt:
         return 'reviewer', None                   # subagent bukti ⚠️ (brief + diff, tanpa report) bukan reviewer
     m = IMPL_RE.search(prompt)
     if m and '-report.md' in prompt:
         return 'implementer', m.group(1)
-    return None, None
+    return 'other', None                          # critic/Explore/smoke: dihitung atribusinya saja
 
 
 def _is_build(records: list) -> bool:
@@ -129,9 +131,8 @@ def analyze_session(path: Path) -> dict | None:
                 use = {'cls': classify(name, inp), 'dispatch': None}
                 if name == 'Agent':
                     kind, task = _dispatch_kind(inp)
-                    if kind:
-                        use['dispatch'] = {'kind': kind, 'task': task, 'ctx': _ctx(msg.get('usage')), 'result': ''}
-                        dispatches.append(use['dispatch'])
+                    use['dispatch'] = {'kind': kind, 'task': task, 'ctx': _ctx(msg.get('usage')), 'result': ''}
+                    dispatches.append(use['dispatch'])
                 uses[b.get('id')] = use
         elif r.get('type') == 'user':
             if isinstance(content, list):
@@ -172,6 +173,8 @@ def analyze_session(path: Path) -> dict | None:
         'review_dispatches': len(reviews),
         'brief_writer_dispatches': sum(d['kind'] == 'brief_writer' for d in dispatches),
         'needs_context_tasks': len({d['task'] for d in impl if NEEDS_CONTEXT_RE.search(d['result'])}),
+        # brief-writer menangkap ambiguitas SEBELUM implementer jalan → bandingkan (needs_ctx + ambigu) vs baseline needs_ctx
+        'ambiguity_tasks': len({d['task'] for d in dispatches if d['kind'] == 'brief_writer' and AMBIGU_RE.search(d['result'])}),
         'blocked_tasks': len({d['task'] for d in impl if BLOCKED_RE.search(d['result'])}),
         'cannot_verify': cannot,
         'attribution': attribution,
@@ -194,6 +197,7 @@ def summarize(sessions: list[dict]) -> dict:
         'median_growth': _median([s['growth_median'] for s in sessions if s['growth_median'] is not None]),
         'review_rounds_per_task': _ratio(tot('review_dispatches'), tot('tasks')),
         'needs_context_per_task': _ratio(tot('needs_context_tasks'), tot('tasks')),
+        'ambiguity_per_task': _ratio(tot('ambiguity_tasks'), tot('tasks')),
         'blocked_per_task': _ratio(tot('blocked_tasks'), tot('tasks')),
         'cannot_verify_per_review': _ratio(tot('cannot_verify'), tot('review_dispatches')),
     }
@@ -228,9 +232,10 @@ def main(argv: list[str]) -> int:
     for s in sessions:
         print(f"{s['id'][:8]} ctx@impl1={_k(s['ctx_first_impl'])} growth={_k(s['growth_median'])} "
               f"impl={s['impl_dispatches']} tasks={s['tasks']} review/task={_x(_ratio(s['review_dispatches'], s['tasks']))} "
-              f"needs_ctx={s['needs_context_tasks']} blocked={s['blocked_tasks']} ⚠️={s['cannot_verify']}")
+              f"needs_ctx={s['needs_context_tasks']} ambigu={s['ambiguity_tasks']} blocked={s['blocked_tasks']} ⚠️={s['cannot_verify']}")
     print(f"median ctx@impl1={_k(summary['median_ctx_first_impl'])} · median growth={_k(summary['median_growth'])} · "
           f"review/task={_x(summary['review_rounds_per_task'])} · needs_ctx/task={_x(summary['needs_context_per_task'])} · "
+          f"ambigu/task={_x(summary['ambiguity_per_task'])} · "
           f"blocked/task={_x(summary['blocked_per_task'])} · ⚠️/review={_x(summary['cannot_verify_per_review'])} · "
           f"sessions={summary['sessions']}")
     return 0

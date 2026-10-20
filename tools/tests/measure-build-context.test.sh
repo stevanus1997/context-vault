@@ -44,7 +44,14 @@ recs += call(70000, 'u6', 'Bash', {'command': 'cat src/app/page.tsx'}, 'C' * 960
 recs += call(80000, 'u7', 'Agent', {'description': 'Implement T2',
              'prompt': '.claude/build/x/task-T2-brief.md .claude/build/x/task-T2-report.md'}, 'Status: BLOCKED\nalasan')
 recs += call(81000, 'u8', 'Agent', {'subagent_type': 'context-vault:brief-writer',
-             'prompt': 'Tulis brief ke: .claude/build/x/task-T3-brief.md'}, 'brief: x')
+             'prompt': 'Tulis brief ke: .claude/build/x/task-T3-brief.md'}, 'brief: x\nambigu: none')
+recs += call(82000, 'u9', 'Agent', {'subagent_type': 'context-vault:brief-writer',
+             'prompt': 'Rakit brief task T4\nTulis brief ke: .claude/build/x/task-T4-brief.md'},
+             'brief: y\nambigu: tabel orders atau order?')
+recs += call(83000, 'u10', 'Agent', {'subagent_type': 'context-vault:critic', 'prompt': 'Pre-flight sweep build x'},
+             'Async agent launched successfully.\nagentId: ccc9 (internal)')
+recs += [{'type': 'user', 'message': {'role': 'user', 'content':
+          'Another Claude session sent a message:\n<agent-message from="ccc9">\n' + 'X' * 5000 + '\n</agent-message>'}}]
 (d / 'build.jsonl').write_text('\n'.join(json.dumps(r, ensure_ascii=False) for r in recs) + '\n', encoding='utf-8')
 
 plain = [{'type': 'user', 'message': {'role': 'user', 'content': 'halo'}},
@@ -64,7 +71,9 @@ eq '.sessions[0].growth_median' 10000
 eq '.sessions[0].impl_dispatches' 3
 eq '.sessions[0].tasks' 2
 eq '.sessions[0].review_dispatches' 1
-eq '.sessions[0].brief_writer_dispatches' 1
+eq '.sessions[0].brief_writer_dispatches' 2
+eq '.sessions[0].ambiguity_tasks' 1
+eq '.sessions[0].attribution.agent >= 5000' true
 eq '.sessions[0].needs_context_tasks' 1
 eq '.sessions[0].blocked_tasks' 1
 eq '.sessions[0].cannot_verify' 2
@@ -76,6 +85,7 @@ eq '.summary.review_rounds_per_task' 0.5
 eq '.summary.needs_context_per_task' 0.5
 eq '.summary.blocked_per_task' 0.5
 eq '.summary.cannot_verify_per_review == 2' true
+eq '.summary.ambiguity_per_task' 0.5
 
 out="$($PY "$MB" "$T" 2>&1)"
 grep -qF 'ctx@impl1=60K' <<<"$out" && grep -qF 'sessions=1' <<<"$out" \
