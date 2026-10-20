@@ -25,8 +25,10 @@ STATE_RE = re.compile(r'tasks\.yaml|feature\.yaml|last-run|gates\.yaml|carry|_ru
 CODE_RE = re.compile(r'/src/|migrations|mockups/|\.tsx?\b|\.sql\b|\.html\b|\.css\b|\.go\b|\.py\b|-brief\.md|'
                      r'/schema/|package\.json')
 IMPL_RE = re.compile(r'task-([A-Za-z0-9_.-]+)-brief\.md')
-AGENT_ID_RE = re.compile(r'agentId:\s*([A-Za-z0-9_-]+)')
-AGENT_MSG_RE = re.compile(r'<agent-message from="([^"]+)">')
+# CC lama: 'agentId: <id>' + <agent-message from="<id>">; CC 2.1.30x: 'agent_id: <id>' / 'name: <nama>'
+# + <teammate-message teammate_id="<nama>"> — dua-duanya dipetakan ke dispatch-nya
+AGENT_ID_RE = re.compile(r'(?m)(?:agentId|agent_id|^name):\s*([A-Za-z0-9_.-]+)')
+AGENT_MSG_RE = re.compile(r'<(?:agent-message from|teammate-message teammate_id)="([^"]+)"')
 AMBIGU_RE = re.compile(r'(?mi)^\s*ambigu:\s*(?!none\b)\S')
 # Status implementer di awal baris; kata "status" boleh huruf apa pun + markdown (`STATUS: BLOCKED`,
 # `**Status: NEEDS_CONTEXT.**`). Token status tetap HURUF BESAR — "Blocked: none" bukan BLOCKED.
@@ -133,6 +135,8 @@ def analyze_session(path: Path) -> dict | None:
                     kind, task = _dispatch_kind(inp)
                     use['dispatch'] = {'kind': kind, 'task': task, 'ctx': _ctx(msg.get('usage')), 'result': ''}
                     dispatches.append(use['dispatch'])
+                    if isinstance(inp.get('name'), str) and inp['name']:
+                        by_agent[inp['name']] = use['dispatch']      # nama dipakai ulang → dispatch terbaru menang
                 uses[b.get('id')] = use
         elif r.get('type') == 'user':
             if isinstance(content, list):

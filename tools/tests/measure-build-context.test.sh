@@ -54,6 +54,18 @@ recs += call(83000, 'u10', 'Agent', {'subagent_type': 'context-vault:critic', 'p
              'Async agent launched successfully.\nagentId: ccc9 (internal)')
 recs += [{'type': 'user', 'message': {'role': 'user', 'content':
           'Another Claude session sent a message:\n<agent-message from="ccc9">\n' + 'X' * 5000 + '\n</agent-message>'}}]
+# format CC baru (2.1.30x): agent bernama, tool_result 'agent_id:/name:', hasil lewat <teammate-message teammate_id="<name>">
+def spawned(name):
+    return f'Spawned successfully.\nagent_id: a{name}-8772f699\nname: {name}\nThe agent is now running and will receive instructions via mailbox.'
+def mate(name, body):
+    return [{'type': 'user', 'message': {'role': 'user', 'content':
+             f'Another Claude session sent a message:\n<teammate-message teammate_id="{name}" color="blue" summary="x">\n{body}\n</teammate-message>'}}]
+recs += call(90000, 'u12', 'Agent', {'description': 'Implement T5', 'name': 'impl-T5',
+             'prompt': '.claude/build/x/task-T5-brief.md .claude/build/x/task-T5-report.md'}, spawned('impl-T5'))
+recs += call(91000, 'u13', 'Agent', {'subagent_type': 'context-vault:brief-writer', 'name': 'brief-T6',
+             'prompt': 'Tulis brief ke: .claude/build/x/task-T6-brief.md'}, spawned('brief-T6'))
+recs += mate('impl-T5', 'Status: NEEDS_CONTEXT\nbutuh nama kolom')
+recs += mate('brief-T6', 'brief: z\nambigu: pakai tabel A atau B?\ntier: mid')
 (d / 'build.jsonl').write_text('\n'.join(json.dumps(r, ensure_ascii=False) for r in recs) + '\n', encoding='utf-8')
 
 plain = [{'type': 'user', 'message': {'role': 'user', 'content': 'halo'}},
@@ -70,25 +82,25 @@ eq() { local got; got="$(q "$1")"; [ "$got" = "$2" ] && ok "$1 == $2" || bad "$1
 eq '.sessions|length' 1
 eq '.sessions[0].ctx_first_impl' 60000
 eq '.sessions[0].growth_median' 10000
-eq '.sessions[0].impl_dispatches' 3
-eq '.sessions[0].tasks' 2
+eq '.sessions[0].impl_dispatches' 4
+eq '.sessions[0].tasks' 3
 eq '.sessions[0].review_dispatches' 1
-eq '.sessions[0].brief_writer_dispatches' 3
-eq '.sessions[0].brief_tasks' 2
-eq '.sessions[0].ambiguity_tasks' 1
+eq '.sessions[0].brief_writer_dispatches' 4
+eq '.sessions[0].brief_tasks' 3
+eq '.sessions[0].ambiguity_tasks' 2
 eq '.sessions[0].attribution.agent >= 5000' true
-eq '.sessions[0].needs_context_tasks' 1
+eq '.sessions[0].needs_context_tasks' 2
 eq '.sessions[0].blocked_tasks' 1
 eq '.sessions[0].cannot_verify' 2
 eq '.sessions[0].attribution.skillref' 3200
 eq '.sessions[0].attribution.state' 6400
 eq '.sessions[0].attribution.code' 9600
 eq '.sessions[0].attribution.agent > 0' true
-eq '.summary.review_rounds_per_task' 0.5
-eq '.summary.needs_context_per_task' 0.5
-eq '.summary.blocked_per_task' 0.5
+eq '.summary.review_rounds_per_task' 0.33
+eq '.summary.needs_context_per_task' 0.67
+eq '.summary.blocked_per_task' 0.33
 eq '.summary.cannot_verify_per_review == 2' true
-eq '.summary.ambiguity_per_task' 0.5
+eq '.summary.ambiguity_per_task' 0.67
 
 out="$($PY "$MB" "$T" 2>&1)"
 grep -qF 'ctx@impl1=60K' <<<"$out" && grep -qF 'sessions=1' <<<"$out" \
