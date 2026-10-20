@@ -9,6 +9,7 @@ system prompt → seluruh isi file agent dimasukkan sebagai bagian PROMPT tugas.
 |---|---|
 | subagent `context-vault:critic` | sub-agent `explore` (read-only); prompt = SELURUH isi `agents/critic.md` di root plugin (baca via Read) + konteks tugas |
 | subagent `context-vault:security-critic` | sub-agent `explore`; prompt = SELURUH isi `agents/security-critic.md` di root plugin + diff/konteks |
+| subagent `context-vault:brief-writer` | sub-agent `coder` (perlu menulis file brief); prompt = SELURUH isi `agents/brief-writer.md` di root plugin + prompt dispatch |
 | implementer / worker nulis-kode (build, fix, dst) | sub-agent `coder` |
 | reviewer / reader read-only | sub-agent `explore` |
 
