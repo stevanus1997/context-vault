@@ -834,14 +834,105 @@ def snapshot(root: Path, now: float, work_item: str | None = None, quiet_min: in
             'status_line': status_line(shown[0], len(shown) - 1) if shown else None, 'errors': errors}
 
 
+# --- Ringkasan state controller build (--format task|carry) --------------------------------
+# Controller build pegang PETA, bukan isi file: entri task & titipan dibaca lewat sini.
+# Spec: docs/superpowers/specs/2026-10-20-build-lean-controller-design.md §4.4–§4.5.
+
+LEGACY_CARRY = '_carry-notes.md'
+
+
+def _work_item(root: Path, work_item: str) -> tuple[str, Path]:
+    wdir = Path(work_item)
+    wdir = (wdir if wdir.is_absolute() else root / wdir).resolve()
+    return ('fix' if wdir.parent.name == 'fixes' else 'feature'), wdir
+
+
+def _rel(root: Path, p: Path) -> str:
+    try:
+        return p.relative_to(root).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
+def _tasks(doc: dict) -> list[tuple[dict, dict]]:
+    """Pasangan (milestone, task) urut dokumen."""
+    return [(m, t) for m in _list(doc.get('milestones')) if isinstance(m, dict)
+            for t in _list(m.get('tasks')) if isinstance(t, dict)]
+
+
+def task_entries(root: Path, work_item: str, ids: list[str]) -> dict:
+    root = Path(root).resolve()
+    _, wdir = _work_item(root, work_item)
+    pairs = {_str(t.get('id')): (m, t) for m, t in _tasks(_dict(load_yaml(wdir / 'tasks.yaml')))}
+    out = []
+    for i in ids:
+        if i not in pairs:
+            raise YamlError(f"task tak dikenal: {i}")
+        m, t = pairs[i]
+        out.append({**t, 'milestone': _str(m.get('id'))})
+    return {'work_item': _rel(root, wdir), 'tasks': out}
+
+
+def _carry_hits(note_for: str, want: str) -> bool:
+    """Titipan ber-`for:` note_for relevan buat target want? gate:<M> ⊇ gate:<M>/<unit>."""
+    if note_for == want:
+        return True
+    if want.startswith('gate:'):
+        ms, _, unit = want[5:].partition('/')
+        return note_for == f"gate:{ms}" if unit else note_for.startswith(f"gate:{ms}/")
+    return False
+
+
+def _legacy_token(target: str, done: set):
+    if target.startswith('gate:'):
+        return re.compile(rf"\b{re.escape(target[5:].partition('/')[0])}\b")
+    if target == 'ship':
+        return re.compile(r'(?i)\bship\b')
+    if target == 'simplify':
+        return re.compile(r'(?i)\b(simplify|7a)\b')
+    return None if target in done else re.compile(rf"\b{re.escape(target)}\b")
+
+
+def _carry_doc(root: Path, work_item: str):
+    """(rel, wdir, done-ids, sumber, isi): isi = list entri carry.yaml / baris legacy / []."""
+    root = Path(root).resolve()
+    kind, wdir = _work_item(root, work_item)
+    done = {_str(t.get('id')) for _, t in _tasks(_dict(load_yaml(wdir / 'tasks.yaml'))) if t.get('status') == 'done'}
+    if (wdir / 'carry.yaml').is_file():
+        notes = [n for n in _list(_dict(load_yaml(wdir / 'carry.yaml')).get('notes')) if isinstance(n, dict)]
+        return _rel(root, wdir), wdir, done, 'carry.yaml', notes
+    legacy = _scratch(root, kind, wdir.name) / LEGACY_CARRY
+    if legacy.is_file():
+        lines = [ln.rstrip() for ln in legacy.read_text(encoding='utf-8', errors='replace').splitlines()]
+        return _rel(root, wdir), wdir, done, 'legacy', [ln for ln in lines if ln.strip() and not ln.lstrip().startswith('#')]
+    return _rel(root, wdir), wdir, done, 'none', []
+
+
+def _active(note: dict, done: set) -> bool:
+    return not note.get('closed') and _str(note.get('for')) not in done
+
+
+def carry_notes(root: Path, work_item: str, targets: list[str]) -> dict:
+    rel, _, done, source, items = _carry_doc(root, work_item)
+    if source == 'carry.yaml':
+        notes = [n for n in items if _active(n, done) and any(_carry_hits(_str(n.get('for')), t) for t in targets)]
+    else:
+        toks = [tok for tok in (_legacy_token(t, done) for t in targets) if tok is not None]
+        notes = [{'line': ln} for ln in items if any(tok.search(ln) for tok in toks)]
+    return {'work_item': rel, 'source': source, 'notes': notes}
+
+
 # --- CLI -----------------------------------------------------------------------------------
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog='build_status.py', description='Pembaca status build context-vault (read-only).')
     ap.add_argument('--parse-yaml', metavar='FILE', help='parse FILE dengan parser subset, cetak JSON')
     ap.add_argument('--root', default='.', help='root produk (folder yang punya control/)')
-    ap.add_argument('--format', choices=('json', 'status', 'drive'),
-                    help='json = snapshot v1 · status = status line · drive = baris progres drive.sh (item pertama)')
+    ap.add_argument('--format', choices=('json', 'status', 'drive', 'task', 'carry'),
+                    help='json = snapshot v1 · status = status line · drive = baris progres drive.sh (item pertama) · '
+                         'task = entri task lengkap (--task) · carry = titipan aktif (--for); task/carry butuh --work-item')
+    ap.add_argument('--task', metavar='IDS', help='task: id dipisah koma, mis. T1,T2')
+    ap.add_argument('--for', dest='targets', metavar='TARGETS', help='carry: target dipisah koma (id task, gate:<M>[/<unit>], ship, simplify)')
     ap.add_argument('--work-item', metavar='DIR', help='hanya work-item ini (relatif root), mis. control/features/<f>')
     ap.add_argument('--now', type=float, help='epoch "sekarang" (untuk test)')
     ap.add_argument('--quiet-min', type=int, default=QUIET_MIN, help=f'ambang menit "diam" (default {QUIET_MIN})')
@@ -853,6 +944,16 @@ def main(argv: list[str]) -> int:
             if not p.is_file():
                 raise YamlError(f"{p}: file tidak ada")
             print(json.dumps(load_yaml(p), ensure_ascii=False))
+            return 0
+        if args.format in ('task', 'carry'):
+            if not args.work_item:
+                raise YamlError(f"--format {args.format} butuh --work-item")
+            raw = args.task if args.format == 'task' else args.targets
+            ids = [x.strip() for x in (raw or '').split(',') if x.strip()]
+            if not ids:
+                raise YamlError(f"--format {args.format} butuh {'--task' if args.format == 'task' else '--for'}")
+            out = (task_entries if args.format == 'task' else carry_notes)(Path(args.root), args.work_item, ids)
+            print(json.dumps(out, ensure_ascii=False))
             return 0
         if args.format:
             now = args.now if args.now is not None else time.time()

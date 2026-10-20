@@ -1,0 +1,28 @@
+# carry.yaml — titipan antar-task build. Penulis tunggal: controller build. Entri terbaru di ATAS.
+notes:
+  - id: C5
+    for: gate:M2
+    from: review T2
+    at: 2026-10-20
+    note: "sudah dipakai"
+    closed: 2026-10-01
+  - id: C4
+    for: ship
+    from: review T2
+    at: 2026-10-20
+    note: "urutan deploy: api dulu"
+  - id: C3
+    for: gate:M2/api
+    from: review T1
+    at: 2026-10-20
+    note: "cek index orders.user_id"
+  - id: C2
+    for: T1
+    from: review T1
+    at: 2026-10-20
+    note: "lama"
+  - id: C1
+    for: T3
+    from: preflight
+    at: 2026-10-20
+    note: "pakai helper paginate()"

@@ -194,5 +194,44 @@ printf 'outcome: continue\ndone: 7\npending: 5\nreason: cap\n' > "$CV/last-run.m
 J="$(snap)"
 chk "outcome continue → nggak ada alert stop" '[.alerts[] | select(.key|startswith("stop|control/features/checkout-v2|"))] | length' '0'
 
+# === format controller|task|carry (fixture lean — ringkasan state controller build) ===
+LN="$T/lean"; LX="control/features/lean-x"; LF="control/fixes/2026-10-02-legacy"
+mklean() { rm -rf "$LN"; cp -R "$FX/lean" "$LN"; git -C "$LN/api" init -q; git -C "$LN/web" init -q; }
+lean() { $PY "$BS" --root "$LN" "$@"; }
+mklean
+J="$(lean --format task --task T9,T3 --work-item $LX)" || bad "task exit 0" "$J"
+chk "task: urut sesuai --task"              '[.tasks[].id]' '["T9","T3"]'
+chk "task: milestone ditempel"              '.tasks[1].milestone' '"M2"'
+chk "task: reuse blok utuh"                 '.tasks[1].reuse' '[{"table":"users"}]'
+chk "task: work_item relatif root"          '.work_item' '"control/features/lean-x"'
+err="$(lean --format task --task T42 --work-item $LX 2>&1 >/dev/null)"; rc=$?
+[ "$rc" = 2 ] && grep -qF 'task tak dikenal: T42' <<<"$err" && ok "task tak dikenal → exit 2" || bad "task tak dikenal → exit 2" "rc=$rc $err"
+err="$(lean --format task --task T3 2>&1 >/dev/null)"; rc=$?
+[ "$rc" = 2 ] && grep -qF 'butuh --work-item' <<<"$err" && ok "task tanpa --work-item → exit 2" || bad "task tanpa --work-item → exit 2" "rc=$rc $err"
+J="$(lean --format carry --for T3 --work-item $LX)"
+chk "carry T3: sumber carry.yaml"           '.source' '"carry.yaml"'
+chk "carry T3 → C1"                         '[.notes[].id]' '["C1"]'
+J="$(lean --format carry --for T1 --work-item $LX)"
+chk "carry task done → kosong"              '.notes' '[]'
+J="$(lean --format carry --for gate:M2/api --work-item $LX)"
+chk "carry gate:M2/api → C3 (C5 closed)"    '[.notes[].id]' '["C3"]'
+J="$(lean --format carry --for gate:M2 --work-item $LX)"
+chk "carry gate:M2 → C3 (segmen ikut)"      '[.notes[].id]' '["C3"]'
+J="$(lean --format carry --for ship,T3 --work-item $LX)"
+chk "carry ship,T3 → urut file"             '[.notes[].id]' '["C4","C1"]'
+J="$(lean --format carry --for F1 --work-item $LF)"
+chk "carry legacy: sumber legacy"           '.source' '"legacy"'
+chk "carry legacy F1 → barisnya"            '.notes' '[{"line":"- F1: jangan ubah signature parse()"}]'
+J="$(lean --format carry --for F0 --work-item $LF)"
+chk "carry legacy task done → kosong"       '.notes' '[]'
+J="$(lean --format carry --for ship,simplify,gate:M1 --work-item $LF)"
+chk "carry legacy ship/simplify/gate"       '[.notes[].line]' '["- gate M1: cek log error","- SHIP: catat env baru FOO_URL","- 7a: helper kembar formatDate"]'
+printf '\t- id: C9\n' >> "$LN/$LX/carry.yaml"
+err="$(lean --format carry --for T3 --work-item $LX 2>&1 >/dev/null)"; rc=$?
+[ "$rc" = 2 ] && grep -qF 'carry.yaml' <<<"$err" && ok "carry.yaml rusak → exit 2, sebut file" || bad "carry.yaml rusak → exit 2" "rc=$rc $err"
+rm -f "$LN/$LX/carry.yaml"
+J="$(lean --format carry --for T3 --work-item $LX)"
+chk "tanpa carry & legacy → none"           '[.source,.notes]' '["none",[]]'
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

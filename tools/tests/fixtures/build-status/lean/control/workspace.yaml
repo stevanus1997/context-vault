@@ -1,0 +1,15 @@
+topology: multi-repo
+databases:
+  - name: main
+    engine: Postgres
+    migrations: api/migrations
+    owner: api
+apps:
+  - name: api
+    path: api
+    stack:
+      db: main
+  - name: web
+    path: web
+    stack: { db: main }
+packages: []

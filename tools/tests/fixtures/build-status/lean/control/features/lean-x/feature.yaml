@@ -1,0 +1,3 @@
+status: active   # fixture build-status lean
+risk: low
+sensitivity: [payments]

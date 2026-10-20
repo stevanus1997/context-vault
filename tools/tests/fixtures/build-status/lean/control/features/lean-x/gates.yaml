@@ -1,0 +1,7 @@
+feature: lean-x
+gates:
+  - id: G1
+    segment: api×M1
+    tasks: [T1]
+    status: queued
+    reason: "risk:high"

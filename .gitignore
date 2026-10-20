@@ -15,6 +15,7 @@ build/
 !plugin/skills/build/
 !plugin-kimi/skills/build/
 !tools/tests/fixtures/build-status/prod/.claude/build/
+!tools/tests/fixtures/build-status/lean/.claude/build/
 
 # Logs
 *.log

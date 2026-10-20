@@ -1,0 +1,60 @@
+# tasks.yaml — lean-x (fixture tools/tests/build-status.test.sh, format controller|task|carry)
+feature: lean-x
+milestones:
+  - id: M1
+    title: Fondasi
+    tasks:
+      - id: T1
+        unit: api
+        desc: users base
+        status: done
+      - id: T2
+        unit: web
+        desc: layout
+        status: done
+  - id: M2
+    title: Inti
+    tasks:
+      - id: T3
+        unit: api
+        desc: orders endpoint
+        deps: [T1]
+        reuse:
+          - table: users
+        status: pending
+      - id: T4
+        unit: web
+        desc: orders page
+        deps: [T2]
+        reuse:
+          - table: carts
+          - file: src/ghost.ts
+        status: pending
+      - id: T5
+        unit: api
+        desc: orders totals
+        deps: [T3]
+        status: pending
+      - id: T6
+        unit: web
+        desc: cart badge
+        status: in_progress
+      - id: T7
+        unit: api
+        desc: drop legacy cols
+        status: needs_human
+        hold: "migrate destructive — nunggu approve"
+      - id: T8
+        unit: api
+        desc: flaky seed
+        status: blocked
+      - id: T9
+        unit: api
+        desc: "tambah endpoint ringkasan pesanan per pengguna dengan paginasi kursor dan filter status yang bisa digabung"
+        deps: [T1]
+        reuse:
+          - file: src/users.ts
+        status: pending
+      - id: T10
+        deps: [T99]
+        status: pending
