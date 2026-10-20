@@ -922,15 +922,191 @@ def carry_notes(root: Path, work_item: str, targets: list[str]) -> dict:
     return {'work_item': rel, 'source': source, 'notes': notes}
 
 
+# --- Ringkasan state controller build (--format controller) --------------------------------
+# Peta 1 baris/task + READY per repo + hold/gate + staleness + reuse basi + jumlah titipan.
+# Keputusan atas hasilnya (WARN/STOP/hold) tetap di controller (SKILL build step 1).
+
+DESC_MAX = 80
+
+
+def _flow_map(s: str) -> dict:
+    """'{ db: main, orm: x }' → {'db': 'main', 'orm': 'x'}; bukan flow map → {}."""
+    s = s.strip()
+    if not (s.startswith('{') and _flow_end(s) == len(s)):
+        return {}
+    out = {}
+    for raw in _flow_items(s[1:-1]):
+        kv = _split_key(raw.strip()) if isinstance(raw, str) else None
+        if kv is None:
+            continue
+        k, v = kv
+        v = v.strip()
+        out[k] = _unquote(v) if v[:1] in '"\'' and _quoted_end(v) == len(v) else v
+    return out
+
+
+def _as_map(x) -> dict:
+    """Map blok, atau flow map yang oleh parser subset dibiarkan string mentah."""
+    return x if isinstance(x, dict) else _flow_map(x) if isinstance(x, str) else {}
+
+
+def schema_owner(ws: dict, unit: str) -> str:
+    """plugin/rules/db-ownership.md: databases[name == app.stack.db].owner, selainnya unit (legacy)."""
+    for app in _list(ws.get('apps')):
+        if isinstance(app, dict) and app.get('name') == unit:
+            db = _as_map(app.get('stack')).get('db')
+            for d in _list(ws.get('databases')):
+                if isinstance(d, dict) and isinstance(db, str) and db and d.get('name') == db:
+                    owner = d.get('owner')
+                    return owner if isinstance(owner, str) and owner else unit
+    return unit
+
+
+def effective_risk(feature: dict) -> str:
+    """risk low|normal|high (absen/typo → normal); sensitivity payments = floor high (hard)."""
+    risk = _str(feature.get('risk'))
+    risk = risk if risk in ('low', 'normal', 'high') else 'normal'
+    if risk != 'high' and 'payments' in _list(feature.get('sensitivity')):
+        return 'high (payments)'
+    return risk
+
+
+def staleness(wdir: Path, kind: str) -> str:
+    tm = _mtime(wdir / 'tasks.yaml')
+    if tm is None:
+        return '—'
+    if kind == 'fix':
+        newer = [f for f in ('fix.yaml', 'notes.md') if (_mtime(wdir / f) or 0) > tm]
+        return 'STALE ' + ', '.join(f"{f} > tasks.yaml" for f in newer) if newer else 'OK'
+    newer = [p for p in sorted((wdir / 'plans').glob('*.md')) if (_mtime(p) or 0) > tm]
+    if newer:
+        return 'STALE ' + ', '.join(f"plans/{p.name} > tasks.yaml" for p in newer)
+    return 'WARN business.md > tasks.yaml' if (_mtime(wdir / 'business.md') or 0) > tm else 'OK'
+
+
+def _schema_tables(root: Path, owner: str):
+    """Nama tabel (heading '## ') di proyeksi control/schema/<owner>.md; absen/stub (nol heading) → None."""
+    p = root / 'control' / 'schema' / f"{owner}.md"
+    try:
+        text = p.read_text(encoding='utf-8', errors='replace')
+    except OSError:
+        return None
+    names = {ln[3:].split()[0].strip('`') for ln in text.splitlines() if ln.startswith('## ') and ln[3:].split()}
+    return names or None
+
+
+def controller_text(root: Path, work_item: str) -> str:
+    root = Path(root).resolve()
+    kind, wdir = _work_item(root, work_item)
+    rel = _rel(root, wdir)
+    doc = _dict(load_yaml(wdir / 'tasks.yaml'))
+    ws = _dict(load_yaml(root / 'control' / 'workspace.yaml'))
+    tasks = [t for _, t in _tasks(doc)]
+    tid = lambda t: _str(t.get('id'))  # noqa: E731
+    unit = lambda t: _str(t.get('unit'))  # noqa: E731
+    st = {tid(t): _str(t.get('status')) for t in tasks}
+    deps = lambda t: [d for d in _list(t.get('deps')) if isinstance(d, str)]  # noqa: E731
+    lane = _lane_keys(root, lambda load, _wdir: load())
+
+    def label(u: str) -> str:
+        k = lane(u)
+        return 'integration' if k == '__integration__' else 'root' if k == 'root' else Path(k).name
+
+    def join(items: list) -> str:
+        return ' · '.join(items) or '—'
+
+    if kind == 'fix':
+        lines = [f"work-item: {rel} (fix)"]
+    else:
+        feat = _dict(load_yaml(wdir / 'feature.yaml'))
+        sens = ','.join(s for s in _list(feat.get('sensitivity')) if isinstance(s, str)) or '—'
+        lines = [f"work-item: {rel} (feature · risk {effective_risk(feat)} · sensitivity {sens})"]
+    lines.append(f"staleness: {staleness(wdir, kind)}")
+
+    units = list(dict.fromkeys(unit(t) for t in tasks if unit(t) and unit(t) != 'integration'))
+    lines.append(f"repos: {join([f'{u}={label(u)}' for u in units])}")
+
+    ready, busy = {}, {}
+    for t in tasks:
+        if st[tid(t)] == 'pending' and all(st.get(d) == 'done' for d in deps(t)):
+            ready.setdefault(label(unit(t)), []).append(tid(t))
+        elif st[tid(t)] == 'in_progress':
+            busy.setdefault(label(unit(t)), []).append(tid(t))
+    lines.append('READY: ' + join([f"{lb} {' '.join(ids)}" + (f" (sibuk {','.join(busy[lb])})" if lb in busy else '')
+                                   for lb, ids in ready.items()]))
+    lines.append('in_progress: ' + join([f"{tid(t)} {unit(t) or '-'}" for t in tasks if st[tid(t)] == 'in_progress']))
+
+    def reason(t: dict):
+        manual = [x for x in _list(t.get('manual')) if isinstance(x, str)]
+        r = t.get('hold') if isinstance(t.get('hold'), str) and t.get('hold') else (manual[0] if manual else None)
+        return f' "{r}"' if r else ''
+    lines.append('hold: ' + join([f"{tid(t)} needs_human{reason(t)}" for t in tasks if st[tid(t)] == 'needs_human']))
+    lines.append('blocked: ' + join([f"{tid(t)} {unit(t) or '-'}{reason(t)}" for t in tasks if st[tid(t)] == 'blocked']))
+
+    gates = [g for g in _list(_dict(load_yaml(wdir / 'gates.yaml')).get('gates'))
+             if isinstance(g, dict) and g.get('status') == 'queued']
+    lines.append('gates queued: ' + join([f"{_str(g.get('id'))} {_str(g.get('segment'))}"
+                                          + (f' "{_str(g.get("reason"))}"' if _str(g.get('reason')) else '') for g in gates]))
+
+    paths = {e['name']: e.get('path') for e in _list(ws.get('apps')) + _list(ws.get('packages'))
+             if isinstance(e, dict) and isinstance(e.get('name'), str)}
+    apps = {e['name'] for e in _list(ws.get('apps')) if isinstance(e, dict) and isinstance(e.get('name'), str)}
+    stale = []
+    for t in tasks:
+        if st[tid(t)] == 'done':
+            continue
+        for r in map(_as_map, _list(t.get('reuse'))):
+            tbl, f = r.get('table'), r.get('file')
+            if isinstance(tbl, str) and tbl and unit(t) in apps:
+                names = _schema_tables(root, schema_owner(ws, unit(t)))
+                if names is not None and tbl not in names:
+                    stale.append(f"{tid(t)} table {tbl}")
+            if isinstance(f, str) and f and isinstance(paths.get(unit(t)), str) and not (root / paths[unit(t)] / f).exists():
+                stale.append(f"{tid(t)} file {f}")
+    lines.append('reuse basi: ' + join(stale))
+
+    _, _, done, source, items = _carry_doc(root, work_item)
+    if source == 'carry.yaml':
+        counts = {}
+        for n in items:
+            if _active(n, done) and _str(n.get('for')):
+                counts[_str(n.get('for'))] = counts.get(_str(n.get('for')), 0) + 1
+        nums = [int(m.group(1)) for n in items if (m := re.fullmatch(r'C(\d+)', _str(n.get('id'))))]
+        lines.append(f"carry: {join([f'{k}×{v}' for k, v in counts.items()])} · next C{max(nums, default=0) + 1}")
+    elif source == 'legacy':
+        lines.append(f"carry: legacy {LEGACY_CARRY} ({len(items)} baris) · next C1")
+    else:
+        lines.append('carry: — · next C1')
+
+    lines.append('map:')
+    for m in (m for m in _list(doc.get('milestones')) if isinstance(m, dict)):
+        ts = [t for t in _list(m.get('tasks')) if isinstance(t, dict)]
+        d = sum(st.get(tid(t)) == 'done' for t in ts)
+        if ts and d == len(ts):
+            lines.append(f"  {_str(m.get('id'))} ✓ {d}/{len(ts)} {_str(m.get('title'))}".rstrip())
+            continue
+        lines.append(f"  {_str(m.get('id'))} {d}/{len(ts)} {_str(m.get('title'))}".rstrip())
+        for t in ts:
+            row = f"    {tid(t)} {unit(t) or '-'} {_str(t.get('status')) or '-'}"
+            if deps(t):
+                row += f" deps {','.join(deps(t))}"
+            desc = ' '.join(_str(t.get('desc')).split())
+            if desc:
+                row += ' · ' + (desc if len(desc) <= DESC_MAX else desc[:DESC_MAX - 1] + '…')
+            lines.append(row)
+    return '\n'.join(lines) + '\n'
+
+
 # --- CLI -----------------------------------------------------------------------------------
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog='build_status.py', description='Pembaca status build context-vault (read-only).')
     ap.add_argument('--parse-yaml', metavar='FILE', help='parse FILE dengan parser subset, cetak JSON')
     ap.add_argument('--root', default='.', help='root produk (folder yang punya control/)')
-    ap.add_argument('--format', choices=('json', 'status', 'drive', 'task', 'carry'),
+    ap.add_argument('--format', choices=('json', 'status', 'drive', 'controller', 'task', 'carry'),
                     help='json = snapshot v1 · status = status line · drive = baris progres drive.sh (item pertama) · '
-                         'task = entri task lengkap (--task) · carry = titipan aktif (--for); task/carry butuh --work-item')
+                         'controller = ringkasan state + peta · task = entri task lengkap (--task) · '
+                         'carry = titipan aktif (--for); controller/task/carry butuh --work-item')
     ap.add_argument('--task', metavar='IDS', help='task: id dipisah koma, mis. T1,T2')
     ap.add_argument('--for', dest='targets', metavar='TARGETS', help='carry: target dipisah koma (id task, gate:<M>[/<unit>], ship, simplify)')
     ap.add_argument('--work-item', metavar='DIR', help='hanya work-item ini (relatif root), mis. control/features/<f>')
@@ -945,9 +1121,12 @@ def main(argv: list[str]) -> int:
                 raise YamlError(f"{p}: file tidak ada")
             print(json.dumps(load_yaml(p), ensure_ascii=False))
             return 0
-        if args.format in ('task', 'carry'):
+        if args.format in ('controller', 'task', 'carry'):
             if not args.work_item:
                 raise YamlError(f"--format {args.format} butuh --work-item")
+            if args.format == 'controller':
+                print(controller_text(Path(args.root), args.work_item), end='')
+                return 0
             raw = args.task if args.format == 'task' else args.targets
             ids = [x.strip() for x in (raw or '').split(',') if x.strip()]
             if not ids:

@@ -233,5 +233,37 @@ rm -f "$LN/$LX/carry.yaml"
 J="$(lean --format carry --for T3 --work-item $LX)"
 chk "tanpa carry & legacy → none"           '[.source,.notes]' '["none",[]]'
 
+mklean
+setm "$LN/$LX/tasks.yaml" 600; setm "$LN/$LX/plans/api.md" 60; setm "$LN/$LX/plans/_shared.md" 900; setm "$LN/$LX/business.md" 30
+lean --format controller --work-item $LX > "$T/ctl1" 2>&1; rc=$?
+[ "$rc" = 0 ] && cmp -s "$T/ctl1" "$FX/lean/expected-controller.txt" && ok "controller lean-x == expected-controller.txt" \
+  || bad "controller lean-x == expected-controller.txt" "rc=$rc"$'\n'"$(diff "$FX/lean/expected-controller.txt" "$T/ctl1")"
+lean --format controller --work-item $LX > "$T/ctl2" 2>&1; rc2=$?
+[ "$rc" = 0 ] && [ "$rc2" = 0 ] && cmp -s "$T/ctl1" "$T/ctl2" && ok "controller deterministik (dua kali identik)" || bad "controller deterministik" "$(diff "$T/ctl1" "$T/ctl2")"
+line() { lean --format controller --work-item "$1" 2>&1 | sed -n "$2"; }
+setm "$LN/$LX/plans/api.md" 900
+out="$(line $LX 2p)"; [ "$out" = "staleness: WARN business.md > tasks.yaml" ] && ok "staleness WARN business.md" || bad "staleness WARN business.md" "$out"
+setm "$LN/$LX/business.md" 900
+out="$(line $LX 2p)"; [ "$out" = "staleness: OK" ] && ok "staleness OK" || bad "staleness OK" "$out"
+rm -f "$LN/control/schema/api.md"
+out="$(line $LX '/^reuse basi:/p')"; [ "$out" = "reuse basi: T4 file src/ghost.ts" ] \
+  && ok "proyeksi skema absen → cek tabel dilewati (nggak basi palsu)" || bad "proyeksi absen → reuse basi" "$out"
+mklean
+$PY - "$LN/$LX/tasks.yaml" <<'PY'
+import sys; p = sys.argv[1]; s = open(p).read()
+old = "        reuse:\n          - table: carts\n          - file: src/ghost.ts\n"
+assert s.count(old) == 1; open(p, 'w').write(s.replace(old, "        reuse: [ {table: carts}, {file: src/ghost.ts} ]\n"))
+PY
+out="$(line $LX '/^reuse basi:/p')"; [ "$out" = "reuse basi: T4 table carts · T4 file src/ghost.ts" ] \
+  && ok "reuse bentuk flow map ({table: x}) tetap dibaca" || bad "reuse flow map" "$out"
+out="$(line $LF 1p)"; [ "$out" = "work-item: control/fixes/2026-10-02-legacy (fix)" ] && ok "controller fix: baris work-item" || bad "controller fix: baris work-item" "$out"
+out="$(line $LF '/^carry:/p')"; [ "$out" = "carry: legacy _carry-notes.md (5 baris) · next C1" ] && ok "controller fix: carry legacy" || bad "controller fix: carry legacy" "$out"
+err="$(lean --format controller 2>&1 >/dev/null)"; rc=$?
+[ "$rc" = 2 ] && grep -qF 'butuh --work-item' <<<"$err" && ok "controller tanpa --work-item → exit 2" || bad "controller tanpa --work-item → exit 2" "rc=$rc $err"
+mkprod
+out="$($PY "$BS" --root "$P" --format controller --work-item control/features/checkout-v2 2>&1)"; rc=$?
+[ "$rc" = 0 ] && grep -qxF 'READY: —' <<<"$out" && grep -qxF 'gates queued: G3 api×M2 "floor-scan T6 (token)"' <<<"$out" \
+  && ok "controller prod checkout-v2: READY — + gate G3" || bad "controller prod checkout-v2" "rc=$rc"$'\n'"$out"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

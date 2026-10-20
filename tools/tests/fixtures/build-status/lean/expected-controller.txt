@@ -1,0 +1,21 @@
+work-item: control/features/lean-x (feature · risk high (payments) · sensitivity payments)
+staleness: STALE plans/api.md > tasks.yaml
+repos: api=api · web=web
+READY: api T3 T9 · web T4 (sibuk T6)
+in_progress: T6 web
+hold: T7 needs_human "migrate destructive — nunggu approve"
+blocked: T8 api
+gates queued: G1 api×M1 "risk:high"
+reuse basi: T4 table carts · T4 file src/ghost.ts
+carry: ship×1 · gate:M2/api×1 · T3×1 · next C6
+map:
+  M1 ✓ 2/2 Fondasi
+  M2 0/8 Inti
+    T3 api pending deps T1 · orders endpoint
+    T4 web pending deps T2 · orders page
+    T5 api pending deps T3 · orders totals
+    T6 web in_progress · cart badge
+    T7 api needs_human · drop legacy cols
+    T8 api blocked · flaky seed
+    T9 api pending deps T1 · tambah endpoint ringkasan pesanan per pengguna dengan paginasi kursor dan filte…
+    T10 - pending deps T99
