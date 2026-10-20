@@ -32,7 +32,7 @@ gates:
 ```
 - **Atomik:** satu entri / satu flip status per operasi tulis (pola `tasks.yaml` §E). Absen → dianggap kosong; dibuat saat entri pertama. User boleh edit manual (dipercaya, pola `tasks.yaml`).
 - **Higiene commit** = `tasks.yaml` (§F): jangan commit ke repo yang lane-nya in-flight.
-- **Scratch** (`<root>/.claude/build/<work-item>/`, gitignored `init`): `gate-Gn-critic.md`, `gate-Gn-impact.md`. Diff segmen TIDAK bikin file baru — pakai paket `review-<base7>..<head7>.diff` per task; hilang → regenerate dari `commits:` via `git -C <path> diff <base7>..<head7>`. Critic hilang → re-run saat drain (degrade).
+- **Scratch** (`<root>/<wi>/`, gitignored `init`): `gate-Gn-critic.md`, `gate-Gn-impact.md`. Diff segmen TIDAK bikin file baru — pakai paket `review-<base7>..<head7>.diff` per task; hilang → regenerate dari `commits:` via `git -C <path> diff <base7>..<head7>`. Critic hilang → re-run saat drain (degrade).
 - **`ship`** menolak selama ada `status: queued`; body PR memuat daftar `approved` + `auto`.
 
 ### Field `hold:` di `tasks.yaml` (opsional, build-written — preseden `commits:`; BUKAN status baru)

@@ -1,6 +1,6 @@
 ## B. Menyusun brief implementer dari satu task
 
-Dari satu entri `tasks.yaml`, **brief-writer** (`${CLAUDE_PLUGIN_ROOT}/agents/brief-writer.md`, didispatch controller `build` — SKILL step 3; jalur degrade: controller sendiri; peminjam `design-system`/`fix` memakai aturan isi ini apa adanya) merakit **brief** — ditulis ke `<root>/.claude/build/<work-item>/task-<id>-brief.md` (SKILL step 3; scratch ter-gitignore, TIDAK di-paste ke prompt) — berisi:
+Dari satu entri `tasks.yaml`, **brief-writer** (`${CLAUDE_PLUGIN_ROOT}/agents/brief-writer.md`, didispatch controller `build` — SKILL step 3; jalur degrade: controller sendiri; peminjam `design-system`/`fix` memakai aturan isi ini apa adanya) merakit **brief** — ditulis ke `<root>/<wi>/task-<id>-brief.md` (SKILL step 3; scratch ter-gitignore, TIDAK di-paste ke prompt) — berisi:
 - **Task:** `desc` + `unit` (app/package/integration).
 - **Files:** isi `files` (path create/modify/test).
 - **Approach:** `approach`.

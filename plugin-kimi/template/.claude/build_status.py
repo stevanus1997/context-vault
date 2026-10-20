@@ -927,7 +927,7 @@ def _carry_doc(root: Path, work_item: str):
     if (wdir / 'carry.yaml').is_file():
         doc = _dict(load_yaml(wdir / 'carry.yaml'))
         spans = _id_spans(wdir / 'carry.yaml')
-        entries = [{**n, 'line': spans.get(_str(n.get('id')), (None,))[0]}
+        entries = [{**n, 'line_no': spans.get(_str(n.get('id')), (None,))[0]}   # 'line' = teks baris legacy
                    for n in _list(doc.get('notes')) if isinstance(n, dict)]
         converted = bool(doc.get('legacy_converted'))
     lines = None
@@ -1034,7 +1034,10 @@ def _flags(t: dict) -> list[str]:
     """Penanda peta yang mengubah cara dispatch: manual: (needs_human dulu), actions: (migrate = gate), mockup:."""
     flags = ['manual'] if [x for x in _list(t.get('manual')) if x] else []
     other = False
-    for a in map(_as_map, _list(t.get('actions'))):
+    for raw in _list(t.get('actions')):
+        a = _as_map(raw)
+        if not a and isinstance(raw, str) and raw.strip():      # flow `[install: zod]` = string mentah
+            a = {raw.split(':', 1)[0].strip(): raw}
         if 'migrate' in a:
             kind = _str(a.get('kind')) or '?'
             if f"migrate:{kind}" not in flags:

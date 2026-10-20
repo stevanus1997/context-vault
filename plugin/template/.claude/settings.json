@@ -16,7 +16,8 @@
       "Bash(git commit:*)",
       "Bash(git checkout:*)",
       "Bash(python3 .claude/build_status.py:*)",
-      "Read(~/.claude/plugins/**)"
+      "Read(~/.claude/plugins/cache/**)",
+      "Read(~/.claude/plugins/installed_plugins.json)"
     ],
     "deny": [
       "Bash(git push --force:*)",

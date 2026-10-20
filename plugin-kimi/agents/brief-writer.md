@@ -12,7 +12,7 @@ root produk · work-item (`control/features/<f>` / `control/fixes/<id>`) · id t
 
 ## Alat
 Read, Bash, dan Write saja — jangan cari tool pencarian lain, Claude Code versi sekarang tak menyediakannya. Di run unattended, Bash di luar allowlist (`ls`, `grep`, `find`, `sed`, `cat`) DITOLAK, jadi jangan pakai. Yang boleh:
-- Read file apa pun di root produk. File utuh boleh, karena context-mu sekali pakai; yang harus ringkas cuma brief-nya.
+- Read file di root produk, plus file plugin yang disebut prompt (aturan §B; butuh allowlist `Read(~/.claude/plugins/cache/**)`). File utuh boleh, karena context-mu sekali pakai; yang harus ringkas cuma brief-nya.
 - `python3 .claude/build_status.py …`
 - `git -C <path-unit-literal> show|log|rev-parse …`, dengan `<path-unit-literal>` = `path` unit dari `workspace.yaml` apa adanya. Listing dir: `git -C <path-unit-literal> show HEAD:./<dir>/`. Kalau repo sibuk, ganti `HEAD` dengan `<base7>`.
 

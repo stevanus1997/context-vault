@@ -14,7 +14,7 @@
   - `map:` — milestone kelar dilipat 1 baris, sisanya 1 baris per task: id · unit · status · deps · penanda `[manual]`/`[migrate:<kind>]`/`[actions]`/`[mockup]` (task belum done) · desc ≤ 80 karakter.
   Jalankan ulang tiap scheduler tick (murah).
 - `task --task <id>[,<id>…]` — JSON entri task lengkap (+ `milestone`, dan `line`/`end_line` = rentang blok task di `tasks.yaml` buat Read offset/limit + Edit, §E). Dipakai brief-writer, gate step 6, dan waktu controller butuh detail satu task.
-- `carry --for <target>[,<target>…]` — JSON titipan AKTIF untuk target itu (+ `line` tiap entri `carry.yaml`).
+- `carry --for <target>[,<target>…]` — JSON titipan AKTIF untuk target itu (+ `line_no` tiap entri `carry.yaml`; entri legacy = `{"line": <teks baris>}`).
 
 Kalau exit ≠ 0 dengan `invalid choice` (salinan lama), atau mode unattended tanpa entri allowlist `Bash(python3 .claude/build_status.py:*)`, controller degrade ke cara lama (SKILL step 1).
 
@@ -40,7 +40,7 @@ notes:
 - **Cara tulis (tanpa baca file utuh).**
   - Titipan pertama → Write file dengan header di atas.
   - Selanjutnya → Read `limit: 3` (Edit butuh file sudah di-Read), lalu Edit ganti baris `notes:` dengan `notes:` + entri baru. Id-nya = `next` dari baris `carry:` ringkasan state.
-  - Menutup entri: `line` entri dari `--format carry` → Read `offset: <line>` `limit: 6` → Edit tambah baris `closed: <tanggal>`.
+  - Menutup entri: `line_no` entri dari `--format carry` → Read `offset: <line_no>` `limit: 6` → Edit tambah baris `closed: <tanggal>`.
 - **Siapa baca.** Brief-writer `--for <task>`; gate step 6 `--for gate:<M>/<unit>`; 7a `--for simplify`; `ship` `--for ship`. Controller cuma melihat JUMLAH (baris `carry:`).
 - **Target gate.** `gate:<M>` berlaku untuk semua segmen milestone itu; `gate:<M>/<unit>` cuma segmen itu. Minta `--for gate:M4/api` → dapat `gate:M4` + `gate:M4/api`.
 - **Aktif.** Titipan ber-`for:` task yang sudah `done`, dan titipan ber-`closed:`, tidak dikeluarkan `--format carry`. Entrinya tetap di file sebagai jejak audit.

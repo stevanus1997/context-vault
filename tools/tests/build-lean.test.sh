@@ -67,7 +67,7 @@ n="$(grep -rlF 'scripts/review-package' "$B" | grep -v 'a-pinjam-sdd.md' | wc -l
 hasnt "$B/reference/e-status-resume.md" 'diff via `review-package`' "§E: paket review via git"
 
 # === T10: fallback headless (probe 2026-10-20: Read/Glob plugin-cache dari subagent ditolak di claude -p) ===
-has "$S" '(c) mode unattended DAN allowlist tak memuat `Read(~/.claude/plugins/**)`' "SKILL degrade (c): hanya bila allowlist Read plugin absen"
+has "$S" '(c) mode unattended DAN allowlist tak memuat `Read(~/.claude/plugins/cache/**)`' "SKILL degrade (c): hanya bila allowlist Read plugin absen"
 
 # === final review C-1: legacy tetap dibaca sampai legacy_converted ===
 has "$J" "legacy_converted:" "§J: penanda konversi legacy"
@@ -85,8 +85,10 @@ has "$S" "berlaku walau §J tak terbaca" "SKILL step 2: kontrak minimum carry.ya
 
 # === review independen sesi desain 2026-10-20: Read plugin di headless, tanpa Grep/Glob, catatan reviewer, penanda peta ===
 TS="$ROOT/plugin/template/.claude/settings.json"
-has "$TS" '"Read(~/.claude/plugins/**)"' "template: allowlist Read plugin (probe headless: tanpa ini ditolak)"
-has "$ROOT/plugin/skills/upgrade/SKILL.md" 'Read(~/.claude/plugins/**)' "upgrade: susulin allowlist Read plugin"
+has "$TS" '"Read(~/.claude/plugins/cache/**)"' "template: allowlist Read cache plugin (probe headless: tanpa ini ditolak)"
+has "$TS" '"Read(~/.claude/plugins/installed_plugins.json)"' "template: allowlist Read installed_plugins.json (<sdd>)"
+hasnt "$TS" '"Read(~/.claude/plugins/**)"' "template: aturan baca tak selebar ~/.claude/plugins/**"
+has "$ROOT/plugin/skills/upgrade/SKILL.md" 'Read(~/.claude/plugins/cache/**)' "upgrade: susulin allowlist Read plugin"
 has "$S" 'stderr `invalid choice`' "SKILL degrade (b): salinan lama dibedakan dari file rusak"
 has "$S" '`.claude/settings.local.json`' "SKILL degrade (a): cek dua file settings"
 has "$S" "**Sebelum dispatch, ambil entri lengkap task terpilih**" "SKILL step 2: manual/actions/mockup dari entri lengkap"
@@ -108,6 +110,15 @@ for f in "$J" "$B/reference/e-status-resume.md"; do hasnt "$f" "Grep -n" "$(base
 has "$B/reference/e-status-resume.md" "end_line" "§E: blok task dari line/end_line"
 has "$J" "korup:" "§J: baris korup"
 has "$J" "boleh list" "§J: for: multi-target"
+
+# === re-review minor 2026-10-20 ===
+hasnt "$S" ".claude/build/<work-item>/" "SKILL: path scratch pakai <wi>, bukan <work-item> dua-makna"
+has "$S" '**`<wi>`** = folder scratch work-item' "SKILL step 1: definisi <wi> (+ fallback degrade)"
+has "$S" "ambil ULANG tepat sebelum tiap tulis" "SKILL step 2: line/end_line tak dipakai ulang basi"
+has "$S" "task tak dikenal: <id>" "SKILL degrade: pesan error dibaca, bukan semua = file rusak"
+has "$K" "Alat: Read saja (unattended: grep/find/ls lewat Bash ditolak)" "§K bukti ⚠️: Read saja"
+has "$K" "Read brief \`limit: 1\`" "§K: jawaban ambigu tanpa baca brief utuh"
+has "$J" "line_no" "§J: nomor baris titipan = line_no"
 
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

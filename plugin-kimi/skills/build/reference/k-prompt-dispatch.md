@@ -4,7 +4,7 @@ Controller TIDAK membaca isi template superpowers maupun §B. Path-nya diserahka
 
 - **`<wi>`** = folder scratch work-item, persis dari baris `work-item: … · scratch <wi>` ringkasan state (fitur `.claude/build/<fitur>`, fix `.claude/build/fixes/<id>`). Semua path brief/report/review/`_rules` di bawah memakai `<root>/<wi>/`. `<work-item>` = folder `control/` (`control/features/<f>` / `control/fixes/<id>`).
 - **`<abs>`** = `${KIMI_SKILL_DIR}/../..` (absolut).
-- **`<sdd>`** = folder `skills/subagent-driven-development` superpowers terpasang. Read `~/.claude/plugins/installed_plugins.json` SEKALI per run → `installPath` entri `superpowers@…` + `/skills/subagent-driven-development`. Implementer/reviewer membaca template-nya sendiri lewat Read, dan ini butuh allowlist `Read(~/.claude/plugins/**)` (template `settings.json`). Probe 2026-10-20: tanpa allowlist itu, Read di luar root produk ditolak di `claude -p` headless, baik dari sesi utama maupun subagent. Kalau file tak terbaca, entri absen, atau mode unattended tanpa allowlist itu → hapus baris "Ikuti template" dari prompt. Kontrak ringkas di bawah tetap lengkap tanpanya. Plugin dipasang di luar `~/.claude/plugins` (dev `--plugin-dir`) → tambah `Read(<abs>/**)` sendiri.
+- **`<sdd>`** = folder `skills/subagent-driven-development` superpowers terpasang. Read `~/.claude/plugins/installed_plugins.json` SEKALI per run → `installPath` entri `superpowers@…` + `/skills/subagent-driven-development`. Implementer/reviewer membaca template-nya sendiri lewat Read, dan ini butuh allowlist `Read(~/.claude/plugins/cache/**)` + `Read(~/.claude/plugins/installed_plugins.json)` (template `settings.json`). Probe 2026-10-20: tanpa allowlist itu, Read di luar root produk ditolak di `claude -p` headless, baik dari sesi utama maupun subagent. Kalau file tak terbaca, entri absen, atau mode unattended tanpa allowlist itu → hapus baris "Ikuti template" dari prompt. Kontrak ringkas di bawah tetap lengkap tanpanya. Plugin dipasang di luar `~/.claude/plugins` (dev `--plugin-dir`) → tambah `Read(<abs>/**)` sendiri.
 
 ### Brief-writer (step 3) — `subagent_type: context-vault:brief-writer`
 Degrade (c) SKILL step 1 → controller merakit brief sendiri, tanpa brief-writer.
@@ -15,7 +15,7 @@ Repo sibuk (baca signature dep & listing dir dari base-SHA ini): <repo>=<base7>,
 Tulis brief ke: <root>/<wi>/task-<id>-brief.md
 Balikan ≤10 baris sesuai kontrak di file agent-mu.
 ```
-Ambiguitas sudah dijawab controller → tambahkan `Jawaban controller: <jawaban>` lalu dispatch ulang. Jawaban ≤2 baris boleh langsung ditambahkan ke brief: Read brief → Edit (tambah di akhir). Maks 2 kali dispatch ulang per task. Kalau masih `ambigu:` → attended: tanya user; unattended: `needs_human` + `hold: "NEEDS_CONTEXT: <pertanyaan>"`. `titipan: GAGAL …` → perbaiki `carry.yaml` dulu (SKILL step 1, file rusak), lalu dispatch ulang.
+Ambiguitas sudah dijawab controller → tambahkan `Jawaban controller: <jawaban>` lalu dispatch ulang. Jawaban ≤2 baris boleh langsung ditambahkan ke brief tanpa membacanya utuh: Read brief `limit: 1` → Edit baris 1 jadi baris 1 + `Jawaban controller: …`. Maks 2 kali dispatch ulang per task. Kalau masih `ambigu:` → attended: tanya user; unattended: `needs_human` + `hold: "NEEDS_CONTEXT: <pertanyaan>"`. `titipan: GAGAL …` → perbaiki `carry.yaml` dulu (SKILL step 1, file rusak), lalu dispatch ulang.
 
 ### Implementer (step 3)
 ```
@@ -55,6 +55,7 @@ Task <id>. Item ⚠️ dari reviewer:
   - <item per baris>
 Brief: <root>/<wi>/task-<id>-brief.md   Diff: <root>/<wi>/review-<base7>..<head7>.diff   Repo (read-only): <path>
 Per item balas 1 baris: <item> → gap nyata | aman — bukti <file:baris>
+Alat: Read saja (unattended: grep/find/ls lewat Bash ditolak).
 ```
 Keputusan tetap di controller.
 
