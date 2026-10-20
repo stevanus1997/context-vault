@@ -844,7 +844,29 @@ LEGACY_CARRY = '_carry-notes.md'
 def _work_item(root: Path, work_item: str) -> tuple[str, Path]:
     wdir = Path(work_item)
     wdir = (wdir if wdir.is_absolute() else root / wdir).resolve()
+    if not (wdir / 'tasks.yaml').is_file():         # --work-item salah ketik jangan jadi peta kosong "semua beres"
+        raise YamlError(f"{_rel(root, wdir)}/tasks.yaml tidak ada — --work-item salah?")
     return ('fix' if wdir.parent.name == 'fixes' else 'feature'), wdir
+
+
+_ID_LINE = re.compile(r'^\s*-\s+id:\s*([\'"]?)([^\'"#\s]+)\1\s*(#.*)?$')
+
+
+def _id_spans(path: Path) -> dict:
+    """id → (baris '- id:', baris terakhir bloknya) 1-based, untuk Read offset/limit + Edit tanpa baca file utuh.
+    Blok berakhir tepat sebelum baris '- id:' berikutnya (task/milestone/entri), tanpa baris kosong/komentar di ekor."""
+    try:
+        lines = path.read_text(encoding='utf-8', errors='replace').splitlines()
+    except OSError:
+        return {}
+    starts = [(i + 1, m.group(2)) for i, ln in enumerate(lines) if (m := _ID_LINE.match(ln))]
+    out = {}
+    for k, (no, ident) in enumerate(starts):
+        end = starts[k + 1][0] - 1 if k + 1 < len(starts) else len(lines)
+        while end > no and (not lines[end - 1].strip() or lines[end - 1].lstrip().startswith('#')):
+            end -= 1
+        out.setdefault(ident, (no, end))
+    return out
 
 
 def _rel(root: Path, p: Path) -> str:
@@ -864,12 +886,14 @@ def task_entries(root: Path, work_item: str, ids: list[str]) -> dict:
     root = Path(root).resolve()
     _, wdir = _work_item(root, work_item)
     pairs = {_str(t.get('id')): (m, t) for m, t in _tasks(_dict(load_yaml(wdir / 'tasks.yaml')))}
+    spans = _id_spans(wdir / 'tasks.yaml')
     out = []
     for i in ids:
         if i not in pairs:
             raise YamlError(f"task tak dikenal: {i}")
         m, t = pairs[i]
-        out.append({**t, 'milestone': _str(m.get('id'))})
+        no, end = spans.get(i, (None, None))
+        out.append({**t, 'milestone': _str(m.get('id')), 'line': no, 'end_line': end})
     return {'work_item': _rel(root, wdir), 'tasks': out}
 
 
@@ -902,7 +926,9 @@ def _carry_doc(root: Path, work_item: str):
     entries, converted = None, False
     if (wdir / 'carry.yaml').is_file():
         doc = _dict(load_yaml(wdir / 'carry.yaml'))
-        entries = [n for n in _list(doc.get('notes')) if isinstance(n, dict)]
+        spans = _id_spans(wdir / 'carry.yaml')
+        entries = [{**n, 'line': spans.get(_str(n.get('id')), (None,))[0]}
+                   for n in _list(doc.get('notes')) if isinstance(n, dict)]
         converted = bool(doc.get('legacy_converted'))
     lines = None
     legacy = _scratch(root, kind, wdir.name) / LEGACY_CARRY
@@ -912,13 +938,19 @@ def _carry_doc(root: Path, work_item: str):
     return _rel(root, wdir), done, entries, lines
 
 
-def _active(note: dict, done: set) -> bool:
-    return not note.get('closed') and _str(note.get('for')) not in done
+def _live_targets(note: dict, done: set) -> list[str]:
+    """Target titipan yang masih hidup. `for:` boleh satu target, list ([T3, T5]), atau "T5, T9";
+    titipan ber-`closed:` dan target task yang sudah done gugur."""
+    if note.get('closed'):
+        return []
+    f = note.get('for')
+    items = f if isinstance(f, list) else _str(f).split(',')
+    return [x.strip() for x in items if isinstance(x, str) and x.strip() and x.strip() not in done]
 
 
 def carry_notes(root: Path, work_item: str, targets: list[str]) -> dict:
     rel, done, entries, lines = _carry_doc(root, work_item)
-    notes = [n for n in entries or [] if _active(n, done) and any(_carry_hits(_str(n.get('for')), t) for t in targets)]
+    notes = [n for n in entries or [] if any(_carry_hits(f, t) for f in _live_targets(n, done) for t in targets)]
     toks = [tok for tok in (_legacy_token(t, done) for t in targets) if tok is not None]
     notes += [{'line': ln} for ln in lines or [] if any(tok.search(ln) for tok in toks)]
     source = '+'.join(s for s, x in (('carry.yaml', entries), ('legacy', lines)) if x is not None) or 'none'
@@ -998,6 +1030,24 @@ def _schema_tables(root: Path, owner: str):
     return names or None
 
 
+def _flags(t: dict) -> list[str]:
+    """Penanda peta yang mengubah cara dispatch: manual: (needs_human dulu), actions: (migrate = gate), mockup:."""
+    flags = ['manual'] if [x for x in _list(t.get('manual')) if x] else []
+    other = False
+    for a in map(_as_map, _list(t.get('actions'))):
+        if 'migrate' in a:
+            kind = _str(a.get('kind')) or '?'
+            if f"migrate:{kind}" not in flags:
+                flags.append(f"migrate:{kind}")
+        elif a:
+            other = True
+    if other:
+        flags.append('actions')
+    if t.get('mockup'):
+        flags.append('mockup')
+    return flags
+
+
 def controller_text(root: Path, work_item: str) -> str:
     root = Path(root).resolve()
     kind, wdir = _work_item(root, work_item)
@@ -1032,12 +1082,16 @@ def controller_text(root: Path, work_item: str) -> str:
     def join(items: list) -> str:
         return ' · '.join(items) or '—'
 
+    scratch = _scratch(root, kind, wdir.name)
+    if kind == 'fix' and not scratch.is_dir():
+        scratch = root / '.claude' / 'build' / 'fixes' / wdir.name   # fix baru: folder kerja fixes/<id>
+    where = f" · scratch {_rel(root, scratch)}"      # folder brief/report/review/_rules work-item ini
     if kind == 'fix':
-        lines = [f"work-item: {rel} (fix)"]
+        lines = [f"work-item: {rel} (fix){where}"]
     else:
         feat = _dict(load_yaml(wdir / 'feature.yaml'))
         sens = ','.join(s for s in _list(feat.get('sensitivity')) if isinstance(s, str)) or '—'
-        lines = [f"work-item: {rel} (feature · risk {effective_risk(feat)} · sensitivity {sens})"]
+        lines = [f"work-item: {rel} (feature · risk {effective_risk(feat)} · sensitivity {sens}){where}"]
     lines.append(f"staleness: {staleness(wdir, kind)}")
 
     units = list(dict.fromkeys(unit(t) for t in tasks if unit(t) and unit(t) != 'integration'))
@@ -1064,6 +1118,10 @@ def controller_text(root: Path, work_item: str) -> str:
              if isinstance(g, dict) and g.get('status') == 'queued']
     lines.append('gates queued: ' + join([f"{_str(g.get('id'))} {_str(g.get('segment'))}"
                                           + (f' "{_str(g.get("reason"))}"' if _str(g.get('reason')) else '') for g in gates]))
+    corrupt = [f"{tid(t)} deps {','.join(d for d in deps(t) if d not in st)} (tak dikenal)"
+               for t in tasks if st[tid(t)] != 'done' and any(d not in st for d in deps(t))]
+    corrupt += [f"{lb} in_progress ganda {','.join(ids)}" for lb, ids in busy.items() if len(ids) > 1]
+    lines.append('korup: ' + join(corrupt))                  # SKILL step 1: state korup → halt / tanya user
 
     paths = {e['name']: e.get('path') for e in _list(ws.get('apps')) + _list(ws.get('packages'))
              if isinstance(e, dict) and isinstance(e.get('name'), str)}
@@ -1086,8 +1144,8 @@ def controller_text(root: Path, work_item: str) -> str:
     if entries is not None:
         counts = {}
         for n in entries:
-            if _active(n, done) and _str(n.get('for')):
-                counts[_str(n.get('for'))] = counts.get(_str(n.get('for')), 0) + 1
+            for f in _live_targets(n, done):
+                counts[f] = counts.get(f, 0) + 1
         nums = [int(m.group(1)) for n in entries if (m := re.fullmatch(r'C(\d+)', _str(n.get('id'))))]
         carry = f"carry: {join([f'{k}×{v}' for k, v in counts.items()])} · next C{max(nums, default=0) + 1}"
         lines.append(carry + (f" · legacy {LEGACY_CARRY} aktif ({len(legacy)} baris)" if legacy is not None else ''))
@@ -1108,6 +1166,8 @@ def controller_text(root: Path, work_item: str) -> str:
             row = f"    {tid(t)} {unit(t) or '-'} {_str(t.get('status')) or '-'}"
             if deps(t):
                 row += f" deps {','.join(deps(t))}"
+            if st.get(tid(t)) != 'done':
+                row += ''.join(f" [{f}]" for f in _flags(t))
             desc = ' '.join(_str(t.get('desc')).split())
             if desc:
                 row += ' · ' + (desc if len(desc) <= DESC_MAX else desc[:DESC_MAX - 1] + '…')

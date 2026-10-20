@@ -256,7 +256,7 @@ assert s.count(old) == 1; open(p, 'w').write(s.replace(old, "        reuse: [ {t
 PY
 out="$(line $LX '/^reuse basi:/p')"; [ "$out" = "reuse basi: T4 table carts · T4 file src/ghost.ts" ] \
   && ok "reuse bentuk flow map ({table: x}) tetap dibaca" || bad "reuse flow map" "$out"
-out="$(line $LF 1p)"; [ "$out" = "work-item: control/fixes/2026-10-02-legacy (fix)" ] && ok "controller fix: baris work-item" || bad "controller fix: baris work-item" "$out"
+out="$(line $LF 1p)"; [ "$out" = "work-item: control/fixes/2026-10-02-legacy (fix) · scratch .claude/build/fixes/2026-10-02-legacy" ] && ok "controller fix: baris work-item" || bad "controller fix: baris work-item" "$out"
 out="$(line $LF '/^carry:/p')"; [ "$out" = "carry: legacy _carry-notes.md (5 baris) · next C1" ] && ok "controller fix: carry legacy" || bad "controller fix: carry legacy" "$out"
 # legacy belum dikonversi + carry.yaml baru (titipan pertama ditulis unattended) → legacy TETAP kebaca (final review C-1)
 mklean
@@ -287,6 +287,52 @@ mkprod
 out="$($PY "$BS" --root "$P" --format controller --work-item control/features/checkout-v2 2>&1)"; rc=$?
 [ "$rc" = 0 ] && grep -qxF 'READY: —' <<<"$out" && grep -qxF 'gates queued: G3 api×M2 "floor-scan T6 (token)"' <<<"$out" \
   && ok "controller prod checkout-v2: READY — + gate G3" || bad "controller prod checkout-v2" "rc=$rc"$'\n'"$out"
+
+# === fix(review) 2026-10-20: baris task/carry, multi-target, work-item salah, penanda peta, korup ===
+mklean
+J="$(lean --format task --task T3,T10 --work-item $LX)"
+l3="$(jq -r '.tasks[0].line' <<<"$J")"; e3="$(jq -r '.tasks[0].end_line' <<<"$J")"; e10="$(jq -r '.tasks[1].end_line' <<<"$J")"
+TY="$LN/$LX/tasks.yaml"
+[ "$(sed -n "${l3}p" "$TY")" = "      - id: T3" ] && sed -n "${l3},${e3}p" "$TY" | grep -qx '        status: pending' \
+  && [ "$(sed -n "$((e3+1))p" "$TY")" = "      - id: T4" ] && ok "task: line/end_line = blok task (Read offset/limit + Edit)" || bad "task: line/end_line" "$J"
+[ "$e10" = "$(wc -l < "$TY" | tr -d ' ')" ] && ok "task terakhir: end_line = baris terakhir file" || bad "task terakhir: end_line" "$e10"
+J="$(lean --format carry --for T3 --work-item $LX)"
+lc="$(jq -r '.notes[0].line' <<<"$J")"
+[ "$(sed -n "${lc}p" "$LN/$LX/carry.yaml")" = "  - id: C1" ] && ok "carry: line = baris '- id:' entri" || bad "carry: line" "$J"
+$PY - "$LN/$LX/carry.yaml" <<'PY2'
+import sys; p = sys.argv[1]; s = open(p).read()
+add = ('notes:\n'
+       '  - id: C8\n    for: [T1, T9]\n    from: review T1\n    at: 2026-10-20\n    note: "multi, satu done"\n'
+       '  - id: C7\n    for: "T5, T9"\n    from: review T1\n    at: 2026-10-20\n    note: "multi koma"\n'
+       '  - id: C6\n    for: [T3, T5]\n    from: review T1\n    at: 2026-10-20\n    note: "multi list"\n')
+assert s.count('notes:\n') == 1; open(p, 'w').write(s.replace('notes:\n', add, 1))
+PY2
+J="$(lean --format carry --for T5 --work-item $LX)"; chk "carry multi-target: T5 ← C7,C6"            '[.notes[].id]' '["C7","C6"]'
+J="$(lean --format carry --for T9 --work-item $LX)"; chk "carry multi-target: T9 ← C8 (T1 done),C7" '[.notes[].id]' '["C8","C7"]'
+J="$(lean --format carry --for T3 --work-item $LX)"; chk "carry multi-target: T3 ← C6,C1"            '[.notes[].id]' '["C6","C1"]'
+out="$(line $LX '/^carry:/p')"; [ "$out" = "carry: T9×2 · T5×2 · T3×2 · ship×1 · gate:M2/api×1 · next C9" ] \
+  && ok "controller: hitung titipan multi-target per target" || bad "controller: titipan multi-target" "$out"
+for f in controller "task --task T1" "carry --for T1"; do
+  err="$(lean --format $f --work-item control/features/nope 2>&1 >/dev/null)"; rc=$?
+  [ "$rc" = 2 ] && grep -qF 'tasks.yaml tidak ada' <<<"$err" && ok "--work-item salah ($f) → exit 2" || bad "--work-item salah ($f)" "rc=$rc $err"
+done
+mklean
+$PY - "$LN/$LX/tasks.yaml" <<'PY2'
+import sys; p = sys.argv[1]; s = open(p).read()
+old = "        desc: orders totals\n"
+new = old + ("        manual:\n          - set env FOO\n"
+             "        actions:\n          - migrate: add col total\n            kind: additive\n          - install: zod\n"
+             "        mockup: mockups/totals.html\n")
+assert s.count(old) == 1; s = s.replace(old, new)
+for t in ("flaky seed", "tambah endpoint"):
+    i = s.index(t); j = s.index("status: ", i); k = s.index("\n", j)
+    s = s[:j] + "status: in_progress" + s[k:]
+open(p, 'w').write(s)
+PY2
+out="$(line $LX '/^    T5 /p')"; [ "$out" = "    T5 api pending deps T3 [manual] [migrate:additive] [actions] [mockup] · orders totals" ] \
+  && ok "peta: penanda manual/migrate/actions/mockup" || bad "peta: penanda" "$out"
+out="$(line $LX '/^korup:/p')"; [ "$out" = "korup: T10 deps T99 (tak dikenal) · api in_progress ganda T8,T9" ] \
+  && ok "korup: deps tak dikenal + in_progress ganda satu repo" || bad "korup" "$out"
 
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
