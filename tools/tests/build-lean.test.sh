@@ -66,5 +66,9 @@ n="$(grep -rlF 'scripts/review-package' "$B" | grep -v 'a-pinjam-sdd.md' | wc -l
 [ "$n" = 0 ] && ok "review-package hanya disebut di §A (tidak dipakai)" || bad "review-package masih dipanggil di luar §A ($n file)"
 hasnt "$B/reference/e-status-resume.md" 'diff via `review-package`' "§E: paket review via git"
 
+# === T10: fallback headless (probe 2026-10-20: Read/Glob plugin-cache dari subagent ditolak di claude -p) ===
+has "$K" '**Unattended:** jangan resolve `<sdd>`' "§K: unattended tanpa template plugin-cache"
+has "$S" '(c) mode unattended → rakit brief SENDIRI (cara lama)' "SKILL step 1: unattended rakit brief sendiri, bukan brief-writer"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

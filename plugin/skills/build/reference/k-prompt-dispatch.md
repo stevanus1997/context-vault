@@ -2,7 +2,7 @@
 
 Controller TIDAK membaca isi template superpowers maupun §B. Path-nya diserahkan ke subagent yang butuh. Artefak bulky lewat file di `<root>/.claude/build/<work-item>/`. Tiap subagent membalas sesuai kontrak di bawah.
 
-**`<sdd>`** = folder `skills/subagent-driven-development` superpowers terpasang. Resolve SEKALI per run pakai tool **Glob** (bukan Bash, karena path plugin-cache bernomor versi tak bisa di-allowlist): `path` = `~/.claude/plugins/cache` (HOME user), pattern `*/superpowers/*/skills/subagent-driven-development/implementer-prompt.md`, lalu ambil versi tertinggi. Tidak ketemu → hapus baris "Ikuti template" dari prompt. Kontrak ringkas di bawah tetap lengkap tanpanya. **`<abs>`** = `${CLAUDE_PLUGIN_ROOT}` (absolut).
+**`<sdd>`** = folder `skills/subagent-driven-development` superpowers terpasang. Resolve SEKALI per run pakai tool **Glob** (bukan Bash, karena path plugin-cache bernomor versi tak bisa di-allowlist): `path` = `~/.claude/plugins/cache` (HOME user), pattern `*/superpowers/*/skills/subagent-driven-development/implementer-prompt.md`, lalu ambil versi tertinggi. Tidak ketemu (atau harness tanpa tool Glob) → hapus baris "Ikuti template" dari prompt. **Unattended:** jangan resolve `<sdd>`; hapus baris "Ikuti template" dari prompt (probe 2026-10-20: Read & Glob plugin-cache dari subagent ditolak di `claude -p` headless). Kontrak ringkas di bawah tetap lengkap tanpanya. **`<abs>`** = `${CLAUDE_PLUGIN_ROOT}` (absolut).
 
 ### Brief-writer (step 3) — `subagent_type: context-vault:brief-writer`
 ```
