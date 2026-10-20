@@ -17,5 +17,20 @@ for f in $(grep -oE '`reference/[a-z]-[a-z-]+\.md`' "$B/reference.md" | tr -d '`
   [ -f "$B/$f" ] && head -1 "$B/$f" | grep -qE "^## $L\. " && ok "indeks → $f" || bad "indeks → $f (hilang / heading salah)"
 done
 
+# === T5: brief-writer + §K ===
+A="$ROOT/plugin/agents/brief-writer.md"
+has "$A" "name: brief-writer" "agent: name"
+has "$A" "model: inherit" "agent: model inherit (D5)"
+has "$A" "tools: Read, Grep, Glob, Bash, Write" "agent: tools"
+for k in "brief:" "rules:" "titipan:" "deps:" "ambigu:" "tier:"; do has "$A" "$k" "agent: kunci balikan $k"; done
+has "$A" "Jangan menebak." "agent: lapor ambigu, bukan nebak"
+K="$B/reference/k-prompt-dispatch.md"
+has "$K" "Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT" "§K: status implementer"
+has "$K" "OVERRIDE format balikan template" "§K: override format reviewer"
+has "$K" "task-<id>-review-r<n>.md" "§K: file review"
+has "$K" "cap 3 ronde" "§K: cap 3 ronde tetap (D12)"
+has "$B/reference/b-brief.md" "**brief-writer**" "§B: perakit = brief-writer"
+has "$B/reference.md" "reference/k-prompt-dispatch.md" "indeks: §K"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

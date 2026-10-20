@@ -13,3 +13,4 @@ Dibaca oleh skill `build`. **Jangan baca semua section di depan** — baca secti
 | G | `reference/g-lapor-keluar.md` | Lapor-keluar / notifikasi unattended | mode unattended / tiap titik STOP (`last-run.md`) |
 | H | `reference/h-driver.md` | Outer-loop driver lintas-sesi | mode unattended berkelanjutan |
 | I | `reference/i-antrian-gate.md` | Antrian `gates.yaml` + drain pagi | ada gate `queued` / task `needs_human` / unattended |
+| K | `reference/k-prompt-dispatch.md` | Bentuk prompt dispatch tiap subagent | tiap dispatch subagent (step 1, 3, 4) |
