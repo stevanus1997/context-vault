@@ -323,3 +323,17 @@ Kalau angka kualitas lebih buruk, periksa brief yang dihasilkan brief-writer dul
 | Ronde review / task | 0.97 (391 task, measure-build-context 2026-10-20) | |
 | NEEDS_CONTEXT / task | 0.04 (14 task dari 391, measure-build-context 2026-10-20 — regex status toleran huruf/markdown) | |
 | Rasio `blocked` | 0.0026 (1 task dari 391, measure-build-context 2026-10-20) · ⚠️/review 0.25 | |
+| `ambigu:` brief-writer / task | 0 (belum ada brief-writer) — **bandingkan (NEEDS_CONTEXT + ambigu) / task sesudah vs NEEDS_CONTEXT / task baseline**: ambiguitas kini ditangkap brief-writer sebelum implementer jalan | |
+
+## 10. Amandemen pasca-review (2026-10-20, sesi desain)
+
+Sesudah eksekusi plan, sesi desain menjalankan review independen dan dua probe headless. Hasilnya:
+
+| # | Temuan | Keputusan |
+|---|---|---|
+| D13 | Di `claude -p` (jalur `drive.sh`), Read ke luar root produk **ditolak**, termasuk dari sesi utama. Sudah begitu sejak sebelum spec ini: sesi unattended 2026-09 tak pernah bisa membaca `reference.md`. Fallback "unattended tanpa brief-writer" bikin hemat context terbesar cuma berlaku di attended. | Template `settings.json` dapat `Read(~/.claude/plugins/**)`. Probe 2026-10-20 membuktikan aturan ini membuka akses baca untuk sesi utama **dan** subagent, dan `upgrade` menyusulkannya lewat merge baseline. Degrade (c) cuma berlaku bila allowlist itu absen. `<sdd>` di-resolve dari `~/.claude/plugins/installed_plugins.json`, jadi salinan `_sdd` tak perlu lagi. |
+| D14 | Claude Code 2.1.27x–2.1.304 **tak punya tool Grep/Glob**: nol pemakaian di sesi build nyata. Di unattended, `grep`/`ls`/`sed` lewat Bash tak di-allowlist. | Agent `brief-writer`: `tools: Read, Bash, Write`. Listing dir lewat `git -C <path> show HEAD:./<dir>/` (sudah di-allowlist), dan `_rules-<repo>.md` selalu ditulis ulang. `--format task` membawa `line`/`end_line`, `--format carry` membawa `line`, dan §E/§J memakai itu sebagai pengganti `Grep -n`. |
+| D15 | Verdict ringkas cuma memberi jumlah Minor/Important. Padahal 54 dari 189 baris carry-notes venue-tables berasal dari temuan semacam itu yang dititip ke task lain. | Verdict membawa ≤5 baris `catatan:`. Controller yang memutuskan tujuannya dari peta: titipan / `debt.yaml` / buang. |
+| D16 | Peta cuma `id unit status deps desc`, jadi `manual:`/`actions:`/`mockup:` tak terlihat dan action bisa terlewat. | Peta diberi penanda `[manual]`/`[migrate:<kind>]`/`[actions]`/`[mockup]`, dan entri lengkap task wajib diambil sebelum dispatch (SKILL step 2). |
+| D17 | `for:` multi-target diam-diam hilang. | `for:` boleh berupa list atau `"T5, T9"`; tiap target dihitung & dikirim. |
+| — | Minor | `--work-item` salah → exit 2. Degrade (b) hanya untuk `invalid choice`; `build_status: <file>` = file rusak. Allowlist dicek di dua file settings. Baris `korup:` ditambahkan. Placeholder `<wi>` = path scratch dari baris `work-item:`. Loop `ambigu:` dibatasi maks 2 kali. Alat ukur menghitung `ambigu:` brief-writer. |
