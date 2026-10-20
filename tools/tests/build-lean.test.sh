@@ -43,5 +43,17 @@ has "$B/SKILL.md" "**Titipan legacy (sekali, attended):**" "SKILL step 1: konver
 has "$B/SKILL.md" "WAJIB sebelum tick: brief-writer cuma tahu yang tertulis" "SKILL step 2: titipan sebelum tick (D6)"
 has "$ROOT/plugin/skills/ship/SKILL.md" "--format carry --for ship" "ship: titipan ship"
 
+# === T7: controller pakai peta + brief-writer ===
+S="$B/SKILL.md"
+has "$S" "= **indeks**" "SKILL: reference = indeks, baca per step"
+has "$S" "--format controller --work-item <work-item>" "SKILL step 1: ringkasan state"
+has "$S" 'Bash(python3 .claude/build_status.py:*)' "SKILL step 1: cek allowlist sebelum panggil (unattended)"
+has "$S" 'jalankan `/upgrade` biar build hemat context' "SKILL step 1: WARN degrade"
+has "$S" "**Brief dirakit subagent \`context-vault:brief-writer\`**" "SKILL step 3: brief-writer"
+has "$S" '`hold: "NEEDS_CONTEXT: <pertanyaan verbatim>"`, lanjut task lain' "SKILL step 3: ambigu unattended → hold"
+hasnt "$S" "Rakit **BRIEF** LENGKAP dari task" "SKILL: controller tak merakit brief lagi"
+has "$S" "dispatch SATU subagent \`context-vault:critic\`" "SKILL step 1: pre-flight via subagent"
+has "$B/reference/e-status-resume.md" "**Tanpa membaca file utuh**" "§E: tulis status tanpa baca utuh"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
