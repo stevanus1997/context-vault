@@ -7,7 +7,7 @@ import type { On } from 'claude-code'
 
 import type { Alert, SnapItem, Snapshot } from '../../types'
 import { nextAlerts } from '../panel/alerts'
-import { bar, paneRows } from '../panel/rows'
+import { bar, pips } from '../panel/view'
 import { SNAP_MID } from './fixture-snapshot'
 
 const item = (over: Partial<SnapItem> = {}): SnapItem => ({
@@ -29,7 +29,7 @@ const START = { cwd: '/p', surface: null, isInteractive: true } as const
 // Jawab semua op engine ({ value } atau { deny } = call plugin reject); process.run dijawab
 // berurutan dari antrian (habis → jawaban terakhir diulang).
 function world(on: On, runs: Run[], opts: { exists?: boolean; before?: () => Promise<void>; panes?: { id: string; isShown: boolean }[]; openDeny?: boolean } = {}) {
-  const seen = { argv: [] as (readonly string[])[], status: [] as (string | undefined)[], toasts: [] as string[], opens: 0, closes: 0, registers: [] as string[] }
+  const seen = { argv: [] as (readonly string[])[], status: [] as (string | undefined)[], toasts: [] as string[], titles: [] as (string | undefined)[], opens: 0, closes: 0, registers: [] as string[] }
   let last: Run = runs[0] ?? snapA
   on('session.start', async ($, e) => ({ cwd: e.cwd }))
   on('fs.exists', async () => ({ value: opts.exists ?? true }))
@@ -45,10 +45,10 @@ function world(on: On, runs: Run[], opts: { exists?: boolean; before?: () => Pro
   })
   on('ui.status', async ($, e) => { seen.status.push(e.text); return { value: undefined } })
   on('ui.toast', async ($, e) => { seen.toasts.push(e.text); return { value: undefined } })
-  on('ui.open', async () => { seen.opens++; return opts.openDeny ? { deny: 'ui.open ditolak' } : { value: { isPlaced: true } } })
+  on('ui.open', async ($, e) => { seen.opens++; seen.titles.push(e.title); return opts.openDeny ? { deny: 'ui.open ditolak' } : { value: { isPlaced: true } } })
   on('ui.close', async () => { seen.closes++; return { value: undefined } })
   on('ui.panes', async () => ({
-    value: (opts.panes ?? []).map(p => ({ ...p, title: 'context-vault · build', isFocused: false, isPlaced: true, plugin: 'context-vault' })),
+    value: (opts.panes ?? []).map(p => ({ ...p, title: '🔨 build', isFocused: false, isPlaced: true, plugin: 'context-vault' })),
   }))
   return seen
 }
@@ -168,6 +168,7 @@ test('auto-open: build yang jalan bukan item teratas tetap membuka panel', async
   mock.clock(on)
   await $.session.start(START)
   expect(w.opens).toBe(1)
+  expect(w.titles).toEqual(['🔨 build'])     // judul pendek: tab pane sempit nggak motong
 })
 
 test('poll pertama melempar (ui.open ditolak) → interval tetap hidup', async ($, on) => {
@@ -227,77 +228,137 @@ test('nextAlerts murni: baseline lalu yang baru saja', async () => {
   expect(nextAlerts(['a', 'b'], [a, b])).toEqual({ toast: null, seen: ['a', 'b'] })
 })
 
-// --- Task 7: isi panel + /cv-panel ---
-const texts = (snap: Snapshot | null, err: string | null = null) => paneRows(snap, err).map(r => r.text)
+// --- Task 7: isi panel + /cv-panel (tampilan: kartu header + emoji, lihat view.tsx) ---
 const MID2: Snapshot = { ...SNAP_MID, items: SNAP_MID.items.slice(0, 2) }
+const withItem = (over: Partial<SnapItem>): Snapshot => ({ ...MID2, items: [{ ...MID2.items[0]!, ...over }] })
+const paneOf = async ($: Engine, on: On, snap: Snapshot) => {
+  world(on, [snap])
+  mock.clock(on)
+  await $.session.start(START)
+  return mountPane($)
+}
+type Ui = Awaited<ReturnType<typeof mountPane>>
+const texts = async (ui: Ui) => (await ui.findAll({ type: 'Text' })).map(t => t.text)
+const row = async (ui: Ui, key: string) => (await ui.find({ key }))?.text
 
-test('paneRows: header, +N build lain, milestone kelar dilipat', async () => {
-  const t = texts(MID2)
-  expect(t).toContain('checkout-v2  unattended · putaran 2')
-  expect(t).toContain('+1 build lain')
-  expect(t.some(x => x.startsWith('✓ M1 Fondasi auth') && x.endsWith('4/4'))).toBe(true)
-  expect(t.some(x => x.includes(' T1 '))).toBe(false)
+test('panel: kartu header — nama tebal, chip mode, +N build lain', async ($, on) => {
+  const ui = await paneOf($, on, MID2)
+  expect((await ui.find({ key: 'card' }))?.props.borderStyle).toBe('round')
+  expect((await ui.find({ type: 'Text', text: /^checkout-v2$/ }))?.props.bold).toBe(true)
+  expect(await texts(ui)).toContain(' 🤖 UNATTENDED · putaran 2 ')
+  expect(await texts(ui)).toContain('+1 build lain')
+  // pane sempit: chip turun baris, nama nggak dipotong demi chip
+  expect((await ui.find({ key: 'head' }))?.props.flexWrap).toBe('wrap')
 })
 
-test('paneRows: progres + ringkasan 3 baris', async () => {
-  const t = texts(MID2)
-  expect(t).toContain('███████░░░░░ 7/12  sisa ~1–15m + T9 nunggu lo')
-  expect(t).toContain('▸ 2 jalan T8 api · T11 web')
-  expect(t).toContain('⏸ T9 ketahan · nahan T12, T13')
-  expect(t).toContain('◆ 1 gate antri')
+test('panel: build attended → chip 👀 ATTENDED, tanpa footer putaran', async ($, on) => {
+  const ui = await paneOf($, on, { ...MID2, items: [MID2.items[1]!] })
+  expect(await texts(ui)).toContain(' 👀 ATTENDED ')
+  expect(await ui.find({ key: 'footer' })).toBeUndefined()
 })
 
-test('paneRows: baris task — fase, ketahan + alasan, nunggu dep, int', async () => {
-  const t = texts(MID2)
-  expect(t).toContain('M2 Checkout  ███░░░░░  3/8')
-  expect(t).toContain(' ▸ T8   api  checkout endpoint impl 12m')
-  expect(t).toContain(' ▸ T11  web  cart summary UI 7m')
-  expect(t).toContain(' ⏸ T9   api  migrate orders needs_human')
-  expect(t).toContain('          migrate destructive — nunggu lo')
-  expect(t.find(x => x.startsWith(' · T12 '))?.endsWith('nunggu T9, T11')).toBe(true)
-  expect(t.find(x => x.startsWith(' · T13 '))).toContain(' int  ')
-  expect(t).toContain('◆ G3 api×M2  floor-scan T6 (token)')
-  expect(t).toContain('jalan 1j12m / maks 6j')
+test('panel: progres — pips ▰▱ berwarna, angka, persen, ETA + catatan ketahan', async ($, on) => {
+  const ui = await paneOf($, on, MID2)
+  expect(await texts(ui)).toContain('▰▰▰▰▰▰▰▱▱▱▱▱ 7/12 · 58%')
+  expect(await texts(ui)).toContain('🏁 sisa ~1–15m + T9 nunggu lo')      // tanpa spasi depan: turun baris tetap rata kiri
+  expect((await ui.find({ key: 'progress' }))?.props.flexWrap).toBe('wrap')
+  expect((await ui.find({ type: 'Text', text: /^▰+$/ }))?.props.color).toBe('success')
+  expect((await ui.find({ type: 'Text', text: /^▱+$/ }))?.props.dimColor).toBe(true)
 })
 
-test('paneRows: task diam → "diam <durasi>", bukan durasi naik', async () => {
+test('panel: ETA lewat estimasi → ⌛ tanpa "sisa"', async ($, on) => {
+  const ui = await paneOf($, on, withItem({ eta: { text: 'lewat estimasi', held_note: null } }))
+  expect(await texts(ui)).toContain('⌛ lewat estimasi')
+  expect((await texts(ui)).some(t => t.includes('sisa'))).toBe(false)
+})
+
+test('panel: ringkasan — 🔄 jalan, 🚧 ketahan + yang ditahan, 🚦 gate', async ($, on) => {
+  const ui = await paneOf($, on, MID2)
+  expect(await row(ui, 'lanes')).toBe('🔄 2 jalan  T8 api · T11 web')
+  expect(await row(ui, 'held-T9')).toBe('🚧 T9 ketahan  nahan T12, T13')
+  expect(await row(ui, 'gates')).toBe('🚦 1 gate antri')
+})
+
+test('panel: lane diam (sesi crash) → 💤 diam, bukan jalan', async ($, on) => {
+  const it = MID2.items[0]!
+  const ui = await paneOf($, on, withItem({ running: false, lanes: it.lanes.map(l => ({ ...l, quiet: true, quiet_for: '2j' })) }))
+  expect(await row(ui, 'lanes')).toBe('💤 2 diam  T8 api · T11 web')
+})
+
+test('panel: milestone kelar dilipat ✅ satu baris, yang jalan 📂 + bar', async ($, on) => {
+  const ui = await paneOf($, on, MID2)
+  expect(await row(ui, 'ms-M1')).toBe('✅ M1 Fondasi auth 4/4')
+  expect(await ui.find({ key: 'task-T1' })).toBeUndefined()
+  expect(await row(ui, 'ms-M2')).toBe('📂 M2 Checkout ███░░░░░ 3/8')
+})
+
+test('panel: baris task — ikon status, unit, fase/durasi, alasan ketahan, nunggu dep, int', async ($, on) => {
+  const ui = await paneOf($, on, MID2)
+  expect(await row(ui, 'task-T5')).toBe('✅ T5   api  cart totals service')
+  expect(await row(ui, 'task-T8')).toBe('🔄 T8   api  checkout endpoint impl · 12m')
+  expect(await row(ui, 'task-T11')).toBe('🔄 T11  web  cart summary UI 7m')
+  expect(await row(ui, 'task-T9')).toBe('🚧 T9   api  migrate orders needs_human')
+  expect(await row(ui, 'why-T9')).toBe('↳ migrate destructive — nunggu lo')
+  expect(await row(ui, 'task-T12')).toBe('⏳ T12  web  checkout button nunggu T9, T11')
+  expect(await row(ui, 'task-T13')).toBe('⏳ T13  int  checkout roundtrip nunggu T8, T12')
+})
+
+test('panel: task diam → 💤 "diam <durasi>", bukan durasi naik', async ($, on) => {
   const it = MID2.items[0]!
   const ms = it.milestones.map(m => ({ ...m, tasks: m.tasks.map(x => (x.id === 'T8' ? { ...x, quiet: true, quiet_for: '40m' } : x)) }))
-  const t = texts({ ...MID2, items: [{ ...it, milestones: ms }] })
-  expect(t.find(x => x.startsWith(' ▸ T8 '))?.endsWith('diam 40m')).toBe(true)
+  const ui = await paneOf($, on, withItem({ milestones: ms }))
+  expect(await row(ui, 'task-T8')).toBe('💤 T8   api  checkout endpoint diam 40m')
 })
 
-test('paneRows: lane diam (sesi crash) → ringkasan "diam", bukan "jalan"', async () => {
-  const it = MID2.items[0]!
-  const t = texts({ ...MID2, items: [{ ...it, running: false, lanes: it.lanes.map(l => ({ ...l, quiet: true, quiet_for: '2j' })) }] })
-  expect(t).toContain('▸ 2 diam T8 api · T11 web')
+test('panel: gate antri + footer putaran', async ($, on) => {
+  const ui = await paneOf($, on, MID2)
+  expect(await row(ui, 'gate-G3')).toBe('🚦 G3  api×M2  floor-scan T6 (token)')
+  expect(await row(ui, 'footer')).toBe('🕒 jalan 1j12m / maks 6j')
 })
 
-test('paneRows: file rusak di work-item lain → baris peringatan, item sehat tetap tampil', async () => {
+test('panel: file rusak di work-item lain → 🚨 peringatan, item sehat tetap tampil', async ($, on) => {
   const err = { dir: 'control/features/old-done', message: 'control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga' }
-  const t = texts({ ...MID2, errors: [err] })
-  expect(t[0]).toBe('checkout-v2  unattended · putaran 2')
-  expect(t).toContain('⚠ control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga')
-  expect(texts({ ...MID2, items: [], errors: [err] })).toEqual(['Nggak ada build jalan.', '⚠ control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga'])
+  const ui = await paneOf($, on, { ...MID2, errors: [err] })
+  expect(await ui.find({ key: 'card' })).toBeDefined()
+  expect(await row(ui, 'err-0')).toBe('🚨 control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga')
 })
 
-test('paneRows: ETA lewat estimasi → tanpa "sisa"', async () => {
-  const it = MID2.items[0]!
-  const t = texts({ ...MID2, items: [{ ...it, eta: { text: 'lewat estimasi', held_note: null } }] })
-  expect(t).toContain('███████░░░░░ 7/12  lewat estimasi')
+test('panel: nggak ada build → ☕, peringatan file rusak tetap tampil', async ($, on) => {
+  const err = { dir: 'control/features/old-done', message: 'control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga' }
+  const ui = await paneOf($, on, { ...MID2, items: [], errors: [err] })
+  expect(await texts(ui)).toContain('☕ Nggak ada build jalan.')
+  expect(await row(ui, 'err-0')).toBe('🚨 control/features/old-done/tasks.yaml: baris 8: indentasi tak terduga')
+  expect(await ui.find({ key: 'card' })).toBeUndefined()
 })
 
-test('paneRows: error, belum ada data, nggak ada build; bar', async () => {
-  expect(texts(null, 'butuh python3')[0]).toMatch(/^Panel butuh python3/)
-  expect(texts(SNAP_MID, 'data basi — x')).toEqual(['Panel: data basi — x'])
-  expect(paneRows(null, null)).toEqual([{ text: 'Nunggu data…', dim: true }])
-  expect(paneRows({ ...SNAP_MID, items: [] }, null)).toEqual([{ text: 'Nggak ada build jalan.', dim: true }])
-  expect(bar(3, 8, 8)).toBe('███░░░░░')
-  expect(bar(0, 0, 4)).toBe('░░░░')
-  expect(bar(9, 8, 4)).toBe('████')
+test('panel: belum ada data (poll pertama exit 2) → ⏳ Nunggu data…', async ($, on) => {
+  const ui = await paneOf($, on, { exitCode: 2 } as unknown as Snapshot)
+  expect(await texts(ui)).toContain('⏳ Nunggu data…')
 })
 
-const PANE_PROPS = { title: 'context-vault · build', isFocused: false, bodyColumns: 60, placement: 'inline', scroll: { offset: 0, bodyRows: 30 }, view: {} } as const
+test('panel: pesan error pakai ikon — 🐍 python3, 🚨 lainnya', async ($, on) => {
+  world(on, ['reject', { exitCode: 1, stderr: 'ValueError: boom\n' }])
+  const clock = mock.clock(on)
+  await $.session.start(START)
+  let ui = await mountPane($)
+  expect((await texts(ui)).some(t => t.startsWith('🐍 Panel butuh python3'))).toBe(true)
+  await ui.unmount()
+  await clock.advance(60_000)
+  ui = await mountPane($)
+  expect((await texts(ui)).some(t => t.startsWith('🚨 Panel: pembaca status gagal'))).toBe(true)
+})
+
+test('bar: blok per-delapan (▏…▉) + sisa ░; pips: ▰ bulat + ▱', async () => {
+  expect(bar(3, 8, 8)).toEqual(['███', '░░░░░'])
+  expect(bar(5, 8, 4)).toEqual(['██▌', '░'])
+  expect(bar(1, 3, 4)).toEqual(['█▍', '░░'])
+  expect(bar(0, 0, 4)).toEqual(['', '░░░░'])
+  expect(bar(9, 8, 4)).toEqual(['████', ''])
+  expect(pips(7, 12, 12)).toEqual(['▰▰▰▰▰▰▰', '▱▱▱▱▱'])
+  expect(pips(0, 0, 3)).toEqual(['', '▱▱▱'])
+})
+
+const PANE_PROPS = { title: '🔨 build', isFocused: false, bodyColumns: 60, placement: 'inline', scroll: { offset: 0, bodyRows: 30 }, view: {} } as const
 type Surface = 'terminal' | 'desktop'
 const mountPane = ($: Engine, surface: Surface = 'terminal') =>
   $.ui.mount({ plugin: 'context-vault', surface, component: 'Pane', requestId: 'cv-build', props: PANE_PROPS })
@@ -308,8 +369,8 @@ test('pane di-mount (terminal & desktop): menggambar snapshot terakhir', async (
   await $.session.start(START)
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await mountPane($, surface)
-    expect(await ui.find({ type: 'Text', text: /^checkout-v2  / })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^✓ M1 Fondasi auth/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^checkout-v2$/ })).toBeDefined()
+    expect(await ui.find({ key: 'ms-M1' })).toBeDefined()
     await ui.unmount()
   }
 })
@@ -320,7 +381,7 @@ test('pane: exit ≠ 0 sesudah data valid → tetap gambar data lama', async ($,
   await $.session.start(START)
   await clock.advance(3000)
   const ui = await mountPane($)
-  expect(await ui.find({ type: 'Text', text: /^checkout-v2  unattended/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /UNATTENDED · putaran 2/ })).toBeDefined()
 })
 
 test('pane: python3 nggak bisa jalan → pesan install', async ($, on) => {

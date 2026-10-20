@@ -6,11 +6,11 @@ import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
 import { nextAlerts } from './panel/alerts'
-import { paneRows } from './panel/rows'
 import { parseSnapshot } from './panel/snapshot'
+import { paneView } from './panel/view'
 
 export const PANE = 'cv-build'
-export const TITLE = 'context-vault · build'
+export const TITLE = '🔨 build'          // pendek: tab pane sempit motong judul panjang
 export const POLL_MS = 3000
 export const STALE_MS = 90_000      // exit 2 (file setengah tertulis) selama ini → data lama berhenti dipajang
 export const BACKOFF_MS = 60_000    // gagal keras (python3 tak ada / crash) → coba lagi sesudah jeda ini, bukan tiap tick
@@ -129,17 +129,6 @@ export const register: Register = on => {
     return { text: 'Panel build dibuka.' }
   })
 
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
-    const rows = paneRows(await read($, snapshot), await read($, error))
-    return (
-      <Box flexDirection="column">
-        {rows.map(r => (
-          <Text wrap="truncate-end" color={r.color} dimColor={r.dim}>
-            {r.text || ' '}
-          </Text>
-        ))}
-      </Box>
-    )
-  })
+  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) =>
+    paneView($.ui.resolve(e), await read($, snapshot), await read($, error)))
 }

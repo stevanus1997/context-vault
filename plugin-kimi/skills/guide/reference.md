@@ -73,7 +73,7 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 - `/fanout` — petakan fitur ke app yang kena lintas-repo → `fanout.md` + update capabilities.
 - `/plan` — fase teknis per-app: baca kode tiap app + Q&A teknis → plan implementasi.
 - `/breakdown` — pecah plan flat → `tasks.yaml` (task kecil berurutan, tanpa kode).
-- `/build` — eksekusi `tasks.yaml` → kode lulus-test: implementer subagent per task (TDD) + review + gate; resumable; mode `--unattended` = gate ditunda ke antrian `gates.yaml` (review pagi via `/build` attended = drain), blocker cuma nahan subtree-nya. Pantau progres (panel cuma di Claude Code): panel `context-vault · build` (auto saat build jalan, `/cv-panel` manual) + status line + toast; unattended: baris progres live di terminal `drive.sh`.
+- `/build` — eksekusi `tasks.yaml` → kode lulus-test: implementer subagent per task (TDD) + review + gate; resumable; mode `--unattended` = gate ditunda ke antrian `gates.yaml` (review pagi via `/build` attended = drain), blocker cuma nahan subtree-nya. Pantau progres (panel cuma di Claude Code): panel `🔨 build` (auto saat build jalan, `/cv-panel` manual) + status line + toast; unattended: baris progres live di terminal `drive.sh`.
 - `/ship` — finishing gate: review + quality + security (sensitivity-scaled) + cek alignment ke business → PR → tandai shipped.
 
 ### Lane samping
