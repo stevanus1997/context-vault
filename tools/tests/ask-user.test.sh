@@ -30,7 +30,7 @@ for kw in 'satu panggilan per gate' 'Jawaban = kata-kata user sendiri' '> 4 hal'
 done
 grep -qF 'satu kotak per gate' "$SRC/skills/build/SKILL.md" \
   && ok "R8 build step 6: satu kotak per gate" || bad "R8 build step 6 tanpa satu kotak per gate"
-grep -qF 'JANGAN PERNAH nanya interaktif' "$SRC/skills/build/SKILL.md" && grep -qF 'JANGAN PERNAH akhiri turn dengan pertanyaan interaktif' "$SRC/skills/build/reference.md" \
+grep -qF 'JANGAN PERNAH nanya interaktif' "$SRC/skills/build/SKILL.md" && grep -qF 'JANGAN PERNAH akhiri turn dengan pertanyaan interaktif' "$SRC/skills/build/reference/g-lapor-keluar.md" \
   && ok "R9 larangan bertanya unattended build masih utuh" || bad "R9 larangan bertanya unattended build hilang"
 
 # --- S. baris rujukan di SKILL.md (tepat sekali, 2 baris di bawah H1) ---
@@ -53,7 +53,7 @@ for f in "$SRC"/skills/*/SKILL.md; do
     ok "S2 $name: baris rujukan tepat sekali, 2 baris di bawah H1"
   else bad "S2 $name: baris rujukan (n=$n h1=$h baris=$l)"; fi
 done
-grep -qF 'Satu gate = satu panggilan `AskUserQuestion`' "$SRC/skills/build/reference.md" \
+grep -qF 'Satu gate = satu panggilan `AskUserQuestion`' "$SRC/skills/build/reference/i-antrian-gate.md" \
   && ok "S3 drain pagi: satu gate per panggilan" || bad "S3 drain pagi tanpa aturan satu gate per panggilan"
 
 # --- D. tip setup push di guide + README ---

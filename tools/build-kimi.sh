@@ -108,16 +108,20 @@ EOF
 inject_below_frontmatter "$DST/skills/build/SKILL.md" "$BANNER_FILE"
 rm -f "$BANNER_FILE"
 
-# --- 8b. Note D5 — build/reference.md, sesudah heading pertama ber-'unattended' ---
-REF="$DST/skills/build/reference.md"
-grep -qiE '^#{1,6} .*unattended' "$REF" || die "anchor heading 'unattended' di build/reference.md tak ketemu — source berubah, sesuaikan generator"
-awk '
-  done==0 && /^#/ && tolower($0) ~ /unattended/ {
-    print; print ""
-    print "> ⛔ **Harness Kimi Code:** bagian unattended di file ini BELUM berlaku di Kimi — lihat banner di `SKILL.md` (fase 2)."
-    done=1; next
-  }
-  { print }' "$REF" > "$REF.tmp" && mv "$REF.tmp" "$REF"
+# --- 8b. Note D5 — build/reference/*.md, sesudah heading pertama ber-'unattended' di tiap file ---
+n_ref=0
+for REF in "$DST"/skills/build/reference/*.md; do
+  grep -qiE '^#{1,6} .*unattended' "$REF" || continue
+  awk '
+    done==0 && /^#/ && tolower($0) ~ /unattended/ {
+      print; print ""
+      print "> ⛔ **Harness Kimi Code:** bagian unattended di file ini BELUM berlaku di Kimi — lihat banner di `SKILL.md` (fase 2)."
+      done=1; next
+    }
+    { print }' "$REF" > "$REF.tmp" && mv "$REF.tmp" "$REF"
+  n_ref=$((n_ref+1))
+done
+[ "$n_ref" -gt 0 ] || die "anchor heading 'unattended' di build/reference/*.md tak ketemu — source berubah, sesuaikan generator"
 
 # --- 9. Self-checks (fail keras, jangan diam-diam) ---
 AFTER="$(git -C "$ROOT" status --porcelain -- plugin/)"

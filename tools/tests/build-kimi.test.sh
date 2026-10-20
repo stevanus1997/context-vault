@@ -82,8 +82,8 @@ if [ -n "$bline" ] && [ -n "$hline" ] && [ "$bline" -lt "$hline" ]; then
 else bad "banner unattended hilang/salah posisi di build/SKILL.md"; fi
 
 # Note D5 di build/reference.md (setelah heading unattended pertama)
-grep -q 'Harness Kimi Code' "$DST/skills/build/reference.md" \
-  && ok "note unattended di build/reference.md" || bad "note unattended hilang di build/reference.md"
+grep -q 'Harness Kimi Code' "$DST/skills/build/reference/g-lapor-keluar.md" && grep -q 'Harness Kimi Code' "$DST/skills/build/reference/h-driver.md" \
+  && ok "note unattended di build/reference/{g,h}-*.md" || bad "note unattended hilang di build/reference/{g,h}-*.md"
 
 # --- 7. deterministik: dua kali jalan → identik ---
 TMP="$(mktemp -d)"
