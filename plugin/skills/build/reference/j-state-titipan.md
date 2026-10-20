@@ -20,6 +20,7 @@ Kalau exit ≠ 0 (salinan lama), atau mode unattended tanpa entri allowlist `Bas
 Isinya keputusan/temuan yang ngaruh ke task LAIN, ke gate, ke `ship`, atau ke simplify 7a. File ini ikut ke-commit, karena ini state resume, setara `tasks.yaml`/`gates.yaml`. Controller membuatnya waktu ada titipan pertama, dengan header persis ini:
 ```yaml
 # carry.yaml — titipan antar-task build. Penulis tunggal: controller build. Entri terbaru di ATAS.
+legacy_converted: 2026-10-20  # opsional — diset subagent konversi legacy (lihat "Legacy" di bawah)
 notes:
   - id: C2
     for: T75            # id task | gate:<M> | gate:<M>/<unit> | ship | simplify
@@ -45,6 +46,6 @@ notes:
 - **Kandidat debt BUKAN titipan** → langsung `control/debt.yaml` (pintu ke-4, SKILL step 6).
 
 ### Legacy `_carry-notes.md`
-`.claude/build/<work-item>/_carry-notes.md` (catatan bebas buatan run lama, belum resmi) yang ada tanpa `carry.yaml` → baris `carry:` bertanda `legacy`.
-- **Attended:** SEKALI, sebelum dispatch pertama. Dispatch subagent konversi (prompt §K) → `carry.yaml` (`from: legacy`) → balik jumlah per target. Tunjukkan JUMLAH-nya ke user, bukan isinya. File lama tetap ada sebagai arsip.
-- **Unattended, atau belum dikonversi:** `--format carry` mengambil baris `_carry-notes.md` yang menyebut token target (`T75`; `gate:M4` → `M4`; `ship`; `simplify` → `simplify`/`7a`) dengan `source: legacy`.
+`.claude/build/<work-item>/_carry-notes.md` (catatan bebas buatan run lama, belum resmi) tetap AKTIF selama `carry.yaml` belum ber-`legacy_converted:` — juga kalau `carry.yaml` sudah ada karena titipan baru ditulis duluan. Baris `carry:` bertanda `legacy` (`… · legacy _carry-notes.md aktif (<n> baris)` bila `carry.yaml` sudah ada).
+- **Attended:** SEKALI, sebelum dispatch pertama DAN sebelum titipan pre-flight ditulis. Dispatch subagent konversi (prompt §K) → entri `from: legacy` DITAMBAH ke `carry.yaml` (file sudah ada → id lanjut dari `next`, entri lama tak ditimpa) + set `legacy_converted: <tanggal>` → balik jumlah per target. Tunjukkan JUMLAH-nya ke user, bukan isinya. File lama tetap ada sebagai arsip.
+- **Unattended, atau belum dikonversi:** `--format carry` menggabung baris `_carry-notes.md` yang menyebut token target (`T75`; `gate:M4` → `M4`; `ship`; `simplify` → `simplify`/`7a`) — `source: legacy`, atau `carry.yaml+legacy` bila `carry.yaml` sudah ada.

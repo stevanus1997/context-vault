@@ -62,6 +62,6 @@ Balikan: satu baris per konflik — <task> · <invarian/package> · <1 baris>; a
 ### Konversi legacy `_carry-notes.md` (step 1, attended, sekali) — general-purpose
 ```
 Konversi <root>/.claude/build/<work-item>/_carry-notes.md → <work-item>/carry.yaml (format: <abs>/skills/build/reference/j-state-titipan.md).
-Task belum-done: <daftar id dari ringkasan state>. Ambil HANYA baris yang menyebut task itu atau agenda gate/ship/simplify yang belum lewat. Satu entri per titipan: from: legacy, at: <hari ini>, id C1.. (terbaru di atas). Jangan ubah _carry-notes.md.
+Task belum-done: <daftar id dari ringkasan state>. Ambil HANYA baris yang menyebut task itu atau agenda gate/ship/simplify yang belum lewat. Satu entri per titipan: from: legacy, at: <hari ini>, id mulai <next dari baris carry: ringkasan state> (terbaru di atas). carry.yaml sudah ada → TAMBAH di atas entri yang ada, jangan timpa. Lalu set key legacy_converted: <hari ini> tepat di bawah header (tanpa itu legacy tetap dibaca). Jangan ubah _carry-notes.md.
 Balikan: jumlah entri per target (mis. T75×2 · gate:M6×1 · ship×3).
 ```

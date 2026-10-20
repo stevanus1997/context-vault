@@ -70,5 +70,11 @@ hasnt "$B/reference/e-status-resume.md" 'diff via `review-package`' "§E: paket 
 has "$K" '**Unattended:** jangan resolve `<sdd>`' "§K: unattended tanpa template plugin-cache"
 has "$S" '(c) mode unattended → rakit brief SENDIRI (cara lama)' "SKILL step 1: unattended rakit brief sendiri, bukan brief-writer"
 
+# === final review C-1: legacy tetap dibaca sampai legacy_converted ===
+has "$J" "legacy_converted:" "§J: penanda konversi legacy"
+has "$K" "legacy_converted:" "§K: subagent konversi set penanda + tak menimpa"
+has "$S" "SEBELUM titipan pre-flight ditulis" "SKILL step 1: konversi legacy dulu"
+has "$ROOT/plugin/skills/ship/SKILL.md" "legacy_converted:" "ship: fallback baca legacy sampai dikonversi"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

@@ -258,6 +258,21 @@ out="$(line $LX '/^reuse basi:/p')"; [ "$out" = "reuse basi: T4 table carts · T
   && ok "reuse bentuk flow map ({table: x}) tetap dibaca" || bad "reuse flow map" "$out"
 out="$(line $LF 1p)"; [ "$out" = "work-item: control/fixes/2026-10-02-legacy (fix)" ] && ok "controller fix: baris work-item" || bad "controller fix: baris work-item" "$out"
 out="$(line $LF '/^carry:/p')"; [ "$out" = "carry: legacy _carry-notes.md (5 baris) · next C1" ] && ok "controller fix: carry legacy" || bad "controller fix: carry legacy" "$out"
+# legacy belum dikonversi + carry.yaml baru (titipan pertama ditulis unattended) → legacy TETAP kebaca (final review C-1)
+mklean
+printf '%s\n' '# carry.yaml — titipan antar-task build. Penulis tunggal: controller build. Entri terbaru di ATAS.' 'notes:' \
+  '  - id: C1' '    for: ship' '    from: review F1' '    at: 2026-10-21' '    note: "deploy web dulu"' > "$LN/$LF/carry.yaml"
+J="$(lean --format carry --for F1,ship --work-item $LF)"
+chk "carry.yaml + legacy belum dikonversi → sumber gabungan" '.source' '"carry.yaml+legacy"'
+chk "… entri carry.yaml lalu baris legacy"  '[.notes[] | (.id // .line)]' '["C1","- F1: jangan ubah signature parse()","- SHIP: catat env baru FOO_URL"]'
+out="$(line $LF '/^carry:/p')"; [ "$out" = "carry: ship×1 · next C2 · legacy _carry-notes.md aktif (5 baris)" ] \
+  && ok "controller: legacy tetap ditandai selama belum dikonversi" || bad "controller: legacy + carry.yaml" "$out"
+$PY - "$LN/$LF/carry.yaml" <<'PY'
+import sys; p = sys.argv[1]; s = open(p).read(); open(p, 'w').write(s.replace('notes:\n', 'legacy_converted: 2026-10-21\nnotes:\n', 1))
+PY
+J="$(lean --format carry --for F1 --work-item $LF)"
+chk "legacy_converted → legacy berhenti dibaca" '[.source,.notes]' '["carry.yaml",[]]'
+out="$(line $LF '/^carry:/p')"; [ "$out" = "carry: ship×1 · next C2" ] && ok "controller: legacy_converted → tanpa penanda legacy" || bad "controller: legacy_converted" "$out"
 err="$(lean --format controller 2>&1 >/dev/null)"; rc=$?
 [ "$rc" = 2 ] && grep -qF 'butuh --work-item' <<<"$err" && ok "controller tanpa --work-item → exit 2" || bad "controller tanpa --work-item → exit 2" "rc=$rc $err"
 mkprod
