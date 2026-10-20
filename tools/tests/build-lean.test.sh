@@ -32,5 +32,16 @@ has "$K" "cap 3 ronde" "§K: cap 3 ronde tetap (D12)"
 has "$B/reference/b-brief.md" "**brief-writer**" "§B: perakit = brief-writer"
 has "$B/reference.md" "reference/k-prompt-dispatch.md" "indeks: §K"
 
+# === T6: titipan ===
+J="$B/reference/j-state-titipan.md"
+has "$J" "# carry.yaml — titipan antar-task build. Penulis tunggal: controller build. Entri terbaru di ATAS." "§J: header carry.yaml"
+has "$J" "Kandidat debt BUKAN titipan" "§J: debt tetap ke debt.yaml (D10)"
+has "$B/reference.md" "reference/j-state-titipan.md" "indeks: §J"
+has "$B/SKILL.md" "--format carry --for gate:<M>/<unit>" "SKILL gate: agenda titipan"
+has "$B/SKILL.md" "--format carry --for simplify" "SKILL 7a: titipan simplify"
+has "$B/SKILL.md" "**Titipan legacy (sekali, attended):**" "SKILL step 1: konversi legacy"
+has "$B/SKILL.md" "WAJIB sebelum tick: brief-writer cuma tahu yang tertulis" "SKILL step 2: titipan sebelum tick (D6)"
+has "$ROOT/plugin/skills/ship/SKILL.md" "--format carry --for ship" "ship: titipan ship"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

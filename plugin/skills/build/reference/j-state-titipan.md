@@ -1,0 +1,50 @@
+## J. Ringkasan state (`build_status.py`) + titipan (`carry.yaml`)
+
+### Ringkasan state — controller pegang PETA, bukan isi file
+`python3 .claude/build_status.py --root . --format <f> --work-item <work-item>` (read-only, stdlib; salinan template di produk lewat `init`/`upgrade`):
+- `controller` — teks ringkas. Baris:
+  - `work-item:` (kind · risk efektif · sensitivity);
+  - `staleness:` (`STALE <file> > tasks.yaml` / `WARN business.md > tasks.yaml` / `OK`);
+  - `repos:`;
+  - `READY:` per repo, urut dokumen; `(sibuk <id>)` = repo punya task in-flight;
+  - `in_progress:`, `hold:`, `blocked:`, `gates queued:`, `reuse basi:`;
+  - `carry:` (jumlah titipan aktif per target + `next C<n>`, atau `legacy`);
+  - `map:` — milestone kelar dilipat 1 baris, sisanya 1 baris per task: id · unit · status · deps · desc ≤ 80 karakter.
+  Jalankan ulang tiap scheduler tick (murah).
+- `task --task <id>[,<id>…]` — JSON entri task lengkap (+ `milestone`). Dipakai brief-writer, gate step 6, dan waktu controller butuh detail satu task.
+- `carry --for <target>[,<target>…]` — JSON titipan AKTIF untuk target itu.
+
+Kalau exit ≠ 0 (salinan lama), atau mode unattended tanpa entri allowlist `Bash(python3 .claude/build_status.py:*)`, controller degrade ke cara lama (SKILL step 1).
+
+### Titipan — `<work-item>/carry.yaml`
+Isinya keputusan/temuan yang ngaruh ke task LAIN, ke gate, ke `ship`, atau ke simplify 7a. File ini ikut ke-commit, karena ini state resume, setara `tasks.yaml`/`gates.yaml`. Controller membuatnya waktu ada titipan pertama, dengan header persis ini:
+```yaml
+# carry.yaml — titipan antar-task build. Penulis tunggal: controller build. Entri terbaru di ATAS.
+notes:
+  - id: C2
+    for: T75            # id task | gate:<M> | gate:<M>/<unit> | ship | simplify
+    from: review T66    # review Tn | preflight | gate <M> | drain | user <YYYY-MM-DD> | legacy
+    at: 2026-10-20
+    note: "pratinjau daftar nama sebelum simpan"
+  - id: C1
+    for: gate:M4
+    from: review T52
+    at: 2026-10-19
+    note: "urutan deploy: migrasi PR-1 terbukti di production dulu"
+    closed: 2026-10-20  # opsional — titipan gate/ship/simplify yang sudah dipakai
+```
+- **Kapan tulis (WAJIB).** Sebelum scheduler tick berikutnya (urutan atomik SKILL step 2), tiap ada keputusan/temuan yang ngaruh ke task/gate/ship/simplify lain. Sumbernya: pre-flight sweep, verdict reviewer, gate, drain pagi, jawaban user, atau jawaban ambigu brief-writer. Yang cuma relevan buat task berjalan → JANGAN dititip. Brief-writer cuma tahu yang tertulis di sini.
+- **Cara tulis (tanpa baca file utuh).**
+  - Titipan pertama → Write file dengan header di atas.
+  - Selanjutnya → Read `limit: 3` (Edit butuh file sudah di-Read), lalu Edit ganti baris `notes:` dengan `notes:` + entri baru. Id-nya = `next` dari baris `carry:` ringkasan state.
+  - Menutup entri: `Grep -n 'id: C<n>$'` → Read rentang entri → Edit tambah baris `closed: <tanggal>`.
+- **Siapa baca.** Brief-writer `--for <task>`; gate step 6 `--for gate:<M>/<unit>`; 7a `--for simplify`; `ship` `--for ship`. Controller cuma melihat JUMLAH (baris `carry:`).
+- **Target gate.** `gate:<M>` berlaku untuk semua segmen milestone itu; `gate:<M>/<unit>` cuma segmen itu. Minta `--for gate:M4/api` → dapat `gate:M4` + `gate:M4/api`.
+- **Aktif.** Titipan ber-`for:` task yang sudah `done`, dan titipan ber-`closed:`, tidak dikeluarkan `--format carry`. Entrinya tetap di file sebagai jejak audit.
+- **Penulis tunggal = controller.** Satu-satunya pengecualian: subagent konversi legacy (sekali, attended, sebelum dispatch apa pun).
+- **Kandidat debt BUKAN titipan** → langsung `control/debt.yaml` (pintu ke-4, SKILL step 6).
+
+### Legacy `_carry-notes.md`
+`.claude/build/<work-item>/_carry-notes.md` (catatan bebas buatan run lama, belum resmi) yang ada tanpa `carry.yaml` → baris `carry:` bertanda `legacy`.
+- **Attended:** SEKALI, sebelum dispatch pertama. Dispatch subagent konversi (prompt §K) → `carry.yaml` (`from: legacy`) → balik jumlah per target. Tunjukkan JUMLAH-nya ke user, bukan isinya. File lama tetap ada sebagai arsip.
+- **Unattended, atau belum dikonversi:** `--format carry` mengambil baris `_carry-notes.md` yang menyebut token target (`T75`; `gate:M4` → `M4`; `ship`; `simplify` → `simplify`/`7a`) dengan `source: legacy`.
