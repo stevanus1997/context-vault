@@ -120,5 +120,12 @@ has "$K" "Alat: Read saja (unattended: grep/find/ls lewat Bash ditolak)" "§K bu
 has "$K" "Read brief \`limit: 1\`" "§K: jawaban ambigu tanpa baca brief utuh"
 has "$J" "line_no" "§J: nomor baris titipan = line_no"
 
+# === overhead pasca-upgrade 2026-10-21: balikan dobel (idle_notification) & brief-writer kebanyakan nanya ===
+has "$K" "**Balikan dikirim SEKALI.**" "§K: aturan balikan sekali"
+n="$(grep -c 'Balikan SEKALI (aturan di atas)' "$K")"; [ "$n" -ge 5 ] && ok "§K: tiap template prompt memuat baris balikan sekali ($n)" || bad "§K: baris balikan sekali di template ($n)"
+has "$A" "## Default — JANGAN ditanyakan" "agent: aturan default sebelum ambigu"
+has "$A" "DONE_WITH_CONCERNS" "agent: test di luar scope merah → concern, bukan BLOCKED"
+has "$A" "maks 3" "agent: ambigu dibatasi"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

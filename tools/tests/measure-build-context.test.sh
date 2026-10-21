@@ -101,6 +101,8 @@ eq '.summary.needs_context_per_task' 0.67
 eq '.summary.blocked_per_task' 0.33
 eq '.summary.cannot_verify_per_review == 2' true
 eq '.summary.ambiguity_per_task' 0.67
+eq '.sessions[0].growth_per_task_total' 17000
+eq '.summary.median_growth_per_task_total' 17000
 
 out="$($PY "$MB" "$T" 2>&1)"
 grep -qF 'ctx@impl1=60K' <<<"$out" && grep -qF 'sessions=1' <<<"$out" \

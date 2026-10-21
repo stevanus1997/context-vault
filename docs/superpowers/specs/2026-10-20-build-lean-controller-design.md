@@ -323,6 +323,7 @@ Kalau angka kualitas lebih buruk, periksa brief yang dihasilkan brief-writer dul
 | Ronde review / task | 0.97 (391 task, measure-build-context 2026-10-20) | |
 | NEEDS_CONTEXT / task | 0.04 (14 task dari 391, measure-build-context 2026-10-20 — regex status toleran huruf/markdown) | |
 | Rasio `blocked` | 0.0026 (1 task dari 391, measure-build-context 2026-10-20) · ⚠️/review 0.25 | |
+| Total kenaikan context ÷ task (metrik utama — tahan sesi yang dibuka gate/mockup) | 50.2K (48 sesi, measure-build-context 2026-10-21) | 6de3fd82: 31K (15 task, termasuk gate M4) · 4d5ab4f2: ~82K (1 task, kerja mockup) — belum cukup sesi |
 | `ambigu:` brief-writer / task | 0 (belum ada brief-writer) — **bandingkan (NEEDS_CONTEXT + ambigu) / task sesudah vs NEEDS_CONTEXT / task baseline**: ambiguitas kini ditangkap brief-writer sebelum implementer jalan | |
 
 ## 10. Amandemen pasca-review (2026-10-20, sesi desain)

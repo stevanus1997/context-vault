@@ -122,10 +122,13 @@ def analyze_session(path: Path) -> dict | None:
     dispatches = []                               # urut: {kind, task, ctx, result}
     by_agent = {}                                 # agentId → dispatch
     attribution = dict.fromkeys(CLASSES, 0)
+    ctx_seq = []                                  # ctx tiap record assistant (urut) → total kenaikan, tahan compaction
     for r in records:
         msg = _dict(r.get('message'))
         content = msg.get('content')
         if r.get('type') == 'assistant' and isinstance(content, list):
+            if _ctx(msg.get('usage')):
+                ctx_seq.append(_ctx(msg.get('usage')))
             for b in content:
                 if not (isinstance(b, dict) and b.get('type') == 'tool_use'):
                     continue
@@ -172,6 +175,9 @@ def analyze_session(path: Path) -> dict | None:
         'id': Path(path).stem,
         'ctx_first_impl': ctxs[0] if ctxs else None,
         'growth_median': int(round(statistics.median(growth))) if growth else None,
+        # total kenaikan context sesi ÷ task — sesi yang dibuka gate/mockup tetap sebanding (ctx@impl1 tidak)
+        'growth_per_task_total': (int(round(sum(max(0, b - a) for a, b in zip(ctx_seq, ctx_seq[1:])) / len({d['task'] for d in impl})))
+                                  if impl else None),
         'impl_dispatches': len(impl),
         'tasks': len({d['task'] for d in impl}),
         'review_dispatches': len(reviews),
@@ -201,6 +207,8 @@ def summarize(sessions: list[dict]) -> dict:
         'sessions': len(sessions),
         'median_ctx_first_impl': _median([s['ctx_first_impl'] for s in sessions if s['ctx_first_impl'] is not None]),
         'median_growth': _median([s['growth_median'] for s in sessions if s['growth_median'] is not None]),
+        'median_growth_per_task_total': _median([s['growth_per_task_total'] for s in sessions
+                                                 if s['growth_per_task_total'] is not None]),
         'review_rounds_per_task': _ratio(tot('review_dispatches'), tot('tasks')),
         'needs_context_per_task': _ratio(tot('needs_context_tasks'), tot('tasks')),
         'ambiguity_per_task': _ratio(tot('ambiguity_tasks'), tot('brief_tasks')),   # per task yang di-brief
@@ -237,9 +245,11 @@ def main(argv: list[str]) -> int:
         return 0
     for s in sessions:
         print(f"{s['id'][:8]} ctx@impl1={_k(s['ctx_first_impl'])} growth={_k(s['growth_median'])} "
+              f"growth/task-total={_k(s['growth_per_task_total'])} "
               f"impl={s['impl_dispatches']} tasks={s['tasks']} review/task={_x(_ratio(s['review_dispatches'], s['tasks']))} "
               f"needs_ctx={s['needs_context_tasks']} ambigu={s['ambiguity_tasks']} blocked={s['blocked_tasks']} ⚠️={s['cannot_verify']}")
     print(f"median ctx@impl1={_k(summary['median_ctx_first_impl'])} · median growth={_k(summary['median_growth'])} · "
+          f"median growth/task-total={_k(summary['median_growth_per_task_total'])} · "
           f"review/task={_x(summary['review_rounds_per_task'])} · needs_ctx/task={_x(summary['needs_context_per_task'])} · "
           f"ambigu/task={_x(summary['ambiguity_per_task'])} · "
           f"blocked/task={_x(summary['blocked_per_task'])} · ⚠️/review={_x(summary['cannot_verify_per_review'])} · "

@@ -33,6 +33,14 @@ Path: folder yang sama dengan brief. `<repo>` = basename toplevel git repo unit 
 - TDD (test merah dulu → hijau); commit HANYA file task per `files:` (bukan `git add -A`);
 - "JANGAN baca `tasks.yaml` — brief = requirement-mu".
 
+## Default — JANGAN ditanyakan
+Sesi mahjong `6de3fd82` (2026-10-20): `ambigu:` muncul di 12 dari 15 brief, padahal kebanyakan sudah diputus aturan di bawah. Tiap pertanyaan = controller mikir jawaban + kamu di-dispatch ulang. Terapkan default ini, sebut di brief ("default: …"), dan JANGAN masukkan ke `ambigu:`:
+- **Scope = `files:` + `approach` task.** Kelas bug/refactor yang sama di file LAIN, atau perbaikan di luar `files:` → JANGAN perluas. Tulis di brief: "di luar scope — laporkan sebagai concern". Controller yang mencatatnya ke titipan atau `debt.yaml`.
+- **Test di luar `files:` merah/flaky** (sudah merah di BASE, atau tak tersentuh diff) → implementer lapor `DONE_WITH_CONCERNS` + bukti, bukan `BLOCKED` dan bukan diperbaiki.
+- **Nilai/keputusan yang sudah tertulis** di entri task, plan, `_shared.md`, atau titipan → pakai apa adanya. Titipan yang lebih baru menang atas plan (ia keputusan sesudah plan).
+- **Detail implementasi yang tak mengubah perilaku yang diuji `test:`** (nama helper, letak fungsi, gaya) → serahkan ke implementer, ikut file pola.
+`ambigu:` HANYA untuk hal yang mengubah apa yang dibangun atau diuji dan tak diputus default di atas, misalnya dua tafsir requirement inti atau dua sumber mengikat yang bertentangan — maks 3, paling penting dulu.
+
 ## Aturan
 - **Jangan menebak.** Kalau info yang dibutuhkan brief tidak ada atau kontradiktif (plan vs `_shared.md`, `produces:` vs disk, titipan bentrok dengan `approach`), tulis bagian yang pasti, lalu laporkan di `ambigu:`. Controller yang menjawab.
 - `produces:` dep ≠ signature disk → tandai **DRIFT** di brief dan di `deps:` balikan. Disk selalu menang.
