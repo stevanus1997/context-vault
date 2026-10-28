@@ -318,13 +318,15 @@ Kalau angka kualitas lebih buruk, periksa brief yang dihasilkan brief-writer dul
 
 | Metrik | Baseline | Sesudah |
 |---|---|---|
-| Median context dispatch pertama | 181.5K (49 sesi ber-implementer dari 51 sesi build, measure-build-context 2026-10-20) | |
-| Median pertumbuhan per dispatch | 27.6K (42 sesi ber-≥2 implementer, measure-build-context 2026-10-20) | |
-| Ronde review / task | 0.97 (391 task, measure-build-context 2026-10-20) | |
-| NEEDS_CONTEXT / task | 0.04 (14 task dari 391, measure-build-context 2026-10-20 — regex status toleran huruf/markdown) | |
-| Rasio `blocked` | 0.0026 (1 task dari 391, measure-build-context 2026-10-20) · ⚠️/review 0.25 | |
-| Total kenaikan context ÷ task (metrik utama — tahan sesi yang dibuka gate/mockup) | 50.2K (48 sesi, measure-build-context 2026-10-21) | 6de3fd82: 31K (15 task, termasuk gate M4) · 4d5ab4f2: ~82K (1 task, kerja mockup) — belum cukup sesi |
-| `ambigu:` brief-writer / task | 0 (belum ada brief-writer) — **bandingkan (NEEDS_CONTEXT + ambigu) / task sesudah vs NEEDS_CONTEXT / task baseline**: ambiguitas kini ditangkap brief-writer sebelum implementer jalan | |
+| Median context dispatch pertama | 181.5K (49 sesi ber-implementer dari 51 sesi build, measure-build-context 2026-10-20) | 158K median (4 sesi); **104K** di sesi yang langsung dispatch (mahjong `7aae28da`); 153–178K = sesi dibuka gate M4 / mockup / pre-flight 3 keputusan |
+| Median pertumbuhan per dispatch | 27.6K (42 sesi ber-≥2 implementer, measure-build-context 2026-10-20) | 23.1K (−16%); lora `1c654c73` 13.9K |
+| Ronde review / task | 0.97 (391 task, measure-build-context 2026-10-20) | 1.0 (53 task) ✓ |
+| NEEDS_CONTEXT / task | 0.04 (14 task dari 391, measure-build-context 2026-10-20 — regex status toleran huruf/markdown) | 0.04 ✓ |
+| Rasio `blocked` | 0.0026 (1 task dari 391, measure-build-context 2026-10-20) · ⚠️/review 0.25 | 0 ✓ · ⚠️/review **1.38** ✗ (≈separuh = klaim test/lint/commit yang memang di-re-run controller — aturan reviewer diperketat 0.28.2) |
+| Total kenaikan context ÷ task (metrik utama — tahan sesi yang dibuka gate/mockup) | 50.2K (48 sesi, measure-build-context 2026-10-21) | **28.6K (−43%)** median 4 sesi (lora 22K, mahjong 0.28.1 26K, 0.28.0 31K; sesi mockup 1–3 task 62K) |
+| `ambigu:` brief-writer / task | 0 (belum ada brief-writer) — **bandingkan (NEEDS_CONTEXT + ambigu) / task sesudah vs NEEDS_CONTEXT / task baseline**: ambiguitas kini ditangkap brief-writer sebelum implementer jalan | 0.48 (0.8 di 0.28.0 → aturan default brief-writer 0.28.1) |
+
+**Evaluasi 2026-10-28** (4 sesi pasca-perubahan dengan ≥3 task, 53 task total, 0.28.0–0.28.1): pengaman kualitas lolos untuk review/task, NEEDS_CONTEXT, dan blocked. Dua yang TIDAK lolos: ⚠️/review (1.38 vs 0.25), dan pembanding yang ditetapkan di baris `ambigu:` — (NEEDS_CONTEXT + ambigu)/task 0.52 vs NEEDS_CONTEXT baseline 0.04. Pembanding kedua ternyata tak setara: dulu ambiguitas yang sama diputus diam-diam oleh controller saat merakit brief dan tak pernah tercatat, jadi baseline-nya bukan nol sungguhan. Dampaknya ke implementer (NEEDS_CONTEXT 0.04, review/task 1.0) tak berubah. Target context BELUM tercapai (≤95K di dispatch pertama: terbaik 104K; ≤10K/dispatch: 13.9–24K). Total kenaikan per task turun 43%. Sisa biaya yang teridentifikasi: balikan implementer panjang (median 23 baris; template superpowers membolehkan 15) → 0.28.2 dibatasi 6 baris; ⚠️ "klaim report" → 0.28.2 dilarang; SKILL.md 51K karakter + baca reference ~14K token/sesi; kerja gate/mockup/pre-flight (porsi controller per spec); pembungkus hand-back harness ~550 karakter/dispatch (tak bisa dihindari untuk dispatch latar).
 
 ## 10. Amandemen pasca-review (2026-10-20, sesi desain)
 

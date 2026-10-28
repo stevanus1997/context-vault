@@ -127,5 +127,9 @@ has "$A" "## Default — JANGAN ditanyakan" "agent: aturan default sebelum ambig
 has "$A" "DONE_WITH_CONCERNS" "agent: test di luar scope merah → concern, bukan BLOCKED"
 has "$A" "maks 3" "agent: ambigu dibatasi"
 
+# === pengukuran 2026-10-28 (4 sesi): balikan implementer panjang, ⚠️ klaim report ===
+has "$K" "OVERRIDE batas balikan template: MAKS 6 baris" "§K implementer: balikan ≤6 baris (template superpowers bolehkan 15)"
+has "$K" "⚠️ BUKAN untuk klaim test/lint/typecheck/commit" "§K reviewer: klaim report tak dijadikan ⚠️ (controller re-run sendiri)"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]

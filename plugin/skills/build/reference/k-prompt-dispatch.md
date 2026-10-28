@@ -28,6 +28,7 @@ Pakai test-driven-development. Commit HANYA file task (bukan git add -A). Self-r
 Tulis report detail (apa yang dibangun + bukti test TDD + concern) ke:
   <root>/<wi>/task-<id>-report.md   (ronde fix: APPEND)
 Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT (spec kurang → tanya dulu, jangan nebak).
+OVERRIDE batas balikan template: MAKS 6 baris — status · commit SHA + subjek · 1 baris hasil test · concern ≤2 baris · path report. TDD/files/self-review HANYA di report (BLOCKED/NEEDS_CONTEXT: pertanyaannya tetap di balikan).
 Balikan chat: status + commit SHA + 1 baris hasil test + concern. Balikan SEKALI (aturan di atas).
 ```
 Ronde fix: tambahkan `Temuan review: <root>/<wi>/task-<id>-review-r<n>.md` + SHA/file yang disentuh.
@@ -40,6 +41,7 @@ REPORT: <root>/<wi>/task-<id>-report.md
 DIFF:   <root>/<wi>/review-<base7>..<head7>.diff
 Global constraints: <invarian/konvensi yang mengikat task>
 Aturan baca: baca DIFF SEKALI. Kode di luar diff HANYA untuk risiko konkret yang kamu sebut (nama risiko + apa yang dicek). Klaim REPORT = belum terverifikasi.
+⚠️ BUKAN untuk klaim test/lint/typecheck/commit/trailer di REPORT — controller selalu re-run test & cek commit sendiri (SKILL step 4). ⚠️ hanya untuk requirement yang tak bisa dinilai dari diff: kode tak-berubah, lintas-task, atau keputusan gate.
 OVERRIDE format balikan template: tulis laporan LENGKAP ke <root>/<wi>/task-<id>-review-r<n>.md. Pesan terakhirmu HANYA:
   spec: ✅|❌ <1 baris>
   quality: ✅|❌ (Critical n · Important n · Minor n)
