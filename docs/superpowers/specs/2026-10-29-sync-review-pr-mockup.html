@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup laporan context-vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#E9EDF1;        /* abu kebiruan, kertas kerja */
+    --surface:#FFFFFF;
+    --ink:#17222D;       /* navy tua */
+    --soft:#5B6876;
+    --line:#D3DAE1;
+    --blue:#2D5BD3;      /* garis blueprint diagram */
+    --red:#C2362F;  --red-bg:#FBEAE8;
+    --amber:#A8701A; --amber-bg:#FBF1DF;
+    --green:#2F7D5B; --green-bg:#E4F2EA;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Schibsted Grotesk",system-ui,sans-serif}
+  code,.mono,.code{font-variant-ligatures:none}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em}
+  .wrap{max-width:1040px;margin:0 auto;padding:20px 16px 60px}
+
+  /* tab mockup (cuma buat pindah contoh) */
+  .switch{display:flex;gap:6px;margin-bottom:18px}
+  .switch button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--soft);padding:8px 14px;border-radius:999px;cursor:pointer}
+  .switch button[aria-selected=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .switch button:focus-visible,.copy:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+  .view{display:none}.view.on{display:block}
+
+  /* kepala PR */
+  .pr{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:14px}
+  .pr h1{font-size:20px;margin:0;font-weight:600}
+  .pr .who{color:var(--soft)}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;background:var(--surface);border:1px solid var(--line);padding:2px 10px;border-radius:999px}
+
+  /* vonis + peta: satu-satunya elemen yang "berani" */
+  .hero{display:grid;grid-template-columns:1.1fr 1fr;background:var(--surface);border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+  .verdict{padding:26px 28px;border-left:10px solid var(--red)}
+  .verdict .big{font-size:56px;line-height:1;font-weight:800;letter-spacing:-.02em;color:var(--red);margin:0 0 10px}
+  .verdict p{margin:0;font-size:17px;max-width:30ch}
+  .lanes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:22px}
+  .lane{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--bg)}
+  .lane .dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex:none}
+  .lane small{display:block;color:var(--soft);font-size:12px;line-height:1.2}
+  .d-red{background:var(--red)}.d-amber{background:var(--amber)}.d-green{background:var(--green)}
+  .map{background:
+      linear-gradient(var(--line) 1px,transparent 1px) 0 0/24px 24px,
+      linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/24px 24px,#F6F8FA;
+      padding:14px;display:flex;flex-direction:column}
+  .map .cap{font-size:13px;color:var(--soft);margin:0 0 4px}
+  .map svg{width:100%;height:auto;flex:1}
+
+  /* temuan */
+  .findings{margin-top:22px;display:grid;gap:12px}
+  .f{background:var(--surface);border:1px solid var(--line);border-radius:12px;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+  .f .txt{padding:16px 18px;border-left:6px solid var(--red)}
+  .f.saran .txt{border-left-color:var(--amber)}
+  .f h3{margin:0 0 4px;font-size:17px}
+  .f .loc{color:var(--soft);font-size:13px;margin:0 0 10px}
+  .f .lv{font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--red-bg);color:var(--red);margin-right:6px}
+  .f.saran .lv{background:var(--amber-bg);color:var(--amber)}
+  .draft{background:var(--bg);border-radius:8px;padding:10px 12px;font-size:14px;margin-top:10px}
+  .draft q{quotes:none;display:block;margin-bottom:8px}
+  .copy{font:inherit;font-size:13px;font-weight:600;border:0;background:var(--ink);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer}
+  .ev{background:#F6F8FA;padding:16px 18px;border-left:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+
+  /* bukti: tabel kontrak */
+  .cmp{width:100%;border-collapse:collapse;font-size:13px}
+  .cmp th{font-weight:600;text-align:left;color:var(--soft);padding:4px 8px}
+  .cmp td{padding:6px 8px;border-top:1px solid var(--line)}
+  .cmp tr.bad td{background:var(--red-bg)}
+  .cmp tr.bad td:first-child{color:var(--red);font-weight:600}
+
+  /* bukti: kode */
+  .code{width:100%;font-family:"JetBrains Mono",monospace;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .code div{padding:2px 10px;white-space:pre}
+  .code .hl{background:var(--amber-bg);box-shadow:inset 3px 0 var(--amber)}
+  .code .n{color:#9AA5B1;display:inline-block;width:2.2em}
+
+  .ok-row{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;color:var(--soft)}
+  .ok-row b{color:var(--green)}
+
+  /* ===== ringkasan sinkron ===== */
+  .sync-head{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px 28px}
+  .sync-head h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.015em;line-height:1.1}
+  .sync-head p{margin:6px 0 0;color:var(--soft)}
+  .repos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:20px}
+  .repo{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#F6F8FA}
+  .repo.quiet{opacity:.55}
+  .repo b{font-size:15px}
+  .bar{height:8px;border-radius:4px;background:var(--line);margin:8px 0 6px;display:flex;overflow:hidden}
+  .bar i{display:block;height:100%}
+  .bar .h{background:var(--blue)}.bar .b{background:#A9B6C4}
+  .repo small{color:var(--soft);font-size:12px}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--soft);margin-top:10px}
+  .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--blue)}
+  .legend span.b::before{background:#A9B6C4}
+
+  .groups{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .g{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .g h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .g h2 .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:15px}
+  .item{padding:10px 0;border-top:1px solid var(--line)}
+  .item:first-of-type{border-top:0;padding-top:0}
+  .item .app{font-size:12px;font-weight:600;color:var(--blue)}
+  .item p{margin:2px 0 0;font-size:14px}
+  .ba{display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:800;font-size:22px}
+  .ba .old{color:#9AA5B1;text-decoration:line-through;text-decoration-thickness:2px}
+  .ba .new{color:var(--ink)}
+  .ba small{font-weight:400;font-size:12px;color:var(--soft)}
+  .pill{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:12px;background:var(--bg);padding:1px 6px;border-radius:4px;margin-top:6px}
+  .pill.add{background:var(--green-bg);color:var(--green)}
+
+  .written{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+  .written h2{font-size:14px;margin:0;color:var(--soft);font-weight:500}
+  .written .file{font-family:"JetBrains Mono",monospace;font-size:13px}
+  .written .file em{font-style:normal;color:var(--green);margin-left:4px}
+
+  @media (max-width:760px){
+    .hero,.f,.groups{grid-template-columns:1fr}
+    .ev{border-left:0;border-top:1px solid var(--line)}
+    .verdict .big{font-size:44px}
+    .lanes{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .verdict .big{animation:stamp .5s cubic-bezier(.2,.9,.3,1.3) both}
+    @keyframes stamp{from{transform:scale(1.15);opacity:0}to{transform:none;opacity:1}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="switch" role="tablist">
+    <button role="tab" aria-selected="true" data-v="rv">Laporan review PR</button>
+    <button role="tab" aria-selected="false" data-v="sy">Ringkasan sinkron</button>
+  </div>
+
+  <!-- ================= REVIEW ================= -->
+  <section class="view on" id="rv">
+    <div class="pr">
+      <h1>Jadwal ulang survey dari backoffice</h1>
+      <span class="who">oleh jocelyntjahyadi26, dibuka 2 hari lalu</span>
+      <span class="tag">BLCS-5302</span>
+      <span class="tag">LBOFE #1482</span>
+      <span class="tag">LTS #911</span>
+      <span class="tag">LSS #377</span>
+    </div>
+
+    <div class="hero">
+      <div class="verdict">
+        <div class="big">Perlu ubah</div>
+        <p>2 hal harus dibenerin sebelum approve, 1 saran opsional.</p>
+        <div class="lanes">
+          <div class="lane"><span class="dot d-red">1</span><div>Kontrak LSS<small>field nggak cocok</small></div></div>
+          <div class="lane"><span class="dot d-red">1</span><div>Alur lintas-repo<small>langgar aturan status</small></div></div>
+          <div class="lane"><span class="dot d-amber">1</span><div>Best practice<small>saran</small></div></div>
+          <div class="lane"><span class="dot d-green">✓</span><div>Konsistensi<small>ikut pola repo</small></div></div>
+        </div>
+      </div>
+      <div class="map">
+        <p class="cap">Repo yang disentuh tiket ini</p>
+        <svg viewBox="0 0 400 250" role="img" aria-label="Peta: LBOFE ke LTS bermasalah, LTS ke LSS">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2D5BD3"/></marker>
+            <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#C2362F"/></marker>
+          </defs>
+          <!-- app yang nggak disentuh -->
+          <g fill="#fff" stroke="#C3CCD6" stroke-width="1.5" font-size="11" font-family="Schibsted Grotesk" text-anchor="middle">
+            <rect x="290" y="168" width="84" height="30" rx="8"/><text x="332" y="187" fill="#8995A2" stroke="none">LGS</text>
+            <rect x="20" y="200" width="70" height="26" rx="8"/><text x="55" y="217" fill="#8995A2" stroke="none">LDFW</text>
+            <rect x="100" y="200" width="70" height="26" rx="8"/><text x="135" y="217" fill="#8995A2" stroke="none">LPN</text>
+            <rect x="180" y="200" width="70" height="26" rx="8"/><text x="215" y="217" fill="#8995A2" stroke="none">LPTN</text>
+          </g>
+          <!-- garis -->
+          <path d="M112 72 L176 108" stroke="#C2362F" stroke-width="3" stroke-dasharray="6 4" fill="none" marker-end="url(#ahr)"/>
+          <path d="M262 108 L300 70" stroke="#2D5BD3" stroke-width="2.5" fill="none" marker-end="url(#ah)"/>
+          <path d="M240 140 L300 170" stroke="#C3CCD6" stroke-width="1.5" fill="none"/>
+          <circle cx="144" cy="90" r="11" fill="#C2362F"/><text x="144" y="94" fill="#fff" font-size="13" font-weight="800" text-anchor="middle" font-family="Schibsted Grotesk">!</text>
+          <text x="120" y="122" fill="#C2362F" font-size="11" font-family="JetBrains Mono" text-anchor="middle">surveyDate</text>
+          <!-- app yang disentuh -->
+          <g font-family="Schibsted Grotesk" text-anchor="middle">
+            <rect x="20" y="36" width="96" height="44" rx="10" fill="#fff" stroke="#C2362F" stroke-width="2.5"/>
+            <text x="68" y="56" font-size="14" font-weight="800" fill="#17222D">LBOFE</text><text x="68" y="71" font-size="10" fill="#5B6876">#1482</text>
+            <rect x="176" y="98" width="88" height="44" rx="10" fill="#fff" stroke="#C2362F" stroke-width="2.5"/>
+            <text x="220" y="118" font-size="14" font-weight="800" fill="#17222D">LTS</text><text x="220" y="133" font-size="10" fill="#5B6876">#911</text>
+            <rect x="300" y="36" width="84" height="44" rx="10" fill="#fff" stroke="#2D5BD3" stroke-width="2.5"/>
+            <text x="342" y="56" font-size="14" font-weight="800" fill="#17222D">LSS</text><text x="342" y="71" font-size="10" fill="#5B6876">#377</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="findings">
+      <article class="f">
+        <div class="txt">
+          <h3><span class="lv">Harus dibenerin</span>Nama field beda sama schema LSS</h3>
+          <p class="loc">LBOFE <code>src/pages/survey/reschedule-form.tsx:88</code></p>
+          <div class="draft">
+            <q>Field ini di schema LSS <code>survey-reschedule-v1</code> namanya <code>survey_schedule_at</code> dan wajib diisi. Kayaknya ketuker sama <code>surveyDate</code>?</q>
+            <button class="copy">Copy komentar</button>
+          </div>
+        </div>
+        <div class="ev">
+          <table class="cmp">
+            <thead><tr><th>LBOFE ngirim</th><th>LSS minta</th></tr></thead>
+            <tbody>
+              <tr><td><code>task_id</code></td><td><code>task_id</code></td></tr>
+              <tr class="bad"><td><code>surveyDate</code></td><td><code>survey_schedule_at</code> wajib</td></tr>
+              <tr><td><code>reason</code></td><td><code>reason</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="f">
+        <div class="txt">
+          <h3><span class="lv">Harus dibenerin</span>Survey yang udah dikirim masih bisa dijadwal ulang</h3>
+          <p class="loc">LTS <code>internal/task/reschedule.go:52</code>, bentrok sama <code>invariants.md</code></p>
+          <div class="draft">
+            <q>Di sini status <code>SUBMITTED</code> ikut diizinkan. Aturannya jadwal ulang cuma boleh sebelum surveyor mulai. Perlu dibatasi sampai <code>ASSIGNED</code> aja?</q>
+            <button class="copy">Copy komentar</button>
+          </div>
+        </div>
+        <div class="ev">
+          <svg viewBox="0 0 400 120" width="100%" role="img" aria-label="Status: jadwal ulang boleh di NEW dan ASSIGNED, PR ini juga mengizinkan SUBMITTED">
+            <g font-family="Schibsted Grotesk" font-size="12" text-anchor="middle" font-weight="600">
+              <rect x="4" y="40" width="70" height="32" rx="8" fill="#E4F2EA" stroke="#2F7D5B"/><text x="39" y="61" fill="#2F7D5B">NEW</text>
+              <rect x="88" y="40" width="88" height="32" rx="8" fill="#E4F2EA" stroke="#2F7D5B"/><text x="132" y="61" fill="#2F7D5B">ASSIGNED</text>
+              <rect x="190" y="40" width="94" height="32" rx="8" fill="#fff" stroke="#C3CCD6"/><text x="237" y="61" fill="#8995A2">IN_SURVEY</text>
+              <rect x="298" y="40" width="98" height="32" rx="8" fill="#FBEAE8" stroke="#C2362F" stroke-width="2"/><text x="347" y="61" fill="#C2362F">SUBMITTED</text>
+            </g>
+            <path d="M74 56H88M176 56H190M284 56H298" stroke="#C3CCD6" stroke-width="1.5"/>
+            <path d="M4 30 H176" stroke="#2F7D5B" stroke-width="3"/>
+            <text x="90" y="22" font-size="11" fill="#2F7D5B" text-anchor="middle" font-family="Schibsted Grotesk">boleh jadwal ulang</text>
+            <path d="M298 88 H396" stroke="#C2362F" stroke-width="3" stroke-dasharray="5 4"/>
+            <text x="347" y="106" font-size="11" fill="#C2362F" text-anchor="middle" font-family="Schibsted Grotesk">PR ini ikut izinin</text>
+          </svg>
+        </div>
+      </article>
+
+      <article class="f saran">
+        <div class="txt">
+          <h3><span class="lv">Saran</span>Error dari server nggak keliatan ke user</h3>
+          <p class="loc">LBOFE <code>src/datasources/survey.ts:41</code></p>
+          <div class="draft">
+            <q>Kalau request-nya gagal, user cuma liat form kosong. Gimana kalau error-nya diterusin ke toast kayak datasource lain?</q>
+            <button class="copy">Copy komentar</button>
+          </div>
+        </div>
+        <div class="ev">
+          <div class="code">
+            <div><span class="n">39</span>return fetch(url, opts)</div>
+            <div><span class="n">40</span>  .then(r =&gt; r.json())</div>
+            <div class="hl"><span class="n">41</span>  .catch(() =&gt; null)</div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="ok-row"><b>✓ Konsistensi</b> Struktur folder, nama datasource, dan pola form ikut yang udah ada di LBOFE.</div>
+  </section>
+
+  <!-- ================= SINKRON ================= -->
+  <section class="view" id="sy">
+    <div class="sync-head">
+      <h1>5 hal baru sejak 21 Oktober</h1>
+      <p>47 commit masuk di 6 repo. Semua udah dicatat ke <code>control/</code>. Di bawah ini cuma yang perlu lo tau.</p>
+      <div class="repos">
+        <div class="repo"><b>LGS</b><div class="bar"><i class="h" style="width:30%"></i><i class="b" style="width:55%"></i></div><small>3 orang, 11 bot</small></div>
+        <div class="repo"><b>LBOFE</b><div class="bar"><i class="h" style="width:40%"></i><i class="b" style="width:45%"></i></div><small>4 orang, 9 bot</small></div>
+        <div class="repo"><b>LSS</b><div class="bar"><i class="h" style="width:20%"></i><i class="b" style="width:30%"></i></div><small>2 orang, 5 bot</small></div>
+        <div class="repo"><b>LTS</b><div class="bar"><i class="h" style="width:15%"></i><i class="b" style="width:25%"></i></div><small>2 orang, 4 bot</small></div>
+        <div class="repo"><b>LPN</b><div class="bar"><i class="h" style="width:12%"></i><i class="b" style="width:10%"></i></div><small>1 orang, 2 bot</small></div>
+        <div class="repo quiet"><b>LDFW</b><div class="bar"><i class="b" style="width:8%"></i></div><small>cuma bot</small></div>
+      </div>
+      <div class="legend"><span>commit orang</span><span class="b">commit bot / bump versi</span></div>
+    </div>
+
+    <div class="groups">
+      <div class="g">
+        <h2><span class="ic" style="background:#E4EBFB">✦</span>Fitur baru</h2>
+        <div class="item"><span class="app">LGS</span><p>Debitur dapet WhatsApp otomatis waktu survey-nya dijadwal ulang.</p></div>
+        <div class="item"><span class="app">LPN</span><p>Partner NDF bisa upload dokumen tambahan setelah aplikasi dikirim.</p></div>
+      </div>
+      <div class="g">
+        <h2><span class="ic" style="background:var(--red-bg)">⚑</span>Aturan bisnis berubah</h2>
+        <div class="item"><span class="app">LTS</span><p>Batas jadwal ulang survey per aplikasi</p>
+          <div class="ba"><span class="old">2×</span><span>→</span><span class="new">3×</span></div></div>
+        <div class="item"><span class="app">LSS</span><p>Jadwal ulang sekarang wajib pakai alasan</p>
+          <span class="pill add">+ reason_code wajib</span></div>
+      </div>
+      <div class="g">
+        <h2><span class="ic" style="background:var(--amber-bg)">⌘</span>Aturan coding baru</h2>
+        <div class="item"><span class="app">LBOFE</span><p>Datasource baru dibikin lewat helper bersama, bukan <code>fetch</code> langsung.</p>
+          <span class="pill">createDatasource()</span></div>
+      </div>
+    </div>
+
+    <div class="written">
+      <h2>Ditulis ke control/</h2>
+      <span class="file">invariants.md<em>1 diubah</em></span>
+      <span class="file">conventions.md<em>+1</em></span>
+      <span class="file">schema/survey-reschedule<em>+1 field</em></span>
+      <span class="file">workspace.yaml<em>+2 kapabilitas</em></span>
+      <span style="color:var(--soft);font-size:13px">37 commit lain cuma bot, refactor, atau fix kecil</span>
+    </div>
+  </section>
+
+</div>
+<script>
+  document.querySelectorAll('.switch button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.switch button').forEach(x=>x.setAttribute('aria-selected',x===b));
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===b.dataset.v));
+  });
+  document.querySelectorAll('.copy').forEach(b=>b.onclick=()=>{
+    const t=b.previousElementSibling.innerText;
+    navigator.clipboard?.writeText(t);
+    b.textContent='Tersalin';setTimeout(()=>b.textContent='Copy komentar',1500);
+  });
+</script>
+</body>
+</html>
