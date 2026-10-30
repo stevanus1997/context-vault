@@ -119,5 +119,13 @@ run "prompt raksasa diawali / → diam, cepat, exit 0" \
   "$(pj "$HUGE")" \
   ""
 
+run "skill sync (tanpa args)" \
+  "$(pj '/context-vault:sync')" \
+  "$(title 'sync')"
+
+run "skill review-pr + args" \
+  "$(pj '/context-vault:review-pr bfi/lbofe#1482')" \
+  "$(title 'review-pr: bfi/lbofe#1482')"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
