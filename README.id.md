@@ -133,6 +133,8 @@ Udah punya kode? `/init` bisa ngadopsi monorepo atau multi-repo yang udah ada, d
 | `/guide` | Tur dan tanya-jawab soal plugin ini sendiri |
 | `/render-docs` | Doc HTML seluruh produk yang gampang dibaca stakeholder |
 | `/share` | Satu halaman review HTML per fitur buat rekan; paste balik feedback mereka buat ditriase |
+| `/sync` | Kerja tim: nyusulin `control/` ke kode rekan yang udah merge di branch utama tiap repo; dicatat lengkap ke `control/`, lalu buka satu halaman ringkasan bisnis |
+| `/review-pr` | Review PR rekan (plus PR satu tiket di repo lain) dalam empat lapis: konsistensi, best practice, alur lintas-repo, kontrak. Buka laporan HTML berisi vonis + draft komentar tinggal copy; nggak pernah posting ke GitHub |
 
 ## Mulai cepat
 

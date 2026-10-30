@@ -63,6 +63,7 @@ Kalau code-fallback menyingkap kode yang **membantah** knowledge:
 | `business/*` · perilaku fitur (`features/*/business.md`) | `/intake` (di dalam `/feature`) atau `/feature` |
 | `integrations.md` (vendor) | `/add-integration` |
 | `features/*/feature.yaml` status | lifecycle terkait (`/build` · `/ship` · `/drop`) |
+| Drift karena kode rekan yang sudah merge (repo basi menurut `sync_status.py status`) | `/sync` |
 
 Jelaskan file mana yang punya & skill mana yang memperbaikinya, lalu berhenti. **Jangan menulis koreksi sendiri** — menjaga ownership bersih (tiap file `control/` hanya disentuh skill pemiliknya, yang punya gate/`critic`-nya).
 

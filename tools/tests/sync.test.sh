@@ -261,6 +261,23 @@ for s in feature plan fix tweak; do
   grep -qF 'rules/stale-guard.md' "$ROOT/plugin/skills/$s/SKILL.md" && ok "G2 $s memasang penjaga" || bad "G2 $s tanpa penjaga"; done
 grep -qF '`/sync`' "$ROOT/plugin/skills/ask/SKILL.md" && ok "G3 ask route → /sync" || bad "G3 ask tanpa /sync"
 
+# === I: integrasi rilis (statis) ===
+for f in init upgrade; do
+  grep -qF '.claude/sync/' "$ROOT/plugin/skills/$f/SKILL.md" && grep -qF '.claude/review/' "$ROOT/plugin/skills/$f/SKILL.md" \
+    && ok "I1 $f menyebut baris .gitignore sync/review" || bad "I1 $f tanpa .gitignore sync/review"; done
+grep -qF '/sync' "$ROOT/plugin/skills/guide/reference.md" && grep -qF '/review-pr' "$ROOT/plugin/skills/guide/reference.md" \
+  && ok "I2 guide menyebut /sync + /review-pr" || bad "I2 guide"
+for r in README.md README.id.md; do
+  grep -qF '`/sync`' "$ROOT/$r" && grep -qF '`/review-pr`' "$ROOT/$r" && ok "I3 $r menyebut /sync + /review-pr" || bad "I3 $r"; done
+[ "$(jq -r .version "$ROOT/plugin/.claude-plugin/plugin.json")" = "0.29.0" ] && jq -r .description "$ROOT/plugin/.claude-plugin/plugin.json" | grep -qF 'review-pr (review PR rekan' \
+  && ok "I4 plugin.json 0.29.0 + description" || bad "I4 plugin.json"
+[ "$(jq -r '.metadata.version + " " + .plugins[0].version' "$ROOT/.claude-plugin/marketplace.json")" = "0.29.0 0.29.0" ] \
+  && jq -r '.plugins[0].description' "$ROOT/.claude-plugin/marketplace.json" | grep -qF 'sync & review-pr' \
+  && ok "I4 marketplace.json 0.29.0" || bad "I4 marketplace.json"
+[ -f "$ROOT/plugin-kimi/skills/sync/sync_status.py" ] && [ -f "$ROOT/plugin-kimi/skills/review-pr/prs.py" ] && [ -f "$ROOT/plugin-kimi/agents/sync-reader.md" ] \
+  && [ ! -e "$ROOT/plugin-kimi/hooks" ] && ok "I5 plugin-kimi memuat sync + review-pr, tanpa hooks" || bad "I5 plugin-kimi belum diregen"
+grep -qF 'context-vault:sync-reader' "$ROOT/plugin-kimi/rules/kimi-harness.md" 2>/dev/null && ok "I5 kimi-harness memetakan sync-reader" || bad "I5 kimi-harness tanpa sync-reader"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

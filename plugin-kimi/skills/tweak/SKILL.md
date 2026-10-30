@@ -18,6 +18,8 @@ Tujuan: perubahan KECIL yang tetep ninggalin jejak keputusan di `control/`, TANP
 ### 1. Baca state minimal + cek branch
 Baca `control/workspace.yaml` (apps + stack + path) + cek branch sekarang (multi-repo aware; **jangan commit di `main`/`master` tanpa izin** — branch `tweak/<slug>`). `control/business/*`+`glossary` dibaca **lazy** (pas capture perlu, step 4). **`control/invariants.md` WAJIB dibaca** buat evaluasi tripwire cabang-B (step 2) — KECUALI perubahan jelas murni-kosmetik (copy/format/rename). Prasyarat: ada `control/`; kalau nggak → BERHENTI, suruh `init`.
 
+**Penjaga basi:** ${KIMI_SKILL_DIR}/../../rules/stale-guard.md (repo relevan = app yang diubah).
+
 ### 2. Triage + Tripwire (3 cabang, precedence B→C→A)
 SEBELUM nyentuh kode. **Cek mekanis pakai daftar verba di `reference.md` §A-C, bukan feeling.**
 

@@ -16,7 +16,7 @@ init → roadmap? → architect → wire → feature → breakdown → build →
 ```
 init → architect → extract(opsional) → wire → feature → breakdown → build → ship
 ```
-`feature` = konduktor yang menjalankan `intake → fanout → plan`. `roadmap?` = opsional — susun/re-plan backlog fitur terurut (`control/roadmap.md`); brownfield pun boleh panggil standalone kapan saja. Lane samping bisa kapan saja: `fix` (bug), `tweak` (perubahan kecil), `debt` (utang teknis), `ask` (tanya produk), `drop` (batalin fitur).
+`feature` = konduktor yang menjalankan `intake → fanout → plan`. `roadmap?` = opsional — susun/re-plan backlog fitur terurut (`control/roadmap.md`); brownfield pun boleh panggil standalone kapan saja. Lane samping bisa kapan saja: `fix` (bug), `tweak` (perubahan kecil), `debt` (utang teknis), `ask` (tanya produk), `drop` (batalin fitur), `sync` (nyusulin `control/` dari kode rekan yang sudah merge), `review-pr` (review PR rekan).
 
 ## Cheatsheet — kapan pakai apa
 
@@ -42,6 +42,8 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 | Front-load knowledge dari kode (brownfield) | `/extract` |
 | Doc HTML buat stakeholder | `/render-docs` |
 | File review fitur buat rekan + triase feedback-nya | `/share <fitur>` |
+| Abis pull, susulin catatan dari kerjaan rekan | `/sync` |
+| Review PR rekan | `/review-pr` |
 | Susulin produk lama ke template terbaru | `/upgrade` |
 | Dikabarin di HP tiap skill nunggu lo (attended, Remote Control) | sekali: `/config` → **Push when actions required** |
 
@@ -82,6 +84,8 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 - `/debt` — lane utang teknis: registry `control/debt.yaml`; list/triage/promote/drop.
 - `/ask` — AMA produk read-only: knowledge-first + code-fallback, sebut sumber, flag drift → route.
 - `/drop` — batalkan fitur: tandai dropped + alasan, simpan jadi memori keputusan.
+- `/sync` — kerja tim: nyusulin `control/` ke kode yang sudah merge di branch utama tiap repo (patokan `control/sync.yaml`). Hook awal sesi cuma mendeteksi basi; `feature`/`plan`/`fix`/`tweak`/`review-pr` menawarkan sinkron dulu. Hasil: catatan lengkap di `control/` + satu halaman ringkasan bisnis HTML. Catatan ber-penanda fitur aktif (`<!-- feature:<f> -->`) tidak ditimpa.
+- `/review-pr` — review PR rekan lintas-repo: tanpa argumen tampilkan PR yang minta review lo; PR satu tiket di repo lain digabung. Empat lapis (konsistensi, best practice, alur lintas-repo, kontrak) → laporan HTML dengan vonis + draft komentar tinggal copy. Read-only, nggak pernah posting ke GitHub.
 
 ### Scaffolding / numbuhin produk
 - `/add-app` — nambah app baru pasca-init (declare → `architect` → `wire`).

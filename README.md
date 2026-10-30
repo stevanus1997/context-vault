@@ -133,6 +133,8 @@ Already have code? `/init` adopts an existing monorepo or multi-repo, and `/extr
 | `/guide` | Tour and Q&A about this plugin itself |
 | `/render-docs` | Human-readable HTML docs of the whole product for stakeholders |
 | `/share` | One HTML review page per feature for teammates; paste their feedback back to triage it |
+| `/sync` | Team work: catches `control/` up with code teammates already merged to each repo's main branch; writes everything to `control/` and opens a one-page business summary |
+| `/review-pr` | Reviews a teammate's PR (plus same-ticket PRs in other repos) in four lanes: consistency, best practice, cross-repo flow, contract. Opens an HTML report with a verdict and copy-ready comments; never posts to GitHub |
 
 ## Quick start
 

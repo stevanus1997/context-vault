@@ -5,7 +5,7 @@ description: Use untuk NYUSULIN control/ ke kode yang sudah merge di branch utam
 
 # sync — Nyusulin `control/` ke kode yang sudah merge
 
-> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya. Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
+> **Titik tunggu attended → `AskUserQuestion`:** tiap gate approve/revisi, Q&A keputusan, & konfirmasi yang nunggu jawaban user — tulis konten (draft/diff/ringkasan) sebagai teks DULU, lalu tanya lewat tool `AskUserQuestion` (pertanyaan pendek, opsi bawa konsekuensi); JANGAN akhiri turn dengan pertanyaan teks (tak memicu push Remote Control). Run unattended/headless tetap tak pernah bertanya (satu pengecualian: lihat §Batas). Detail: `${CLAUDE_PLUGIN_ROOT}/rules/ask-user.md`.
 
 Tujuan: `control/` cuma ada di laptop user, kodenya digarap banyak orang. `sync` membaca commit yang sudah merge ke branch utama tiap repo sejak patokan terakhir, mencatat **lengkap** ke file knowledge pemiliknya, lalu menampilkan **satu halaman ringkasan level bisnis**. User nggak baca daftar commit.
 

@@ -16,6 +16,8 @@ Tujuan: koreksi perilaku yang **sudah ada** & salah — TANPA menyeret pipeline 
 ## Langkah
 
 ### 1. Deteksi mode + triage (GATE)
+**Penjaga basi:** ${KIMI_SKILL_DIR}/../../rules/stale-guard.md (repo relevan = semua; dipersempit ke repo bug bila sudah jelas).
+
 Tentukan target nyangkut apa, lalu pilih mode:
 
 | Target | Mode | Aksi |
