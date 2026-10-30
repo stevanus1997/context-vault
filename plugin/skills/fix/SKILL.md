@@ -14,6 +14,8 @@ Tujuan: koreksi perilaku yang **sudah ada** & salah — TANPA menyeret pipeline 
 ## Langkah
 
 ### 1. Deteksi mode + triage (GATE)
+**Penjaga basi:** ${CLAUDE_PLUGIN_ROOT}/rules/stale-guard.md (repo relevan = semua; dipersempit ke repo bug bila sudah jelas).
+
 Tentukan target nyangkut apa, lalu pilih mode:
 
 | Target | Mode | Aksi |

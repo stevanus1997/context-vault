@@ -253,6 +253,14 @@ for s in sync_status.py context-vault:sync-reader assemble.py advance feature-ma
 [ -f "$AG" ] && grep -qxF 'tools: Read, Bash' "$AG" && grep -qF 'SendMessage' "$AG" && ok "K3 agent sync-reader" || bad "K3 agent sync-reader"
 grep -qF 'CLAUDE_PLUGIN_ROOT' "$SK"/*.py "$SK"/*.html && bad "K4 CLAUDE_PLUGIN_ROOT di script/template sync" || ok "K4 tanpa CLAUDE_PLUGIN_ROOT di .py/.html"
 
+# === G: penjaga basi (statis) ===
+SG="$ROOT/plugin/rules/stale-guard.md"
+[ -f "$SG" ] && grep -qF 'mungkin karena catatan basi' "$SG" && grep -qF -- '--format json' "$SG" \
+  && ok "G1 rules/stale-guard.md" || bad "G1 rules/stale-guard.md"
+for s in feature plan fix tweak; do
+  grep -qF 'rules/stale-guard.md' "$ROOT/plugin/skills/$s/SKILL.md" && ok "G2 $s memasang penjaga" || bad "G2 $s tanpa penjaga"; done
+grep -qF '`/sync`' "$ROOT/plugin/skills/ask/SKILL.md" && ok "G3 ask route → /sync" || bad "G3 ask tanpa /sync"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

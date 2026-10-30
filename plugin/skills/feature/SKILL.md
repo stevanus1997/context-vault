@@ -27,6 +27,8 @@ risk: normal           # (M7) low | normal | high — blast-radius build; high =
 (Bila sudah ada, lanjutkan dari tahap yang belum selesai — lihat artifact mana yang sudah ada.)
 
 ### 2. Jalankan tahap berurutan dengan gate
+**Penjaga basi:** sebelum tahap pertama, jalankan ${CLAUDE_PLUGIN_ROOT}/rules/stale-guard.md (repo relevan = semua).
+
 **Cek dependency (warn, BUKAN block — M1):** bila `feature.yaml` punya `depends_on` non-kosong, untuk tiap `<dep>` baca `control/features/<dep>/feature.yaml`. Bila `status` ≠ `shipped` (atau `dropped`/tak ditemukan), **tampilkan peringatan** (mis. `dep <X> belum shipped (status active)` / `<X> dropped — rencana mungkin basi` / `<X> tak ditemukan`) + **minta konfirmasi lanjut** — peringatan, BUKAN palang; user boleh lanjut (dependency sering dikerjakan paralel). Degrade: `depends_on` kosong/absen → skip diam-diam. Catatan jujur: di `/feature` run-pertama `depends_on` masih default `[]` (sizing-check intake mengisinya belakangan) → warn skip; warn bermakna pada run lanjutan / `depends_on` yang user isi manual.
 1. Invoke skill **`intake`** untuk `<nama>` → tunggu gate (approve `business.md`).
 2. Invoke skill **`fanout`** untuk `<nama>` → tunggu gate (approve `fanout.md`).

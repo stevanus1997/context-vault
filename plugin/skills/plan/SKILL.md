@@ -14,6 +14,8 @@ Tujuan: untuk tiap app yang kena fitur, susun plan implementasi konkret berbasis
 ## Langkah
 
 ### 1. Baca input
+**Penjaga basi:** ${CLAUDE_PLUGIN_ROOT}/rules/stale-guard.md dengan repo relevan = app di fanout.md (dilewati bila dipanggil feature dan penjaga sudah jalan di sesi ini).
+
 Baca `control/features/<fitur>/business.md` + `fanout.md` + `control/conventions.md` + `control/workspace.yaml` (untuk `path` & `stack` tiap app, **plus `packages[]` + `consumers[]` — read-only; `plan` tak pernah menulis `consumers[]`, itu jatah `fanout`**) + `control/integrations.md` (kontrak vendor eksternal — read-only) + `control/features/<fitur>/mockups/` (mockup UI yang diserahkan pengguna, **bila ada** — cek keberadaan saja; isi TIDAK di-parse di sini, diserahkan ke `build`) + `control/design-system.md` (fondasi visual — untuk jalur generate & konteks komponen app UI, read-only).
 
 ### 2. Selesaikan kontrak lintas-app dulu
