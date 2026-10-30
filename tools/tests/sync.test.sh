@@ -375,6 +375,46 @@ mkdir -p "$PX/control/business"; printf 'satu <!-- feature:fz -->\r\ndua\r\n' > 
 ss unmark --root "$PX" --feature fz > /dev/null
 [ "$(cat "$PX/control/business/crlf.md")" = "$(printf 'satu\r\ndua\r')" ] && ok "X6 unmark mempertahankan CRLF" || bad "X6 unmark mengubah line ending" "$(od -c "$PX/control/business/crlf.md" | head -3)"
 
+# === L: work-item in_review yang PR-nya sudah merge ===
+PL="$T/pl"; mkprod "$PL"; ss init --root "$PL" > /dev/null
+lmerge() { remote_commit "$PL" "$1" alice "$2"; git -C "$PL/$1" fetch -q origin; }
+lfeat() { mkdir -p "$PL/control/features/f1"; printf 'status: %s\nprs: %s\n' "$1" "$2" > "$PL/control/features/f1/feature.yaml"; }
+lfeat in_review '["api#12"]'
+ss status --root "$PL" > "$T/l0.json"
+check "L0 PR belum merge → land_pending kosong" "$T/l0.json" "d['land_pending']==[]"
+lmerge api "feat: x (#12)"
+ss status --root "$PL" > "$T/l1.json"
+check "L1 land_pending memuat f1" "$T/l1.json" "d['land_pending']==['f1']"
+ss status --root "$PL" --format hook > "$T/l1h.json"
+check "L2 hook menyebut /land f1" "$T/l1h.json" "'/land f1' in d['hookSpecificOutput']['additionalContext']"
+lfeat in_review '["api#12", "web#7"]'
+ss status --root "$PL" > "$T/l3.json"
+check "L3 baru satu dari dua merge → kosong" "$T/l3.json" "d['land_pending']==[]"
+lmerge web "feat: y (#7)"
+ss status --root "$PL" > "$T/l3b.json"
+check "L3 dua-duanya merge → muncul" "$T/l3b.json" "d['land_pending']==['f1']"
+lfeat shipped '["api#12"]'
+ss status --root "$PL" > "$T/l4.json"
+check "L4 status shipped → kosong" "$T/l4.json" "d['land_pending']==[]"
+lfeat in_review '[]'
+ss status --root "$PL" > "$T/l5.json"
+check "L5 prs kosong → kosong" "$T/l5.json" "d['land_pending']==[]"
+lfeat in_review '["ghost#1"]'
+ss status --root "$PL" > "$T/l5b.json"
+check "L5 PR repo tak dikenal → kosong" "$T/l5b.json" "d['land_pending']==[]"
+rm -rf "$PL/control/features/f1"
+mkdir -p "$PL/control/fixes/y"; printf 'status: in_review\nfix_pr: "api#12"\n' > "$PL/control/fixes/y/fix.yaml"
+ss status --root "$PL" > "$T/l6.json"
+check "L6 fix ditulis fix:<id>" "$T/l6.json" "d['land_pending']==['fix:y']"
+ss status --root "$PL" --format hook > "$T/l6h.json"
+check "L6 hook fix memakai id polos" "$T/l6h.json" "'/land y' in d['hookSpecificOutput']['additionalContext']"
+PL2="$T/pl2"; mkprod "$PL2"; mkdir -p "$PL2/control/features/f1"
+printf 'status: in_review\nprs: ["api#12"]\n' > "$PL2/control/features/f1/feature.yaml"
+out="$(ss status --root "$PL2" --format hook)"
+[ -z "$out" ] && ok "L7 tanpa sync.yaml hook tetap diam" || bad "L7 hook bicara" "$out"
+ss status --root "$PL2" > "$T/l7.json"
+check "L7 tanpa sync.yaml field tetap ada" "$T/l7.json" "d['land_pending']==[]"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 
