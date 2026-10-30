@@ -278,6 +278,71 @@ for r in README.md README.id.md; do
   && [ ! -e "$ROOT/plugin-kimi/hooks" ] && ok "I5 plugin-kimi memuat sync + review-pr, tanpa hooks" || bad "I5 plugin-kimi belum diregen"
 grep -qF 'context-vault:sync-reader' "$ROOT/plugin-kimi/rules/kimi-harness.md" 2>/dev/null && ok "I5 kimi-harness memetakan sync-reader" || bad "I5 kimi-harness tanpa sync-reader"
 
+# === F: perbaikan review akhir ===
+PF="$T/pf"; mkprod "$PF"; ss init --root "$PF" > /dev/null
+# I3 — repo force-push / app baru terlihat di status, hook, penjaga
+WF="$PF.work/api"; remote_commit "$PF" api alice "x"
+RC0="$(git -C "$WF" rev-list --max-parents=0 HEAD | tail -1)"
+git -C "$WF" reset -q --hard "$RC0"; gcommit "$WF" alice "baru"; git -C "$WF" push -q --force origin HEAD:main 2>/dev/null
+git -C "$PF/api" fetch -q 2>/dev/null
+mkdir -p "$PF/extra"; git init -q -b main "$PF/extra"; gcommit "$PF/extra" alice "init"
+printf '  - name: extra\n    path: extra\n' > "$T/extra.yaml"
+$PY - "$PF/control/workspace.yaml" "$T/extra.yaml" <<'PY2'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace('packages: []\n', open(sys.argv[2]).read() + 'packages: []\n'); open(p, 'w').write(s)
+PY2
+ss status --root "$PF" > "$T/f1.json"
+check "F1 needs_baseline = repo force-push + app baru" "$T/f1.json" "sorted(d['needs_baseline'])==['api','extra'] and d['stale']==[]"
+ss status --root "$PF" --format hook > "$T/f1h.json"
+check "F1 hook menyebut repo perlu baseline ulang" "$T/f1h.json" "'api' in d['hookSpecificOutput']['additionalContext'] and 'extra' in d['hookSpecificOutput']['additionalContext'] and 'patokan' in d['hookSpecificOutput']['additionalContext']"
+grep -qF 'needs_baseline' "$ROOT/plugin/rules/stale-guard.md" && ok "F1 penjaga menawarkan /sync untuk needs_baseline" || bad "F1 stale-guard tanpa needs_baseline"
+# I4 — status --fetch menyusulkan repo yang belum di-pull
+PG="$T/pg"; mkprod "$PG"; ss init --root "$PG" > /dev/null
+remote_commit "$PG" web alice "feat: w (#5)"
+ss status --root "$PG" > "$T/f2a.json"
+check "F2 tanpa --fetch: web belum kelihatan" "$T/f2a.json" "d['stale']==[]"
+ss status --root "$PG" --fetch > "$T/f2.json"; rc=$?
+[ $rc -eq 0 ] && check "F2 status --fetch: web behind 1" "$T/f2.json" "$(repo web)['behind']==1 and d['stale']==['web']" || bad "F2 status --fetch exit $rc"
+grep -qF 'status --root . --fetch' "$SK/SKILL.md" && ok "F2 SKILL sync: status --fetch dulu" || bad "F2 SKILL sync tanpa status --fetch"
+# I6 — 11 repo, hook < 1 detik
+PH="$T/ph"; mkdir -p "$PH/control"; printf 'product: Besar\napps:\n' > "$PH/control/workspace.yaml"
+for i in 01 02 03 04 05 06 07 08 09 10 11; do
+  _mkrepo "$PH" "r$i"; printf '  - name: r%s\n    path: r%s\n' "$i" "$i" >> "$PH/control/workspace.yaml"; done
+printf 'packages: []\n' >> "$PH/control/workspace.yaml"
+ss init --root "$PH" > /dev/null
+for i in 01 05 09; do remote_commit "$PH" "r$i" alice "feat $i"; git -C "$PH/r$i" fetch -q; done
+ss status --root "$PH" --format hook > /dev/null
+MS="$($PY - "$SK/sync_status.py" "$PH" <<'PY2'
+import subprocess, sys, time
+best = 9e9
+for _ in range(5):
+    t = time.monotonic()
+    subprocess.run([sys.executable, '-B', sys.argv[1], 'status', '--root', sys.argv[2], '--format', 'hook'], capture_output=True)
+    best = min(best, time.monotonic() - t)
+print(int(best * 1000))
+PY2
+)"
+[ "$MS" -lt 1000 ] && ok "F3 hook 11 repo ${MS}ms < 1000ms" || bad "F3 hook 11 repo ${MS}ms ≥ 1000ms"
+check "F3 hasil tetap benar" <(ss status --root "$PH") "sorted(d['stale'])==['r01','r05','r09'] and all(r['behind_all']==(1 if r['key'] in ('r01','r05','r09') else 0) for r in d['repos'])"
+# M1 — unmark YAML tak memakan baris kosong / newline akhir
+PU="$T/pu"; mkdir -p "$PU/control"
+printf 'apps:\n  - name: a\n    capabilities:\n      - x # feature:f9\n\n  - name: b\n' > "$PU/control/workspace.yaml"
+ss unmark --root "$PU" --feature f9 > /dev/null
+[ "$(cat "$PU/control/workspace.yaml"; echo .)" = "$(printf 'apps:\n  - name: a\n    capabilities:\n      - x\n\n  - name: b\n.')" ] \
+  && ok "F4 unmark YAML: baris kosong & newline akhir utuh" || bad "F4 unmark merusak format" "$(cat -e "$PU/control/workspace.yaml")"
+# I5 — baris bentrok sync bisa ditemukan & dibereskan saat ship
+mkdir -p "$PU/control/business" "$PU/control/features/f9"; printf 'status: active\n' > "$PU/control/features/f9/feature.yaml"
+printf -- '- Maks 5x <!-- feature:f9 -->\n- Maks 3x <!-- sync-conflict:f9 abc1234 2026-10-30 -->\n' > "$PU/control/business/flows.md"
+ss markers --root "$PU" --feature f9 > "$T/f5.json"
+check "F5 markers: kind feature + conflict" "$T/f5.json" "sorted((m['kind'],m['line']) for m in d if m['file']=='control/business/flows.md')==[('conflict',2),('feature',1)] and all(m['feature']=='f9' for m in d)"
+ss unmark --root "$PU" --feature f9 > /dev/null
+grep -qF 'sync-conflict:f9' "$PU/control/business/flows.md" && ok "F5 unmark tak menghapus penanda bentrok" || bad "F5 unmark ikut menghapus sync-conflict"
+grep -qF 'sync-conflict' "$SK/reference.md" && grep -qF 'sync-conflict' "$ROOT/plugin/skills/ship/SKILL.md" \
+  && ok "F5 sync menulis sync-conflict, ship membereskannya" || bad "F5 sync/ship tanpa sync-conflict"
+# M10 — balikan sync-reader tak hilang bila SendMessage tak tersedia
+grep -qF 'SendMessage tak tersedia' "$ROOT/plugin/agents/sync-reader.md" && ok "F6 sync-reader: fallback teks akhir" || bad "F6 sync-reader tanpa fallback"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

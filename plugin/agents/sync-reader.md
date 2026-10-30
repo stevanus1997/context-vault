@@ -31,4 +31,4 @@ Dilarang: menulis file apa pun, `git fetch`, `checkout`, `switch`, `stash`, `res
 6. Rahasia/PII: SHAPE saja (nama field/variabel), jangan pernah nilai.
 
 ## Balikan
-JSON list sesuai `reference.md` §1 (kosong `[]` bila tak ada yang terbukti), tanpa teks lain. Kirim **SEKALI** lewat `SendMessage` ke `main`, lalu teks akhirmu persis `.` (agent bernama: teks akhir ikut terkirim lagi lewat idle notification, jadi jangan diulang).
+JSON list sesuai `reference.md` §1 (kosong `[]` bila tak ada yang terbukti), tanpa teks lain. Kirim **SEKALI** lewat `SendMessage` ke `main`, lalu teks akhirmu persis `.` (agent bernama: teks akhir ikut terkirim lagi lewat idle notification, jadi jangan diulang). SendMessage tak tersedia di harness-mu → JSON itu jadi teks akhirmu (tanpa teks lain).

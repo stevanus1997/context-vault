@@ -51,11 +51,17 @@ def slug(key: str) -> str:
 
 
 def load_repos(root: Path) -> dict[str, str]:
-    """owner/repo (huruf kecil) → repo_key, dari repo_url app/package di workspace.yaml."""
+    """owner/repo (huruf kecil) → repo_key, dari repo_url app/package di workspace.yaml. Repo tanpa
+    repo_url yang cocok (monorepo: `repo_url` dikosongkan) → fallback `git remote get-url origin`."""
+    ss = _sync_status()
     out = {}
-    for repo in _sync_status().load_workspace(root):
-        for unit in repo['units']:
-            m = REPO_URL_RE.search(str(unit.get('repo_url') or ''))
+    for repo in ss.load_workspace(root):
+        urls = [str(u.get('repo_url') or '') for u in repo['units']]
+        if not any(REPO_URL_RE.search(u) for u in urls) and not repo['error']:
+            rc, origin = ss.git(repo['path'], 'remote', 'get-url', 'origin')
+            urls = [origin] if rc == 0 else []
+        for url in urls:
+            m = REPO_URL_RE.search(url)
             if m:
                 out.setdefault(f'{m.group(1)}/{m.group(2)}'.lower(), repo['key'])
     return out
@@ -126,6 +132,18 @@ def cmd_inbox(args, repos) -> object:
                     'ticket': ticket_of(pr.get('title')),
                     'reviewed_local': (Path(args.root) / '.claude' / 'review' /
                                        f'{slug(key)}-{pr.get("number")}.html').is_file()})
+    if not out and repos:
+        # `gh search` tidak pernah 404 di akun yang salah — cuma kosong. Pastikan akun aktif bisa
+        # melihat repo produk; tidak bisa → exit 5 + hint, bukan daftar kosong yang menyesatkan (D16).
+        try:
+            gh('api', f'repos/{sorted(repos)[0]}')
+        except GhError as e:
+            if e.code == 5:
+                try:
+                    e.payload['account'] = (gh('api', 'user') or {}).get('login')
+                except GhError:
+                    pass
+            raise
     return sorted(out, key=lambda x: (x['created'], x['owner_repo'], x['number'] or 0))
 
 
@@ -142,14 +160,23 @@ def cmd_siblings(args, repos) -> object:
     exclude = parse_pr(args.exclude, repos) if args.exclude else None
     exclude = (exclude[0].lower(), exclude[1]) if exclude else None
     rx = re.compile(r'\b' + re.escape(args.ticket) + r'\b')
-    out = []
+    out, failed = [], []
     for owner_repo in sorted(repos):
-        for pr in gh('pr', 'list', '--repo', owner_repo, '--state', 'open', '--search', args.ticket,
-                     '--json', PR_FIELDS) or []:
+        try:
+            found = gh('pr', 'list', '--repo', owner_repo, '--state', 'open', '--search', args.ticket,
+                       '--json', PR_FIELDS) or []
+        except GhError as e:   # satu repo tak terjangkau jangan menggagalkan semua — lapor di stderr
+            failed.append(e)
+            print(json.dumps({'warning': 'repo dilewati', 'repo': owner_repo, **e.payload}, ensure_ascii=False),
+                  file=sys.stderr)
+            continue
+        for pr in found:
             if exclude == (owner_repo, pr.get('number')):
                 continue
             if rx.search(pr.get('headRefName') or '') or rx.search(pr.get('title') or ''):
                 out.append(_view_shape(pr, owner_repo, repos))
+    if failed and len(failed) == len(repos):
+        raise failed[0]
     return out
 
 

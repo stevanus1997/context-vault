@@ -14,14 +14,14 @@ Checklist per lapis, contoh temuan, skema JSON laporan, pilihan `evidence`, dan 
 ### 1. Pilih PR
 - **Tanpa argumen** → `PRS inbox --root .`. Tampilkan tabel ringkas (repo · judul · penulis · umur · sudah direview lokal?). Lalu `AskUserQuestion` dengan PR sebagai opsi (maks 4, paling lama dulu). Lebih dari 4 → tampilkan tabel bernomor dan minta user ketik nomornya. Kosong → bilang "nggak ada PR yang minta review lo di repo produk ini", STOP.
 - **Argumen** URL / `owner/repo#n` / `repo-key#n` → `PRS view --root . --pr <arg>`.
-- Exit 4 (`gh` tak ada) atau exit 5 (`gh-auth`: akun aktif mungkin bukan akun kerja) → sampaikan `hint` dari JSON apa adanya, lalu STOP. Tidak pernah ganti akun `gh` sendiri.
+- Exit 4 (`gh` tak ada) atau exit 5 (`gh-auth`: akun aktif mungkin bukan akun kerja — `inbox` kosong juga dicek ke repo produk, dan `account` menyebut akun yang aktif) → sampaikan `hint` (+ `account` bila ada) apa adanya, lalu STOP. Tidak pernah ganti akun `gh` sendiri.
 - PR di luar repo produk (`repo_key: null`) → bilang repo itu tak terdaftar di `workspace.yaml` (→ `/add-app`), STOP.
 
 ### 2. Penjaga basi
 `${KIMI_SKILL_DIR}/../../rules/stale-guard.md` dengan repo relevan = repo PR terpilih + repo PR saudaranya (langkah 3; jalankan setelah daftar PR gabungan diketahui). Skip → temuan yang bersandar ke knowledge repo basi diberi `stale: true`, dan repo itu masuk `stale_repos`.
 
 ### 3. Gabung per tiket
-`ticket` ada → `PRS siblings --root . --ticket <T> --exclude <owner/repo#n>`. Tampilkan daftar gabungan dalam satu kalimat ("BLCS-5302: LBOFE #1482, LTS #911, LSS #377"), lalu lanjut tanpa bertanya. Tanpa tiket → satu PR saja.
+`ticket` ada → `PRS siblings --root . --ticket <T> --exclude <owner/repo#n>`. Tampilkan daftar gabungan dalam satu kalimat ("BLCS-5302: LBOFE #1482, LTS #911, LSS #377"), lalu lanjut tanpa bertanya. Tanpa tiket → satu PR saja. Baris `{"warning": "repo dilewati", …}` di stderr `siblings` → sebut repo itu sekali di chat ("PR saudara di <repo> nggak kebaca") lalu lanjut.
 
 ### 4. Kumpulkan bahan (read-only)
 Per PR:

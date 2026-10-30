@@ -36,7 +36,7 @@ Peta file → jenis perubahan:
 
 Prosedur per `writes[]`:
 1. `op: update` → `old` harus ketemu persis **satu kali** di file. Tidak ketemu / lebih dari satu → lewati, sebut di chat. Jangan menebak.
-2. Baris `old` memuat penanda `<!-- feature:<f> -->` / `# feature:<f>` dengan `<f>` di daftar `markers --status active,draft` → **jangan ganti**. Sisipkan `new` di baris berikutnya (jejak sync), lalu tambah `conflicts`: `{"feature": f, "file": <file relatif control/>, "master": new, "yours": old tanpa penanda}`.
+2. Baris `old` memuat penanda `<!-- feature:<f> -->` / `# feature:<f>` dengan `<f>` di daftar `markers --status active,draft` → **jangan ganti**. Sisipkan `new` di baris berikutnya dengan penanda bentrok ` <!-- sync-conflict:<f> <sha7> <YYYY-MM-DD> -->` (Markdown) / ` # sync-conflict:<f> <sha7> <YYYY-MM-DD>` (YAML) — **bukan** jejak sync biasa, supaya `markers` (kind `conflict`) dan `ship` bisa menemukannya. Lalu tambah `conflicts`: `{"feature": f, "file": <file relatif control/>, "master": new, "yours": old tanpa penanda}`.
 3. `op: add` → sisipkan setelah baris `anchor` (heading/bullet terakhir di bagian itu). `anchor: null` → akhir file. Hindari duplikat: fakta serupa sudah ada → ubah jadi `update` atau lewati.
 4. Jejak: Markdown → tambahkan ` <!-- sync <sha7> <YYYY-MM-DD> -->` di ujung baris. YAML → ` # sync <sha7> <YYYY-MM-DD>` di ujung baris nilai. Baris YAML yang sudah punya komentar → ganti komentar lama dengan jejak sync (kecuali penanda fitur: lihat langkah 2).
 5. Setelah menulis `workspace.yaml`, pastikan masih valid: `python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/sync/sync_status.py status --root .` tidak mengembalikan `reason` "gagal membaca control/…".

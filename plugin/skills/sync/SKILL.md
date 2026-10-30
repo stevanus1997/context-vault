@@ -25,11 +25,11 @@ Unattended/headless → **STOP** dengan satu kalimat ("sync tidak pernah jalan o
 5. Opsi pertama → **selesai** (tanpa ringkasan). Opsi kedua → lanjut ke langkah 2.
 
 ### 2. Hitung
-1. `SS status --root .`. Per repo:
+1. `SS status --root . --fetch` (fetch SEMUA repo berpatokan dulu, paralel — repo yang belum di-pull user ikut tersusul). Per repo:
    - `error: "patokan hilang dari riwayat"` (branch utama di-force-push) → `AskUserQuestion`: baseline ulang repo itu (`SS init --force --only <key> --root .`) / skip repo itu.
    - `error: "belum ada patokan"` (app baru di `workspace.yaml`) → tawarkan `SS init --force --only <key> --root .` (`need_base` → `--base <key>=<ref>`).
    - `error` lain (bukan repo git, ref tak ada) → catat untuk `stale_note`, lewati.
-2. Per repo yang `behind_all > 0`: `SS range --root . --repo <key> --fetch > .claude/sync/work/<slug>-range.json` (`<slug>` = key dengan `/`→`-`, `.` → `root`). `fetch_error` → lanjut dari ref lokal, catat di `stale_note`.
+2. `mkdir -p .claude/sync/work`. Per repo yang `behind_all > 0`: `SS range --root . --repo <key> > .claude/sync/work/<slug>-range.json` (`<slug>` = key dengan `/`→`-`, `.` → `root`; tanpa `--fetch` lagi — sudah di langkah 1). `fetch_error` di langkah 1 → lanjut dari ref lokal, catat di `stale_note`.
 3. Commit `bot: true` atau `own: true` **tidak dibaca**, cukup dihitung. Repo yang semua commit-nya bot/own → langsung ke langkah 5.
 4. `.gitignore` (self-heal): baris `.claude/sync/` belum ada (`grep -qxF`) → append.
 
@@ -38,14 +38,16 @@ Dispatch `context-vault:sync-reader` **paralel, satu per repo basi** (dengan `na
 - root produk, `key`, `path` repo, path file range JSON;
 - daftar file knowledge yang ada (`control/business/*.md`, `invariants.md`, `conventions.md`, `integrations.md`, `design-system.md`, `schema/*.md`, `workspace.yaml`);
 - output `SS markers --root . --status active,draft`, dan `contracts_repos` dari `sync.yaml`;
-- `Balikan SEKALI: SendMessage ke main, lalu teks akhir persis "."`.
+- `Balikan SEKALI: SendMessage ke main, lalu teks akhir persis "." (SendMessage tak tersedia → JSON jadi teks akhir)`.
+
+Balikan tak datang lewat pesan → pakai teks akhir agent itu. Teks akhir `.` tanpa pesan apa pun → dispatch ulang repo itu sekali, lalu lewati (patokan repo itu tidak maju).
 
 Range > 60 commit non-bot/non-own → pecah per 60 (sebut rentang indeks di prompt), lebih dari satu dispatch per repo.
 
 ### 4. Tulis ke `control/`
 Controller (bukan subagent) menerapkan usulan tulis sesuai `reference.md` §2:
 - Tiap baris yang ditulis diberi jejak `<!-- sync <sha7> <YYYY-MM-DD> -->` (Markdown) / `# sync <sha7> <YYYY-MM-DD>` (YAML).
-- **Penanda fitur menang:** usulan yang mengenai baris ber-penanda fitur `draft`/`active` (daftar `markers`) **tidak diterapkan**. Tulis versi master **di baris baru di sampingnya** dengan jejak sync, lalu masukkan ke `conflicts` ringkasan.
+- **Penanda fitur menang:** usulan yang mengenai baris ber-penanda fitur `draft`/`active` (daftar `markers`) **tidak diterapkan**. Tulis versi master **di baris baru di sampingnya** dengan penanda bentrok `<!-- sync-conflict:<f> <sha7> <YYYY-MM-DD> -->` / `# sync-conflict:<f> <sha7> <YYYY-MM-DD>` (bukan jejak sync biasa), lalu masukkan ke `conflicts` ringkasan. `ship` fitur itu yang membereskannya.
 - **Larangan (D8):** jangan menambah entri app/package/vendor baru (jadikan `pointers` → `/add-app`, `/add-package`, `/add-integration`), dan jangan menyentuh `control/features/**` / `control/fixes/**`.
 - Usulan yang `old`-nya tidak ketemu persis satu kali → jangan ditebak. Lewati, sebut di chat.
 

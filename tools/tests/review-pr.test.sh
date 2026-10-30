@@ -22,8 +22,13 @@ cat > "$T/bin/gh" <<'SH'
 if [ -n "${GH_FAIL:-}" ]; then echo "$GH_FAIL" >&2; exit 1; fi
 repo=""; prev=""
 for a in "$@"; do [ "$prev" = "--repo" ] && repo="$a"; prev="$a"; done
+if [ "$1" = api ]; then
+  [ -n "${GH_API_FAIL:-}" ] && [ "$2" != user ] && { echo "$GH_API_FAIL" >&2; exit 1; }
+  [ "$2" = user ] && echo '{"login": "akun-pribadi"}' || echo '{"full_name": "ok"}'; exit 0
+fi
+if [ -n "${GH_FAIL_REPO:-}" ] && [ "$repo" = "$GH_FAIL_REPO" ]; then echo "HTTP 404: Not Found" >&2; exit 1; fi
 case "$1 $2" in
-  "search prs") cat "$GH_DIR/search.json" ;;
+  "search prs") cat "$GH_DIR/${GH_SEARCH:-search}.json" ;;
   "pr view")    cat "$GH_DIR/view-${repo//\//_}-$3.json" ;;
   "pr list")    f="$GH_DIR/list-${repo//\//_}.json"; [ -f "$f" ] && cat "$f" || echo '[]' ;;
   *) echo "stub gh: tak dikenal: $*" >&2; exit 1 ;;
@@ -172,6 +177,22 @@ for s in prs.py stale-guard.md feature-marker.md refs/cv-review assemble.py AskU
 grep -qE 'checkout|switch|stash' "$SM" 2>/dev/null && grep -E 'checkout|switch|stash' "$SM" | grep -vqiE 'dilarang|tidak pernah|jangan' \
   && bad "W3 checkout/switch/stash di luar larangan" || ok "W3 checkout/switch/stash hanya larangan"
 grep -qF 'CLAUDE_PLUGIN_ROOT' "$SK"/*.py "$SK"/*.html && bad "W4 CLAUDE_PLUGIN_ROOT di script/template review-pr" || ok "W4 tanpa CLAUDE_PLUGIN_ROOT di .py/.html"
+
+# === Q: perbaikan review akhir ===
+echo '[]' > "$T/gh/empty.json"
+GH_SEARCH=empty GH_API_FAIL="HTTP 404: Not Found" prs inbox --root "$P" > "$T/q1.json"; rc=$?
+[ $rc -eq 5 ] && ok "Q1 inbox kosong + repo produk 404 → exit 5" || bad "Q1 exit $rc (harap 5)" "$(cat "$T/q1.json")"
+check "Q1 gh-auth + hint + akun aktif" "$T/q1.json" "d['error']=='gh-auth' and 'gh auth switch' in d['hint'] and d.get('account')=='akun-pribadi'"
+GH_SEARCH=empty prs inbox --root "$P" > "$T/q1b.json"; rc=$?
+[ $rc -eq 0 ] && check "Q1 inbox kosong + repo terjangkau → [] exit 0" "$T/q1b.json" "d==[]" || bad "Q1b exit $rc"
+P2="$T/p2"; mkdir -p "$P2/control"
+for a in api web; do git init -q -b main "$P2/$a"; git -C "$P2/$a" remote add origin "https://github.com/acme/$a.git"; done
+printf 'product: Mono\napps:\n  - name: api\n    path: api\n    repo_url: ""\n  - name: web\n    path: web\npackages: []\n' > "$P2/control/workspace.yaml"
+prs inbox --root "$P2" > "$T/q2.json"; rc=$?
+[ $rc -eq 0 ] && check "Q2 repo_url kosong → fallback remote origin" "$T/q2.json" "[(x['owner_repo'],x['repo_key']) for x in d]==[('acme/api','api'),('acme/web','web')]" || bad "Q2 exit $rc" "$(cat "$T/q2.json")"
+GH_FAIL_REPO=acme/api prs siblings --root "$P" --ticket BLCS-5302 --exclude 'acme/web#99' > "$T/q3.json" 2> "$T/q3.err"; rc=$?
+[ $rc -eq 0 ] && check "Q3 satu repo tak terjangkau → repo lain tetap" "$T/q3.json" "sorted(x['number'] for x in d)==[8,10]" || bad "Q3 exit $rc" "$(cat "$T/q3.json")"
+grep -qF 'acme/api' "$T/q3.err" && ok "Q3 peringatan repo gagal di stderr" || bad "Q3 tanpa peringatan" "$(cat "$T/q3.err")"
 
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"

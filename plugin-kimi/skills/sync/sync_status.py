@@ -4,7 +4,7 @@
 Satu-satunya penulis control/sync.yaml. Dipakai skill sync, penjaga basi skill lain
 (rules/stale-guard.md), dan hook SessionStart (hooks/sync-check.sh). Output JSON ke stdout.
 
-  status  --root DIR [--repos k1,k2] [--format json|hook]
+  status  --root DIR [--repos k1,k2] [--format json|hook] [--fetch]
   init    --root DIR [--since YYYY-MM-DD] [--contracts a,b] [--base KEY=REF ...] [--force] [--only KEY]
   advance --root DIR --repo KEY --sha SHA
   range   --root DIR --repo KEY [--fetch]
@@ -27,10 +27,13 @@ import json
 import os
 import re
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 HERE = Path(__file__).resolve()
 BUILD_STATUS = HERE.parents[2] / 'template' / '.claude' / 'build_status.py'
+WORKERS = 8           # git paralel antar-repo: hook SessionStart harus < 1 detik untuk ~11 repo (spec D4)
+NEEDS_BASELINE = ('patokan hilang dari riwayat', 'belum ada patokan')
 BOT_RE = re.compile(r'(-bot|\[bot\])$')
 DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 HEADER = ('# control/sync.yaml — patokan sinkron control/ ↔ branch utama tiap repo.\n'
@@ -79,12 +82,18 @@ def load_workspace(root: Path) -> list[dict]:
     ws = ws if isinstance(ws, dict) else {}
     real_root = os.path.realpath(root)
     repos: dict[str, dict] = {}
-    for unit in _as_list(ws.get('apps')) + _as_list(ws.get('packages')):
-        if not isinstance(unit, dict) or not isinstance(unit.get('name'), str):
-            continue
-        rel = unit.get('path') if isinstance(unit.get('path'), str) else unit['name']
+    units = [u for u in _as_list(ws.get('apps')) + _as_list(ws.get('packages'))
+             if isinstance(u, dict) and isinstance(u.get('name'), str)]
+    rels = [u.get('path') if isinstance(u.get('path'), str) else u['name'] for u in units]
+
+    def toplevel(rel):
         p = root / rel
-        rc, top = git(p, 'rev-parse', '--show-toplevel') if p.is_dir() else (1, '')
+        return git(p, 'rev-parse', '--show-toplevel') if p.is_dir() else (1, '')
+
+    with ThreadPoolExecutor(WORKERS) as ex:
+        tops = list(ex.map(toplevel, rels))
+    for unit, rel, (rc, top) in zip(units, rels, tops):
+        p = root / rel
         if rc == 0 and top:
             key = os.path.relpath(os.path.realpath(top), real_root)
             path, error = os.path.realpath(top), None
@@ -176,18 +185,28 @@ def repo_status(repo: dict, entry: dict | None, bots: set[str]) -> dict:
     if not _is_ancestor(repo['path'], synced, head):
         out['error'] = 'patokan hilang dari riwayat'
         return out
-    rc1, n = git(repo['path'], 'rev-list', '--count', '--first-parent', f'{synced}..{head}')
-    rc2, authors = git(repo['path'], 'log', '--first-parent', '--format=%an', f'{synced}..{head}')
-    if rc1 or rc2 or not n.isdigit():
+    # satu panggilan: tiap baris = satu commit first-parent (prefix '@' agar author kosong tetap terhitung)
+    rc, log = git(repo['path'], 'log', '--first-parent', '--format=@%an', f'{synced}..{head}')
+    if rc:
         out['error'] = 'gagal menghitung selisih'
         return out
-    out['behind_all'] = int(n)
-    out['behind'] = sum(1 for a in authors.splitlines() if a and a not in bots)
+    authors = [a[1:] for a in log.splitlines() if a.startswith('@')]
+    out['behind_all'] = len(authors)
+    out['behind'] = sum(1 for a in authors if a not in bots)
     return out
 
 
-def compute_status(root: Path, only: list[str] | None = None) -> dict:
-    res = {'initialized': False, 'reason': None, 'repos': [], 'stale': []}
+def fetch_repo(path: str) -> str | None:
+    """`git fetch --quiet origin`; None = sukses, selain itu baris pertama error."""
+    try:
+        r = subprocess.run(['git', '-C', path, 'fetch', '--quiet', 'origin'], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as e:
+        return f'git fetch gagal: {e}'
+    return (r.stderr.strip().splitlines() or ['git fetch gagal'])[0] if r.returncode else None
+
+
+def compute_status(root: Path, only: list[str] | None = None, fetch: bool = False) -> dict:
+    res = {'initialized': False, 'reason': None, 'repos': [], 'stale': [], 'needs_baseline': []}
     if not (root / 'control' / 'workspace.yaml').is_file():
         res['reason'] = 'bukan produk context-vault'
         return res
@@ -197,23 +216,37 @@ def compute_status(root: Path, only: list[str] | None = None) -> dict:
         return res
     res['initialized'] = True
     bots = set(sync['bot_authors'])
-    for repo in load_workspace(root):
-        if only and repo['key'] not in only and not set(repo['apps']) & set(only):
-            continue
-        res['repos'].append(repo_status(repo, sync['repos'].get(repo['key']), bots))
+    repos = [r for r in load_workspace(root)
+             if not only or r['key'] in only or set(r['apps']) & set(only)]
+    with ThreadPoolExecutor(WORKERS) as ex:
+        fetched = {}
+        if fetch:
+            todo = [r for r in repos if not r['error'] and r['key'] in sync['repos']]
+            fetched = dict(zip((r['key'] for r in todo), ex.map(lambda r: fetch_repo(r['path']), todo)))
+        res['repos'] = list(ex.map(lambda r: repo_status(r, sync['repos'].get(r['key']), bots), repos))
+    for r in res['repos']:
+        if fetch:
+            r['fetch_error'] = fetched.get(r['key'])
     res['stale'] = [r['key'] for r in res['repos'] if r['behind']]
+    res['needs_baseline'] = [r['key'] for r in res['repos'] if r['error'] in NEEDS_BASELINE]
     return res
 
 
 def hook_text(res: dict) -> str | None:
     stale = [r for r in res['repos'] if r['behind']]
-    if not stale:
+    rebase = res.get('needs_baseline') or []
+    if not stale and not rebase:
         return None
-    total = sum(r['behind'] for r in stale)
-    since = min((str(r['synced_at']) for r in stale if r['synced_at']), default='?')
-    per = ', '.join(f"{r['key']} ({r['behind']})" for r in stale)
-    return (f'[context-vault] control/ ketinggalan {total} commit (di luar bot) sejak {since}: {per}. '
-            'Jangan sinkron sendiri — skill feature/plan/fix/tweak/review-pr akan menawarkan /sync dulu.')
+    parts = []
+    if stale:
+        total = sum(r['behind'] for r in stale)
+        since = min((str(r['synced_at']) for r in stale if r['synced_at']), default='?')
+        per = ', '.join(f"{r['key']} ({r['behind']})" for r in stale)
+        parts.append(f'control/ ketinggalan {total} commit (di luar bot) sejak {since}: {per}.')
+    if rebase:
+        parts.append(f"Repo yang patokan sinkronnya perlu diulang (branch utama di-force-push / app baru): {', '.join(rebase)}.")
+    return ('[context-vault] ' + ' '.join(parts) +
+            ' Jangan sinkron sendiri — skill feature/plan/fix/tweak/review-pr akan menawarkan /sync dulu.')
 
 
 def _csv(s: str | None) -> list[str]:
@@ -223,11 +256,12 @@ def _csv(s: str | None) -> list[str]:
 def cmd_status(args) -> int:
     root = Path(args.root)
     try:
-        res = compute_status(root, _csv(args.repos) or None)
+        res = compute_status(root, _csv(args.repos) or None, fetch=args.fetch)
     except Exception as e:  # workspace/sync.yaml rusak — jangan pernah crash (hook/penjaga)
         if args.format == 'hook':
             return 1
-        res = {'initialized': False, 'reason': f'gagal membaca control/: {e}', 'repos': [], 'stale': []}
+        res = {'initialized': False, 'reason': f'gagal membaca control/: {e}', 'repos': [], 'stale': [],
+               'needs_baseline': []}
     if args.format == 'hook':
         text = hook_text(res)
         if text:
@@ -397,15 +431,7 @@ def cmd_range(args) -> int:
     if not repo or repo['error'] or not entry:
         print(f'repo tanpa patokan: {args.repo}', file=sys.stderr)
         return 1
-    fetch_error = None
-    if args.fetch:
-        try:
-            r = subprocess.run(['git', '-C', repo['path'], 'fetch', '--quiet', 'origin'],
-                               capture_output=True, text=True, timeout=60)
-            if r.returncode:
-                fetch_error = (r.stderr.strip().splitlines() or ['git fetch gagal'])[0]
-        except (OSError, subprocess.SubprocessError) as e:
-            fetch_error = f'git fetch gagal: {e}'
+    fetch_error = fetch_repo(repo['path']) if args.fetch else None
     st = repo_status(repo, entry, set(sync['bot_authors']))
     if st['error']:
         print(f"{args.repo}: {st['error']}", file=sys.stderr)
@@ -431,6 +457,10 @@ def cmd_range(args) -> int:
 
 MD_MARK = re.compile(r'<!-- feature:([a-z0-9][a-z0-9-]*) -->')
 YAML_MARK = re.compile(r'#\s*feature:([a-z0-9][a-z0-9-]*)\s*$')
+# Baris versi master yang ditulis sync di samping baris ber-penanda fitur aktif (bentrok, D25).
+# Dibereskan ship sebelum unmark; unmark sendiri tidak menyentuhnya.
+MD_CONFLICT = re.compile(r'<!-- sync-conflict:([a-z0-9][a-z0-9-]*) [0-9a-f]{7,40} \d{4}-\d{2}-\d{2} -->')
+YAML_CONFLICT = re.compile(r'#\s*sync-conflict:([a-z0-9][a-z0-9-]*) [0-9a-f]{7,40} \d{4}-\d{2}-\d{2}[ \t]*$')
 
 
 def _knowledge_files(root: Path) -> list[Path]:
@@ -457,13 +487,14 @@ def cmd_markers(args) -> int:
     statuses: dict[str, str | None] = {}
     out = []
     for f in _knowledge_files(root):
-        rx = MD_MARK if f.suffix == '.md' else YAML_MARK
+        rxs = (('feature', MD_MARK), ('conflict', MD_CONFLICT)) if f.suffix == '.md' else \
+              (('feature', YAML_MARK), ('conflict', YAML_CONFLICT))
         try:
             lines = f.read_text(encoding='utf-8').splitlines()
         except (OSError, UnicodeDecodeError):
             continue
         for n, line in enumerate(lines, 1):
-            for m in rx.finditer(line):
+            for kind, rx, m in ((k, rx, m) for k, rx in rxs for m in rx.finditer(line)):
                 feat = m.group(1)
                 if args.feature and feat != args.feature:
                     continue
@@ -471,7 +502,7 @@ def cmd_markers(args) -> int:
                     statuses[feat] = _feature_status(root, feat)
                 if wanted and statuses[feat] not in wanted:
                     continue
-                out.append({'file': f.relative_to(root).as_posix(), 'line': n, 'feature': feat,
+                out.append({'file': f.relative_to(root).as_posix(), 'line': n, 'feature': feat, 'kind': kind,
                             'status': statuses[feat], 'text': rx.sub('', line).rstrip()})
     print(json.dumps(out, ensure_ascii=False, indent=2))
     return 0
@@ -481,7 +512,7 @@ def cmd_unmark(args) -> int:
     root = Path(args.root)
     f_esc = re.escape(args.feature)
     md = re.compile(r' ?<!-- feature:' + f_esc + r' -->')
-    ym = re.compile(r' ?#\s*feature:' + f_esc + r'\s*$', re.M)
+    ym = re.compile(r' ?#[ \t]*feature:' + f_esc + r'[ \t]*$', re.M)   # [ \t], bukan \s: jangan makan newline
     removed = 0
     for f in _knowledge_files(root):
         try:
@@ -505,6 +536,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument('--root', required=True)
     s.add_argument('--repos')
     s.add_argument('--format', choices=('json', 'hook'), default='json')
+    s.add_argument('--fetch', action='store_true', help='git fetch tiap repo berpatokan dulu (skill sync; hook TIDAK)')
     s.set_defaults(fn=cmd_status)
     i = sub.add_parser('init')
     i.add_argument('--root', required=True)
