@@ -243,6 +243,16 @@ asm "$T/r5.json" "$T/r5.html" >/dev/null 2>&1
 grep -qF 'Bentrok sama fitur lo' "$T/r5.html" && grep -qF 'df4w-credit-task-detail' "$T/r5.html" && grep -qF 'maks 5x' "$T/r5.html" \
   && ok "R5 kartu bentrok + nama fitur" || bad "R5 bentrok"
 
+# === K: skill sync + agent sync-reader (statis) ===
+SM="$SK/SKILL.md"; AG="$ROOT/plugin/agents/sync-reader.md"
+[ "$(sed -n 2p "$SM" 2>/dev/null)" = "name: sync" ] && ok "K1 frontmatter name: sync" || bad "K1 frontmatter"
+for s in sync_status.py context-vault:sync-reader assemble.py advance feature-marker.md AskUserQuestion 'init --force --only' 'range' '--fetch' 'need_base'; do
+  grep -qF -- "$s" "$SM" 2>/dev/null && ok "K2 SKILL.md memuat $s" || bad "K2 SKILL.md tanpa $s"; done
+[ -f "$SK/reference.md" ] && grep -qF '"summary_item"' "$SK/reference.md" && grep -qF '"business_rules"' "$SK/reference.md" \
+  && ok "K2 reference.md: skema usulan tulis + ringkasan" || bad "K2 reference.md"
+[ -f "$AG" ] && grep -qxF 'tools: Read, Bash' "$AG" && grep -qF 'SendMessage' "$AG" && ok "K3 agent sync-reader" || bad "K3 agent sync-reader"
+grep -qF 'CLAUDE_PLUGIN_ROOT' "$SK"/*.py "$SK"/*.html && bad "K4 CLAUDE_PLUGIN_ROOT di script/template sync" || ok "K4 tanpa CLAUDE_PLUGIN_ROOT di .py/.html"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 
