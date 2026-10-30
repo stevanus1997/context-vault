@@ -110,6 +110,56 @@ check "P5 error gh-missing" "$T/p5.json" "d['error']=='gh-missing'"
 prs view --root "$P" --pr 'ngawur' > /dev/null 2>&1; rc=$?
 [ $rc -eq 2 ] && ok "P6 --pr tak dikenal → exit 2" || bad "P6 exit $rc (harap 2)"
 
+# === V: laporan review (assemble.py) ===
+mut() { # mut <out.json> <kode python atas d>
+  $PY - "$FX/report-ok.json" "$1" "$2" <<'PY2'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+exec(sys.argv[3])
+json.dump(d, open(sys.argv[2], 'w', encoding='utf-8'), ensure_ascii=False)
+PY2
+}
+asm() { $PY "$SK/assemble.py" --data "$1" --out "$2"; }
+if asm "$FX/report-ok.json" "$T/v1.html" > "$T/v1.out" 2> "$T/v1.err"; then ok "V1 fixture lolos"
+  for s in 'Perlu ubah' 'Copy komentar' 'survey_schedule_at' '<svg' 'class="map"' '2 hal harus dibenerin sebelum approve, 1 saran opsional.' \
+           'Harus dibenerin' 'Saran' 'Info' 'Kontrak' 'Alur lintas-repo' 'Best practice' 'Konsistensi' 'BLCS-5302' 'LBOFE #1482' \
+           'Struktur folder, nama datasource' 'boleh jadwal ulang' 'PR ini ikut izinin' 'Nama field beda sama sch'; do
+    grep -qF -- "$s" "$T/v1.html" && ok "V1 memuat '$s'" || bad "V1 tanpa '$s'"; done
+  grep -q '__' "$T/v1.html" && bad "V1 masih ada __" "$(grep -o '.\{20\}__.\{20\}' "$T/v1.html" | head -3)" || ok "V1 tanpa placeholder __"
+  $PY - "$T/v1.html" <<'PY2' && ok "V1 urutan lapis kontrak→alur→best_practice→konsistensi & temuan harus→saran→info" || bad "V1 urutan"
+import sys
+s = open(sys.argv[1], encoding='utf-8').read()
+lanes = [s.find('data-lane="%s"' % k) for k in ('kontrak', 'alur', 'best_practice', 'konsistensi')]
+cards = [s.find('class="f %s' % k) for k in ('harus', 'saran', 'info')]
+sys.exit(0 if -1 not in lanes + cards and lanes == sorted(lanes) and cards == sorted(cards) else 1)
+PY2
+else bad "V1 assemble gagal" "$(cat "$T/v1.err")"; fi
+vo() { mut "$T/vo.json" "d['findings']=$1"; $PY "$SK/assemble.py" --data "$T/vo.json" --verdict-only 2>&1; }
+[ "$(vo "[dict(lane='alur',level='saran',title='x')]")" = "Approve dengan saran" ] && ok "V2 [saran] → Approve dengan saran" || bad "V2 saran"
+[ "$(vo "[dict(lane='alur',level='info',title='x')]")" = "Siap approve" ] && ok "V2 [info] → Siap approve" || bad "V2 info"
+[ "$(vo "[]")" = "Siap approve" ] && ok "V2 [] → Siap approve" || bad "V2 kosong"
+[ "$(vo "[dict(lane='alur',level='saran',title='x'),dict(lane='kontrak',level='harus',title='y')]")" = "Perlu ubah" ] && ok "V2 harus → Perlu ubah" || bad "V2 harus"
+mut "$T/v2.json" "d['findings']=[f for f in d['findings'] if f['level']!='harus']"; asm "$T/v2.json" "$T/v2.html" >/dev/null 2>&1
+grep -qF '1 saran opsional, aman di-approve.' "$T/v2.html" && ok "V2 subjudul hanya saran" || bad "V2 subjudul saran"
+mut "$T/v2b.json" "d['findings']=[]"; asm "$T/v2b.json" "$T/v2b.html" >/dev/null 2>&1
+grep -qF 'Nggak ada temuan.' "$T/v2b.html" && grep -qF 'Siap approve' "$T/v2b.html" && ok "V2 subjudul tanpa temuan" || bad "V2 subjudul kosong"
+mut "$T/v3.json" "d['title']='<script>x</script>'; d['findings'][1]['comment']='<script>x</script> & </textarea>'; d['findings'][0]['evidence']['lines'][0]['text']='<script>x</script>'"
+asm "$T/v3.json" "$T/v3.html" >/dev/null 2>&1
+grep -qF '&lt;script&gt;x&lt;/script&gt;' "$T/v3.html" && ! grep -qF '<script>x' "$T/v3.html" && ! grep -qF '</textarea>' "$T/v3.html" \
+  && ok "V3 judul/komentar/kode ter-escape" || bad "V3 escape"
+mut "$T/v4.json" "d['findings'][0]['stale']=True; d['stale_repos']=['LBOFE']"; asm "$T/v4.json" "$T/v4.html" >/dev/null 2>&1
+grep -qF 'mungkin karena catatan basi' "$T/v4.html" && ok "V4 chip catatan basi" || bad "V4 chip"
+grep -qF 'Catatan control/ ketinggalan di LBOFE' "$T/v4.html" && ok "V4 banner stale_repos" || bad "V4 banner"
+grep -qF 'mungkin karena catatan basi' "$T/v1.html" && bad "V4 chip muncul tanpa stale" || ok "V4 tanpa stale → tanpa chip"
+mut "$T/v5.json" "d.pop('findings')"; asm "$T/v5.json" "$T/v5.html" >/dev/null 2>&1; rc=$?
+[ $rc -eq 1 ] && [ ! -e "$T/v5.html" ] && ok "V5 tanpa findings → exit 1" || bad "V5 rc=$rc"
+mut "$T/v5b.json" "d['findings'][0]['lane']='ngawur'"; asm "$T/v5b.json" "$T/v5b.html" >/dev/null 2>&1; rc=$?
+[ $rc -eq 1 ] && ok "V5 lane tak dikenal → exit 1" || bad "V5 lane rc=$rc"
+mut "$T/v6.json" "d.pop('map')"; asm "$T/v6.json" "$T/v6.html" >/dev/null 2>&1
+grep -qF 'class="map"' "$T/v6.html" && bad "V6 peta muncul tanpa map" || ok "V6 map absen → tanpa peta"
+mut "$T/v6b.json" "d['map']={'nodes':[{'id':'LBOFE','touched':True}],'edges':[]}"; asm "$T/v6b.json" "$T/v6b.html" >/dev/null 2>&1
+grep -qF 'class="map"' "$T/v6b.html" && bad "V6 peta 1 node tetap dirender" || ok "V6 map 1 node → tanpa peta"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

@@ -5,6 +5,8 @@ Claude menulis isi (JSON, skema di reference.md); script ini merakit, meng-escap
 ke template.html (folder yang sama). Exit: 0 ok (cetak path) · 1 JSON tak valid / kunci wajib hilang
 (output tak ditulis) · 2 argumen salah.
 """
+from __future__ import annotations
+
 import argparse
 import datetime
 import html

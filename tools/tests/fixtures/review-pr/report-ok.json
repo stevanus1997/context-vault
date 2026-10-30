@@ -1,0 +1,49 @@
+{
+  "title": "Jadwal ulang survey dari backoffice",
+  "author": "jocelyntjahyadi26",
+  "opened": "2 hari lalu",
+  "ticket": "BLCS-5302",
+  "prs": [
+    {"label": "LBOFE", "number": 1482, "url": "https://github.com/bfi-finance/lora-backoffice-fe/pull/1482"},
+    {"label": "LTS", "number": 911, "url": "https://github.com/bfi-finance/lora-task-service/pull/911"},
+    {"label": "LSS", "number": 377, "url": "https://github.com/bfi-finance/lora-schema-service/pull/377"}
+  ],
+  "stale_repos": [],
+  "map": {
+    "nodes": [
+      {"id": "LBOFE", "sub": "#1482", "touched": true, "problem": true},
+      {"id": "LTS", "sub": "#911", "touched": true, "problem": true},
+      {"id": "LSS", "sub": "#377", "touched": true},
+      {"id": "LGS", "touched": false},
+      {"id": "LDFW", "touched": false},
+      {"id": "LPN", "touched": false}
+    ],
+    "edges": [
+      {"from": "LBOFE", "to": "LTS", "label": "surveyDate", "problem": true},
+      {"from": "LTS", "to": "LSS"},
+      {"from": "LTS", "to": "LGS"}
+    ]
+  },
+  "lane_ok": {"konsistensi": "Struktur folder, nama datasource, dan pola form ikut yang udah ada di LBOFE."},
+  "findings": [
+    {"lane": "best_practice", "level": "saran", "title": "Error dari server nggak keliatan ke user",
+     "location": "LBOFE src/datasources/survey.ts:41",
+     "comment": "Kalau request-nya gagal, user cuma liat form kosong. Gimana kalau error-nya diterusin ke toast kayak datasource lain?",
+     "stale": false,
+     "evidence": {"type": "code", "lines": [{"n": 39, "text": "return fetch(url, opts)"}, {"n": 40, "text": "  .then(r => r.json())"}, {"n": 41, "text": "  .catch(() => null)", "hl": true}]}},
+    {"lane": "kontrak", "level": "harus", "title": "Nama field beda sama schema LSS",
+     "location": "LBOFE src/pages/survey/reschedule-form.tsx:88",
+     "comment": "Field ini di schema LSS `survey-reschedule-v1` namanya `survey_schedule_at` dan wajib diisi. Kayaknya ketuker sama `surveyDate`?",
+     "stale": false,
+     "evidence": {"type": "contract", "left": "LBOFE ngirim", "right": "LSS minta",
+                  "rows": [{"l": "task_id", "r": "task_id"}, {"l": "surveyDate", "r": "survey_schedule_at wajib", "bad": true}, {"l": "reason", "r": "reason"}]}},
+    {"lane": "alur", "level": "harus", "title": "Survey yang udah dikirim masih bisa dijadwal ulang",
+     "location": "LTS internal/task/reschedule.go:52, bentrok sama invariants.md",
+     "comment": "Di sini status `SUBMITTED` ikut diizinkan. Aturannya jadwal ulang cuma boleh sebelum surveyor mulai. Perlu dibatasi sampai `ASSIGNED` aja?",
+     "stale": false,
+     "evidence": {"type": "states", "states": [{"name": "NEW", "ok": true}, {"name": "ASSIGNED", "ok": true}, {"name": "IN_SURVEY"}, {"name": "SUBMITTED", "flag": true}],
+                  "ok_label": "boleh jadwal ulang", "flag_label": "PR ini ikut izinin"}},
+    {"lane": "alur", "level": "info", "title": "Bakal bentrok sama fitur lo df4w-credit-task-detail",
+     "location": "business/flows.md", "comment": "", "stale": false}
+  ]
+}
