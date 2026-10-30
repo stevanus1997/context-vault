@@ -1,0 +1,34 @@
+{
+  "product": "BFI LORA",
+  "since": "2026-10-21",
+  "generated": "2026-10-29 09:12",
+  "repos": [
+    {"key": "lora-gateway-service", "label": "LGS", "human": 3, "bot": 11, "people": 3},
+    {"key": "lora-backoffice-fe", "label": "LBOFE", "human": 4, "bot": 9, "people": 4},
+    {"key": "lora-schema-service", "label": "LSS", "human": 2, "bot": 5, "people": 2},
+    {"key": "lora-task-service", "label": "LTS", "human": 2, "bot": 4, "people": 2},
+    {"key": "lora-partner-ndf", "label": "LPN", "human": 1, "bot": 2, "people": 1},
+    {"key": "lora-df4w", "label": "LDFW", "human": 0, "bot": 4, "people": 0}
+  ],
+  "features": [
+    {"app": "LGS", "text": "Debitur dapet WhatsApp otomatis waktu survey-nya dijadwal ulang."},
+    {"app": "LPN", "text": "Partner NDF bisa upload dokumen tambahan setelah aplikasi dikirim."}
+  ],
+  "business_rules": [
+    {"app": "LTS", "text": "Batas jadwal ulang survey per aplikasi", "before": "2×", "after": "3×"},
+    {"app": "LSS", "text": "Jadwal ulang sekarang wajib pakai alasan", "pill": "+ reason_code wajib"}
+  ],
+  "coding_rules": [
+    {"app": "LBOFE", "text": "Datasource baru dibikin lewat helper bersama, bukan fetch langsung.", "pill": "createDatasource()"}
+  ],
+  "conflicts": [],
+  "pointers": [{"text": "Repo belum terdaftar: lora-tools", "skill": "/add-app"}],
+  "written": [
+    {"file": "invariants.md", "change": "1 diubah"},
+    {"file": "conventions.md", "change": "+1"},
+    {"file": "schema/survey-reschedule", "change": "+1 field"},
+    {"file": "workspace.yaml", "change": "+2 kapabilitas"}
+  ],
+  "other_commits": 37,
+  "stale_note": null
+}

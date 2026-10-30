@@ -202,6 +202,47 @@ for s in intake fanout ship drop; do
 grep -qF 'prs: ["<repo-key>#<nomor>"' "$ROOT/plugin/skills/ship/SKILL.md" && ok "T3 ship mencatat prs" || bad "T3 ship tanpa prs"
 grep -qF '"<repo-key>#<nomor>"' "$ROOT/plugin/skills/fix/reference.md" && ok "T3 fix_pr berformat repo-key#nomor" || bad "T3 fix/reference.md fix_pr"
 
+# === R: ringkasan sinkron (assemble.py) ===
+mut() { # mut <out.json> <kode python atas d>  — salinan summary-ok.json yang diubah
+  $PY - "$FX/summary-ok.json" "$1" "$2" <<'PY2'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+exec(sys.argv[3])
+json.dump(d, open(sys.argv[2], 'w', encoding='utf-8'), ensure_ascii=False)
+PY2
+}
+asm() { $PY "$SK/assemble.py" --data "$1" --out "$2"; }
+if asm "$FX/summary-ok.json" "$T/r1.html" > "$T/r1.out" 2> "$T/r1.err"; then ok "R1 fixture lolos"
+  grep -qxF "$T/r1.html" "$T/r1.out" && ok "R1 cetak path output" || bad "R1 stdout" "$(cat "$T/r1.out")"
+  for s in '5 hal baru sejak 21 Oktober' '2×' '3×' 'createDatasource()' 'Fitur baru' 'Aturan bisnis berubah' 'Aturan coding baru' \
+           '47 commit masuk di 6 repo' 'cuma bot' '37 commit lain cuma bot, refactor, atau fix kecil' '/add-app' 'invariants.md' 'Ditulis ke control/'; do
+    grep -qF -- "$s" "$T/r1.html" && ok "R1 memuat '$s'" || bad "R1 tanpa '$s'"; done
+  grep -q '__' "$T/r1.html" && bad "R1 masih ada placeholder __" "$(grep -o '.\{20\}__.\{20\}' "$T/r1.html" | head -3)" || ok "R1 tanpa placeholder __"
+  grep -qF 'Bentrok sama fitur lo' "$T/r1.html" && bad "R1 kartu bentrok muncul padahal kosong" || ok "R1 tanpa kartu bentrok"
+else bad "R1 assemble gagal" "$(cat "$T/r1.err")"; fi
+mut "$T/r2.json" "d['coding_rules']=[]"; asm "$T/r2.json" "$T/r2.html" >/dev/null 2>&1
+grep -qF 'Aturan coding baru' "$T/r2.html" && bad "R2 kolom kosong tetap dirender" || ok "R2 kolom kosong tidak dirender"
+grep -qF '4 hal baru sejak' "$T/r2.html" && ok "R2 N ikut berkurang" || bad "R2 N salah"
+mut "$T/r2b.json" "d['features']=[]; d['business_rules']=[]; d['coding_rules']=[]"; asm "$T/r2b.json" "$T/r2b.html" >/dev/null 2>&1
+grep -qF 'Nggak ada hal baru sejak 21 Oktober' "$T/r2b.html" && ok "R2 semua kosong → Nggak ada hal baru" || bad "R2 judul kosong"
+mut "$T/r2c.json" "d['since']='2025-12-30'; d['repos']=[]; d['written']=[]; d['pointers']=[]; d.pop('other_commits')"
+asm "$T/r2c.json" "$T/r2c.html" >/dev/null 2>&1 && grep -qF 'sejak 30 Desember 2025' "$T/r2c.html" \
+  && ok "R2 tahun beda → tanggal pakai tahun; kunci opsional absen tetap lolos" || bad "R2 tanggal lintas tahun / opsional"
+mut "$T/r3.json" "d['features'][0]['text']='<script>alert(1)</script> & </textarea>'; d['repos'][0]['label']='<b>x</b>'"
+asm "$T/r3.json" "$T/r3.html" >/dev/null 2>&1
+grep -qF '&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;/textarea&gt;' "$T/r3.html" && ! grep -qF '<script>alert' "$T/r3.html" \
+  && ! grep -qF '<b>x</b>' "$T/r3.html" && ok "R3 teks ter-escape" || bad "R3 escape"
+mut "$T/r4.json" "d.pop('since')"; asm "$T/r4.json" "$T/r4.html" >/dev/null 2>&1; rc=$?
+[ $rc -eq 1 ] && [ ! -e "$T/r4.html" ] && ok "R4 tanpa since → exit 1, output tak dibuat" || bad "R4 rc=$rc"
+printf '{rusak' > "$T/r4b.json"; asm "$T/r4b.json" "$T/r4b.html" >/dev/null 2>&1; rc=$?
+[ $rc -eq 1 ] && [ ! -e "$T/r4b.html" ] && ok "R4 JSON rusak → exit 1" || bad "R4 JSON rusak rc=$rc"
+$PY "$SK/assemble.py" --data "$FX/summary-ok.json" >/dev/null 2>&1; rc=$?
+[ $rc -eq 2 ] && ok "R4 argumen kurang → exit 2" || bad "R4 argumen rc=$rc"
+mut "$T/r5.json" "d['conflicts']=[{'feature':'df4w-credit-task-detail','file':'business/flows.md','master':'maks 3x','yours':'maks 5x'}]"
+asm "$T/r5.json" "$T/r5.html" >/dev/null 2>&1
+grep -qF 'Bentrok sama fitur lo' "$T/r5.html" && grep -qF 'df4w-credit-task-detail' "$T/r5.html" && grep -qF 'maks 5x' "$T/r5.html" \
+  && ok "R5 kartu bentrok + nama fitur" || bad "R5 bentrok"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 
