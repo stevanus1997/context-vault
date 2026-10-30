@@ -8,9 +8,18 @@ allowlist cukup satu baris dan batasnya ada di sini, bisa dites.
   watch   … [--interval 120] [--max-rounds N]                      ulang sampai ada kejadian, lalu exit
   ack     …                                                        tandai isi event.json sudah diproses
   attempt … --pr REF --check NAME [--reset]                        hitung percobaan fix pipeline
+  log     … --pr REF --check NAME                                  400 baris terakhir log check gagal
+  worktree … (--pr REF | --repo-key KEY --base BASE)               buat/sinkronkan .land/<slug>/<repo>
+  merge-base … --pr REF --dir D                                    merge branch tujuan ke worktree
+  commit  … --dir D --message-file F                               commit semua perubahan worktree
+  push    … --pr REF --dir D                                       push ke head-ref PR, cuma fast-forward
+  reply   … --pr REF --to ID --body-file F                         balas komentar di PR terdaftar
+  open-pr … --repo-key KEY --dir D --head B --base BASE --title T --body-file F   PR baru, branch baru
+  cleanup …                                                        hapus worktree dan state slug ini
 
 W = `features/<fitur>` atau `fixes/<id>`. REF = `<repo-key>#<n>`. Output JSON ke stdout.
-Exit: 0 ok · 1 gagal · 2 argumen salah · 4 gh tak ada · 5 gh akun/izin.
+Exit: 0 ok · 1 gagal · 2 argumen salah · 4 gh tak ada · 5 gh akun/izin · 6 ditolak batas `land`.
+Skrip ini sengaja tidak punya perintah merge PR, approve, atau menutup PR.
 """
 from __future__ import annotations
 
@@ -72,16 +81,20 @@ def parse_yaml(text: str):
     return _bs.parse_yaml(text)
 
 
-def git(cwd, *args) -> tuple[int, str]:
-    """(exit code, stdout di-strip). Timeout/OSError → (1, '')."""
+def run_git(cwd, *args, timeout: int = 60) -> tuple[int, str, str]:
+    """(exit code, stdout, stderr), di-strip. Timeout/OSError → exit 1."""
     try:
-        r = subprocess.run(['git', '-C', str(cwd), *args], capture_output=True, text=True, timeout=60)
-    except (OSError, subprocess.SubprocessError):
-        return 1, ''
-    return r.returncode, r.stdout.strip()
+        r = subprocess.run(['git', '-C', str(cwd), *args], capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as e:
+        return 1, '', str(e)
+    return r.returncode, r.stdout.strip(), r.stderr.strip()
 
 
-def gh(*args, ndjson: bool = False) -> object:
+def git(cwd, *args) -> tuple[int, str]:
+    return run_git(cwd, *args)[:2]
+
+
+def gh(*args, ndjson: bool = False, raw: bool = False) -> object:
     try:
         r = subprocess.run(['gh', *args], capture_output=True, text=True, timeout=60)
     except (OSError, subprocess.SubprocessError) as e:
@@ -95,6 +108,8 @@ def gh(*args, ndjson: bool = False) -> object:
         if any(m in r.stderr for m in AUTH_MARKERS):
             raise Fail(5, {'error': 'gh-auth', 'detail': detail, 'hint': HINT})
         raise Fail(1, {'error': 'gh', 'detail': detail})
+    if raw:
+        return r.stdout
     try:
         if ndjson:
             return [json.loads(line) for line in r.stdout.splitlines() if line.strip()]
@@ -108,15 +123,22 @@ def gh(*args, ndjson: bool = False) -> object:
 class Scope:
     """Satu work-item (atau daftar link): PR yang dijaga + folder state."""
 
-    def __init__(self, root: Path, slug: str, prs: list[dict], bots: set[str], link_mode: bool):
-        self.root, self.slug, self.prs, self.bots, self.link_mode = root, slug, prs, bots, link_mode
+    def __init__(self, root: Path, slug: str, prs: list[dict], repos: list[dict], bots: set[str]):
+        self.root, self.slug, self.prs, self.repos, self.bots = root, slug, prs, repos, bots
         self.state_dir = root / '.claude' / 'land' / slug
+        self.work_dir = root / '.land' / slug
 
     def pr(self, ref: str) -> dict:
         for p in self.prs:
             if p['ref'] == ref:
                 return p
         raise Fail(2, {'error': 'unknown-pr', 'detail': f'{ref} tidak terdaftar di {self.slug}'})
+
+    def repo(self, key: str) -> dict:
+        for r in self.repos:
+            if r['key'] == key:
+                return r
+        raise Fail(2, {'error': 'unknown-repo', 'detail': f'{key} bukan repo produk'})
 
 
 def _as_list(x) -> list:
@@ -176,14 +198,14 @@ def _bare(login: str) -> str:
 
 
 def load_scope(root, work_item: str | None, links: str | None) -> Scope:
-    root = Path(root)
+    root = Path(os.path.realpath(root))   # absolut: `git -C <repo> worktree add` memakai path ini
     repos = load_repos(root)
     if links is not None:
         prs = [parse_ref(u, repos) for u in links.split(',') if u.strip()]
         if not prs:
             raise Fail(2, {'error': 'arg', 'detail': '--links kosong'})
         slug = '+'.join(f"pr-{p['owner_repo'].replace('/', '-')}-{p['number']}" for p in prs)
-        return Scope(root, slug, prs, _bot_authors(root), True)
+        return Scope(root, slug, prs, repos, _bot_authors(root))
     m = WORK_ITEM_RE.match(work_item or '')
     if not m:
         raise Fail(2, {'error': 'arg', 'detail': f'--work-item harus features/<fitur> atau fixes/<id>: {work_item}'})
@@ -199,7 +221,8 @@ def load_scope(root, work_item: str | None, links: str | None) -> Scope:
     for item in items:
         pr = parse_ref(item, repos)
         prs.setdefault(pr['ref'], pr)
-    return Scope(root, name if kind == 'features' else f'fix-{name}', list(prs.values()), _bot_authors(root), False)
+    slug = name if kind == 'features' else f'fix-{name}'
+    return Scope(root, slug, list(prs.values()), repos, _bot_authors(root))
 
 
 # --- baca PR ---------------------------------------------------------------------------------
@@ -472,6 +495,185 @@ def cmd_attempt(args, scope: Scope) -> int:
     return _emit({'count': attempts[key]})
 
 
+# --- tulis ke repo dan GitHub, dengan batas ----------------------------------------------------
+
+def _refuse(error: str, detail: str, **extra):
+    raise Fail(6, {'error': error, 'detail': detail, **extra})
+
+
+def _input_file(path: str) -> str:
+    if not os.path.isfile(path):
+        raise Fail(2, {'error': 'arg', 'detail': f'file tidak ada: {path}'})
+    return path
+
+
+def _check_dir(scope: Scope, d: str, repo_path: str | None = None) -> str:
+    """`--dir` harus worktree `.land/<slug>/<repo-slug>`; `repo_path` → harus worktree repo itu, supaya
+    commit satu repo tidak ter-push ke branch repo lain."""
+    real, base = os.path.realpath(d), os.path.realpath(scope.work_dir)
+    want = os.path.join(base, os.path.basename(repo_path)) if repo_path else real
+    rc, top = git(real, 'rev-parse', '--show-toplevel')
+    if os.path.dirname(real) != base or real != want or rc or os.path.realpath(top) != real:
+        raise Fail(2, {'error': 'dir', 'detail': f'--dir harus worktree di {want if repo_path else base}: {d}'})
+    return real
+
+
+def _fetch_ref(cwd, ref: str) -> str:
+    rc, _, err = run_git(cwd, 'fetch', '--quiet', 'origin', f'refs/heads/{ref}', timeout=180)
+    if rc:
+        raise Fail(1, {'error': 'git', 'detail': (err.splitlines() or ['git fetch gagal'])[0]})
+    return git(cwd, 'rev-parse', 'FETCH_HEAD')[1]
+
+
+def _default_branch(repo_path: str, owner_repo: str) -> str | None:
+    rc, out = git(repo_path, 'symbolic-ref', 'refs/remotes/origin/HEAD')
+    if rc == 0 and out:
+        return out.removeprefix('refs/remotes/origin/')
+    return ((gh('repo', 'view', owner_repo, '--json', 'defaultBranchRef') or {}).get('defaultBranchRef') or {}).get('name')
+
+
+def _push(d: str, head: str) -> None:
+    rc, _, err = run_git(d, 'push', '--quiet', 'origin', f'HEAD:refs/heads/{head}', timeout=300)
+    if rc:
+        if 'rejected' in err or 'non-fast-forward' in err:
+            _refuse('non-fast-forward', f'{head} berubah di remote')
+        raise Fail(1, {'error': 'git', 'detail': (err.splitlines() or ['git push gagal'])[0]})
+
+
+def _open_worktree(scope: Scope, repo_path: str, ref: str) -> dict:
+    d = scope.work_dir / os.path.basename(repo_path)
+    sha = _fetch_ref(repo_path, ref)
+    if (d / '.git').exists():
+        ahead = int(git(d, 'rev-list', '--count', f'{sha}..HEAD')[1] or 0)
+        if ahead:
+            return {'dir': str(d), 'ahead': ahead}
+        if git(d, 'checkout', '--quiet', '--detach', sha)[0]:
+            _refuse('worktree-dirty', f'{d} punya perubahan belum di-commit')
+        return {'dir': str(d), 'ahead': 0}
+    d.parent.mkdir(parents=True, exist_ok=True)
+    git(repo_path, 'worktree', 'prune')
+    rc, _, err = run_git(repo_path, 'worktree', 'add', '--quiet', '--detach', str(d), sha)
+    if rc:
+        raise Fail(1, {'error': 'git', 'detail': (err.splitlines() or ['git worktree gagal'])[0]})
+    return {'dir': str(d), 'ahead': 0}
+
+
+def cmd_worktree(args, scope: Scope) -> int:
+    if args.pr and not (args.repo_key or args.base):
+        pr = scope.pr(args.pr)
+        p = fetch_pr(pr)
+        if p['cross_repo']:
+            _refuse('fork', f"{pr['ref']} dari fork: head-ref bukan branch di origin")
+        return _emit(_open_worktree(scope, pr['repo_path'], p['head_ref']))
+    if args.pr or not (args.repo_key and args.base):
+        raise Fail(2, {'error': 'arg', 'detail': 'pakai --pr, atau --repo-key + --base'})
+    return _emit(_open_worktree(scope, scope.repo(args.repo_key)['path'], args.base))
+
+
+def cmd_merge_base(args, scope: Scope) -> int:
+    pr = scope.pr(args.pr)
+    d = _check_dir(scope, args.dir, pr['repo_path'])
+    _fetch_ref(d, fetch_pr(pr)['base_ref'])
+    rc, out, err = run_git(d, 'merge', 'FETCH_HEAD', '--no-edit')
+    conflicts = git(d, 'diff', '--name-only', '--diff-filter=U')[1].splitlines()
+    if rc and not conflicts:
+        _refuse('merge', err or out)
+    return _emit({'clean': rc == 0, 'conflicts': conflicts})
+
+
+def cmd_commit(args, scope: Scope) -> int:
+    d = _check_dir(scope, args.dir)
+    msg = _input_file(args.message_file)
+    git(d, 'add', '-A')
+    merging = git(d, 'rev-parse', '-q', '--verify', 'MERGE_HEAD')[0] == 0
+    if not merging and git(d, 'diff', '--cached', '--quiet')[0] == 0:
+        _refuse('no-changes', 'tidak ada perubahan')
+    rc, out, err = run_git(d, 'commit', '--quiet', '-F', os.path.realpath(msg), timeout=300)
+    if rc:
+        raise Fail(1, {'error': 'git', 'detail': err or out})
+    return _emit({'sha': git(d, 'rev-parse', 'HEAD')[1]})
+
+
+def cmd_push(args, scope: Scope) -> int:
+    pr = scope.pr(args.pr)
+    d = _check_dir(scope, args.dir, pr['repo_path'])
+    p = fetch_pr(pr)
+    head = p['head_ref']
+    if p['state'] != 'OPEN':
+        _refuse('not-open', f"{pr['ref']} sudah {p['state']}")
+    if p['cross_repo']:
+        _refuse('fork', f"{pr['ref']} dari fork: head-ref bukan branch di origin")
+    if head == p['base_ref'] or head == _default_branch(pr['repo_path'], pr['owner_repo']):
+        _refuse('protected-branch', f'{head} bukan branch PR yang boleh di-push')
+    remote = _fetch_ref(d, head)
+    if git(d, 'merge-base', '--is-ancestor', remote, 'HEAD')[0]:
+        _refuse('non-fast-forward', f'{head} berubah di remote sejak worktree dibuat')
+    _push(d, head)
+    return _emit({'sha': git(d, 'rev-parse', 'HEAD')[1], 'branch': head})
+
+
+def cmd_log(args, scope: Scope) -> int:
+    pr = scope.pr(args.pr)
+    c = next((c for c in fetch_pr(pr)['failed_checks'] if c['name'] == args.check), None)
+    if c is None:
+        _refuse('no-check', f'{args.check} tidak gagal di {pr["ref"]}')
+    if not c['run_id']:
+        _refuse('no-log', 'check ini log-nya tidak bisa dibaca gh', link=c['link'])
+    text = gh('run', 'view', c['run_id'], '--repo', pr['owner_repo'], '--log-failed', raw=True)
+    return _emit({'log': '\n'.join(text.splitlines()[-400:])})
+
+
+def cmd_reply(args, scope: Scope) -> int:
+    pr = scope.pr(args.pr)
+    r, n = pr['owner_repo'], pr['number']
+    body = _input_file(args.body_file)
+    if args.to.startswith('c'):
+        inline = gh('api', f'repos/{r}/pulls/{n}/comments', '--paginate', '--jq', '.[]', ndjson=True)
+        c = next((c for c in inline if f"c{c.get('id')}" == args.to), None)
+        if c is None:
+            raise Fail(2, {'error': 'unknown-comment', 'detail': f"{args.to} bukan komentar di {pr['ref']}"})
+        root = c.get('in_reply_to_id') or c.get('id')   # GitHub menolak balasan atas balasan: selalu ke akar thread
+        res = gh('api', f'repos/{r}/pulls/{n}/comments/{root}/replies', '--method', 'POST', '-F', f'body=@{body}')
+        return _emit({'url': (res or {}).get('html_url')})
+    if args.to[:1] in ('i', 'r'):
+        return _emit({'url': gh('pr', 'comment', str(n), '--repo', r, '--body-file', body, raw=True).strip()})
+    raise Fail(2, {'error': 'arg', 'detail': f'--to tidak dikenal: {args.to}'})
+
+
+def cmd_open_pr(args, scope: Scope) -> int:
+    repo = scope.repo(args.repo_key)
+    d = _check_dir(scope, args.dir, repo['path'])
+    body = _input_file(args.body_file)
+    if args.head == args.base or args.head == _default_branch(repo['path'], repo['owner_repo']):
+        _refuse('protected-branch', f'{args.head} tidak bisa jadi branch PR')
+    if git(d, 'ls-remote', '--heads', 'origin', f'refs/heads/{args.head}')[1]:
+        _refuse('branch-exists', f'{args.head} sudah ada di remote')
+    _push(d, args.head)
+    url = gh('pr', 'create', '--repo', repo['owner_repo'], '--head', args.head, '--base', args.base,
+             '--title', args.title, '--body-file', body, raw=True).strip()
+    m = re.search(r'/pull/(\d+)', url)
+    return _emit({'ref': f"{repo['key']}#{m.group(1)}" if m else None, 'url': url})
+
+
+def cmd_cleanup(args, scope: Scope) -> int:
+    _stop_old(scope.state_dir / 'watch.pid')
+    base = os.path.realpath(scope.work_dir) + os.sep
+    for r in scope.repos:
+        rows = git(r['path'], 'worktree', 'list', '--porcelain')[1].splitlines()
+        for path in (x.removeprefix('worktree ') for x in rows if x.startswith('worktree ')):
+            if os.path.realpath(path).startswith(base):
+                git(r['path'], 'worktree', 'remove', path)
+    shutil.rmtree(scope.work_dir, ignore_errors=True)   # worktree kotor: isinya tidak dipakai lagi
+    shutil.rmtree(scope.state_dir, ignore_errors=True)
+    for r in scope.repos:
+        git(r['path'], 'worktree', 'prune')
+    try:
+        scope.work_dir.parent.rmdir()
+    except OSError:
+        pass
+    return _emit({'cleaned': scope.slug})
+
+
 # --- main ------------------------------------------------------------------------------------
 
 def _parser(sub, name: str, fn, needs_gh: bool = True) -> argparse.ArgumentParser:
@@ -496,6 +698,34 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument('--pr', required=True)
     a.add_argument('--check', required=True)
     a.add_argument('--reset', action='store_true')
+    lg = _parser(sub, 'log', cmd_log)
+    lg.add_argument('--pr', required=True)
+    lg.add_argument('--check', required=True)
+    wt = _parser(sub, 'worktree', cmd_worktree)
+    wt.add_argument('--pr')
+    wt.add_argument('--repo-key')
+    wt.add_argument('--base')
+    mb = _parser(sub, 'merge-base', cmd_merge_base)
+    mb.add_argument('--pr', required=True)
+    mb.add_argument('--dir', required=True)
+    c = _parser(sub, 'commit', cmd_commit, needs_gh=False)
+    c.add_argument('--dir', required=True)
+    c.add_argument('--message-file', required=True)
+    pu = _parser(sub, 'push', cmd_push)
+    pu.add_argument('--pr', required=True)
+    pu.add_argument('--dir', required=True)
+    r = _parser(sub, 'reply', cmd_reply)
+    r.add_argument('--pr', required=True)
+    r.add_argument('--to', required=True)
+    r.add_argument('--body-file', required=True)
+    o = _parser(sub, 'open-pr', cmd_open_pr)
+    o.add_argument('--repo-key', required=True)
+    o.add_argument('--dir', required=True)
+    o.add_argument('--head', required=True)
+    o.add_argument('--base', required=True)
+    o.add_argument('--title', required=True)
+    o.add_argument('--body-file', required=True)
+    _parser(sub, 'cleanup', cmd_cleanup, needs_gh=False)
     return ap
 
 

@@ -11,7 +11,7 @@ command -v python3 >/dev/null 2>&1 || { echo "butuh python3"; exit 1; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 PY="python3 -B"
 PYABS="$(command -v python3)"
-j() { $PY -c 'import json,sys; d=json.load(open(sys.argv[1])); r=eval(sys.argv[2]); print(json.dumps(r) if not isinstance(r,str) else r)' "$1" "$2" 2>/dev/null; }
+j() { $PY -c 'import json,os,sys; d=json.load(open(sys.argv[1])); r=eval(sys.argv[2]); print(json.dumps(r) if not isinstance(r,str) else r)' "$1" "$2" 2>/dev/null; }
 check() { if [ "$(j "$2" "$3")" = "true" ]; then ok "$1"; else bad "$1" "$(head -c 800 "$2")"; fi; }
 source "$ROOT/tools/tests/lib/sync-fixture.sh"
 
@@ -29,6 +29,7 @@ for a in "$@"; do [ "$prev" = "--repo" ] && repo="$a"; prev="$a"; done
 if [ "$1" = api ]; then
   case "$2" in
     user) echo '{"login": "me"}'; exit 0 ;;
+    */replies) echo '{"id": 99, "html_url": "https://x/c99"}'; exit 0 ;;
     repos/*/pulls/*/comments)
       key="${2#repos/}"; r="${key%/pulls/*}"; pr="${key#*/pulls/}"; pr="${pr%/comments}"
       f="$GH_DIR/inline-${r//\//_}-$pr.ndjson"; [ -f "$f" ] && cat "$f"; exit 0 ;;
@@ -38,6 +39,10 @@ case "$1 $2" in
   "pr view")
     f="$GH_DIR/view-${repo//\//_}-$3"
     if [ -f "$f.$GH_ROUND.json" ]; then cat "$f.$GH_ROUND.json"; else cat "$f.json"; fi ;;
+  "run view") for i in $(seq 1 500); do echo "baris-$i"; done ;;
+  "pr comment") echo "https://x/i99" ;;
+  "pr create") echo "https://github.com/acme/api/pull/12" ;;
+  "repo view") echo '{"defaultBranchRef": {"name": "main"}}' ;;
   *) echo "stub gh: tak dikenal: $*" >&2; exit 1 ;;
 esac
 SH
@@ -221,6 +226,150 @@ PATH="$T/nogh" "$PYABS" -B "$LW" scan "${W1[@]}" > "$T/l16.json"; rc=$?
 [ $rc -eq 4 ] && check "L16 tanpa gh → exit 4" "$T/l16.json" "d['error']=='gh-missing'" || bad "L16 exit $rc (harap 4)"
 lw scan --root "$P" --work-item 'features/../../x' > /dev/null; rc=$?
 [ $rc -eq 2 ] && ok "L17 work-item ngawur → exit 2" || bad "L17 exit $rc (harap 2)"
+
+# === W: tulis ke repo dan GitHub, dengan batas ===
+reset_gh
+rm -rf "$STATE"
+for a in api web; do git -C "$P/$a" config user.name tester; git -C "$P/$a" config user.email t@x; done
+BARE="$P.origin/web.git"
+git -C "$P/web" switch -q -c feat/x
+gcommit "$P/web" bob "feat: x"
+git -C "$P/web" push -q origin feat/x 2>/dev/null
+git -C "$P/web" switch -q main
+PRSHA="$(git -C "$P/web" rev-parse feat/x)"
+pv() { view acme_web-7 "d['headRefOid']='$PRSHA'${1:+; $1}"; }
+pv
+git clone -q "$BARE" "$T/oth" 2>/dev/null
+git -C "$T/oth" config user.name other; git -C "$T/oth" config user.email o@x
+bare_sha() { git --git-dir="$BARE" rev-parse "${1:-feat/x}"; }
+oth_push() { # commit lain langsung ke branch PR di remote
+  git -C "$T/oth" fetch -q origin; git -C "$T/oth" switch -q feat/x 2>/dev/null; git -C "$T/oth" merge -q --ff-only origin/feat/x
+  echo "$1" >> "$T/oth/lain.txt"; git -C "$T/oth" add lain.txt; git -C "$T/oth" commit -q -m "lain: $1"; git -C "$T/oth" push -q origin feat/x 2>/dev/null
+}
+WT="$P/.land/f1/web"
+msg="$T/msg.txt"; echo "fix: test" > "$msg"
+BEFORE_ST="$(git -C "$P/web" status --porcelain=v1 -b)"
+lw worktree "${W1[@]}" --pr web#7 > "$T/w1.json"; rc=$?
+[ $rc -eq 0 ] && check "W1 worktree di .land/f1/web" "$T/w1.json" "os.path.realpath(d['dir'])==os.path.realpath('$WT')" 2>/dev/null || bad "W1 exit $rc" "$(cat "$T/w1.json")"
+[ "$(git -C "$WT" rev-parse HEAD 2>/dev/null)" = "$PRSHA" ] && ok "W1 HEAD = head PR" || bad "W1 HEAD"
+[ "$(git -C "$P/web" status --porcelain=v1 -b)" = "$BEFORE_ST" ] && ok "W1 checkout user tak berubah" || bad "W1 checkout berubah"
+(cd "$P" && lw worktree --root . --work-item features/f1 --pr web#7) > "$T/w1r.json"; rc=$?
+[ $rc -eq 0 ] && check "W1 --root . tetap di .land produk" "$T/w1r.json" "os.path.isabs(d['dir']) and d['dir'].endswith('/.land/f1/web')" || bad "W1 --root . exit $rc" "$(cat "$T/w1r.json")"
+echo "kode" >> "$WT/a.txt"
+lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > "$T/w2a.json"; rc=$?
+[ $rc -eq 0 ] && ok "W2 commit" || bad "W2 commit exit $rc" "$(cat "$T/w2a.json")"
+lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > "$T/w2b.json"; rc=$?
+[ $rc -eq 6 ] && check "W2 tanpa perubahan exit 6" "$T/w2b.json" "d['error']=='no-changes'" || bad "W2 tanpa perubahan exit $rc"
+lw push "${W1[@]}" --pr web#7 --dir "$WT" > "$T/w2c.json"; rc=$?
+[ $rc -eq 0 ] && ok "W2 push exit 0" || bad "W2 push exit $rc" "$(cat "$T/w2c.json")"
+[ "$(bare_sha)" = "$(git -C "$WT" rev-parse HEAD)" ] && ok "W2 bare = HEAD worktree" || bad "W2 bare beda"
+
+echo "lagi" >> "$WT/a.txt"; lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > /dev/null
+KEEP="$(bare_sha)"
+push_refused() { # push_refused <nama> <error> <kode python view>
+  pv "$3"
+  lw push "${W1[@]}" --pr web#7 --dir "$WT" > "$T/w.json"; rc=$?
+  [ $rc -eq 6 ] && check "$1" "$T/w.json" "d['error']=='$2'" || bad "$1 exit $rc" "$(cat "$T/w.json")"
+  [ "$(bare_sha)" = "$KEEP" ] && ok "$1: bare tak berubah" || bad "$1: bare berubah"
+}
+push_refused "W3 head = base" protected-branch "d['baseRefName']='feat/x'"
+push_refused "W3 head = default branch" protected-branch "d['headRefName']='main'; d['baseRefName']='rel'"
+push_refused "W3 PR tidak open" not-open "d['state']='MERGED'"
+push_refused "W4 PR dari fork" fork "d['isCrossRepository']=True"
+pv
+oth_push satu; KEEP="$(bare_sha)"
+push_refused "W5 remote maju" non-fast-forward "pass"
+lw push "${W1[@]}" --pr web#7 --dir "$T" > "$T/w6.json"; rc=$?
+[ $rc -eq 2 ] && check "W6 dir di luar .land" "$T/w6.json" "d['error']=='dir'" || bad "W6 exit $rc" "$(cat "$T/w6.json")"
+lw commit "${W1[@]}" --dir "$P/web" --message-file "$msg" > "$T/w6b.json"; rc=$?
+[ $rc -eq 2 ] && ok "W6 commit di checkout user ditolak" || bad "W6b exit $rc"
+view acme_api-3
+lw push "${W1[@]}" --pr api#3 --dir "$WT" > "$T/w6c.json"; rc=$?
+[ $rc -eq 2 ] && check "W6 worktree repo lain ditolak" "$T/w6c.json" "d['error']=='dir'" || bad "W6c exit $rc" "$(cat "$T/w6c.json")"
+
+rm -rf "$P/.land"; git -C "$P/web" worktree prune
+PRSHA="$(bare_sha)"; pv
+lw worktree "${W1[@]}" --pr web#7 > /dev/null
+oth_push dua
+lw worktree "${W1[@]}" --pr web#7 > "$T/w1b.json"
+[ "$(git -C "$WT" rev-parse HEAD)" = "$(bare_sha)" ] && ok "W1 worktree disusulkan ke head terbaru" || bad "W1 tak disusulkan"
+echo "x" >> "$WT/a.txt"; lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > /dev/null
+LOCAL="$(git -C "$WT" rev-parse HEAD)"
+lw worktree "${W1[@]}" --pr web#7 > "$T/w1c.json"
+check "W1 commit belum di-push dibiarkan" "$T/w1c.json" "d['ahead']==1"
+[ "$(git -C "$WT" rev-parse HEAD)" = "$LOCAL" ] && ok "W1 HEAD tetap" || bad "W1 HEAD dibuang"
+
+rm -rf "$P/.land"; git -C "$P/web" worktree prune
+lw worktree "${W1[@]}" --pr web#7 > /dev/null
+git -C "$T/oth" switch -q main; git -C "$T/oth" pull -q --ff-only origin main 2>/dev/null
+echo b > "$T/oth/b.txt"; git -C "$T/oth" add b.txt; git -C "$T/oth" commit -q -m "base: b"; git -C "$T/oth" push -q origin main 2>/dev/null
+lw merge-base "${W1[@]}" --pr web#7 --dir "$WT" > "$T/w7a.json"; rc=$?
+[ $rc -eq 0 ] && check "W7 merge bersih" "$T/w7a.json" "d['clean'] is True and d['conflicts']==[]" || bad "W7 exit $rc" "$(cat "$T/w7a.json")"
+[ -f "$WT/b.txt" ] && ok "W7 isi base masuk" || bad "W7 isi base absen"
+echo beda >> "$T/oth/log.txt"; git -C "$T/oth" add log.txt; git -C "$T/oth" commit -q -m "base: log"; git -C "$T/oth" push -q origin main 2>/dev/null
+echo konflik >> "$WT/log.txt"; lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > /dev/null
+lw merge-base "${W1[@]}" --pr web#7 --dir "$WT" > "$T/w7b.json"; rc=$?
+[ $rc -eq 0 ] && check "W7 konflik" "$T/w7b.json" "d['clean'] is False and d['conflicts']==['log.txt']" || bad "W7b exit $rc" "$(cat "$T/w7b.json")"
+[ -f "$WT/.git" ] && git -C "$WT" rev-parse -q --verify MERGE_HEAD >/dev/null && ok "W7 konflik tidak di-abort" || bad "W7 merge di-abort"
+sed -i.bak '/^<<<<<<<\|^=======\|^>>>>>>>/d' "$WT/log.txt" 2>/dev/null; rm -f "$WT/log.txt.bak"
+printf 'selesai\n' > "$WT/log.txt"
+lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > "$T/w7c.json"; rc=$?
+[ $rc -eq 0 ] && [ -z "$(git -C "$WT" rev-parse -q --verify MERGE_HEAD)" ] && ok "W7 commit menutup merge" || bad "W7c exit $rc" "$(cat "$T/w7c.json")"
+
+reply="$T/reply.txt"; echo "Done" > "$reply"
+cat > "$GH_DIR/inline-acme_web-7.ndjson" <<'JSON'
+{"id": 55, "user": {"login": "bob"}, "body": "ganti", "path": "a.ts", "line": 8, "html_url": "https://x/c55", "created_at": "2026-10-30T01:00:00Z"}
+{"id": 58, "in_reply_to_id": 55, "user": {"login": "bob"}, "body": "tambah", "path": "a.ts", "line": 8, "html_url": "https://x/c58", "created_at": "2026-10-30T01:00:00Z"}
+JSON
+: > "$GH_DIR/log"
+lw reply "${W1[@]}" --pr web#7 --to c55 --body-file "$reply" > "$T/w8.json"; rc=$?
+[ $rc -eq 0 ] && grep -qF 'pulls/7/comments/55/replies --method POST -F body=@' "$GH_DIR/log" && ok "W8 balas thread inline" || bad "W8 exit $rc" "$(cat "$T/w8.json"; cat "$GH_DIR/log")"
+: > "$GH_DIR/log"
+lw reply "${W1[@]}" --pr web#7 --to c58 --body-file "$reply" > /dev/null
+grep -qF 'pulls/7/comments/55/replies' "$GH_DIR/log" && ok "W8 balas komentar balasan → ke akar thread" || bad "W8 akar thread" "$(cat "$GH_DIR/log")"
+lw reply "${W1[@]}" --pr web#7 --to c999 --body-file "$reply" > "$T/w8b.json"; rc=$?
+[ $rc -eq 2 ] && ok "W8 komentar di luar PR ditolak" || bad "W8b exit $rc"
+: > "$GH_DIR/log"
+lw reply "${W1[@]}" --pr web#7 --to i9 --body-file "$reply" > /dev/null; rc=$?
+[ $rc -eq 0 ] && grep -qF 'pr comment 7' "$GH_DIR/log" && ok "W8 balas percakapan" || bad "W8 i9 exit $rc" "$(cat "$GH_DIR/log")"
+lw reply "${W1[@]}" --pr web#8 --to c55 --body-file "$reply" > /dev/null; rc=$?
+[ $rc -eq 2 ] && ok "W8 PR tak terdaftar exit 2" || bad "W8 --pr exit $rc"
+
+pv "d['statusCheckRollup']=[{'__typename':'CheckRun','name':'test','status':'COMPLETED','conclusion':'FAILURE','detailsUrl':'https://github.com/acme/web/actions/runs/123/job/9'},{'__typename':'StatusContext','context':'ext/ci','state':'ERROR','targetUrl':'https://ci.example/1'}]"
+lw log "${W1[@]}" --pr web#7 --check test > "$T/w9.json"; rc=$?
+[ $rc -eq 0 ] && check "W9 log terisi, dipotong 400 baris" "$T/w9.json" "'baris-500' in d['log'] and 'baris-50\n' not in d['log'] and len(d['log'].splitlines())==400" || bad "W9 exit $rc" "$(head -c 300 "$T/w9.json")"
+lw log "${W1[@]}" --pr web#7 --check ext/ci > "$T/w9b.json"; rc=$?
+[ $rc -eq 6 ] && check "W9 check eksternal → link" "$T/w9b.json" "d['error']=='no-log' and d['link']=='https://ci.example/1'" || bad "W9b exit $rc"
+
+ABARE="$P.origin/api.git"
+lw worktree "${W1[@]}" --repo-key api --base main > "$T/w10a.json"; rc=$?
+AWT="$P/.land/f1/api"
+[ $rc -eq 0 ] && [ -d "$AWT" ] && ok "W10 worktree repo baru" || bad "W10 worktree exit $rc" "$(cat "$T/w10a.json")"
+echo baru > "$AWT/n.txt"; lw commit "${W1[@]}" --dir "$AWT" --message-file "$msg" > /dev/null
+body="$T/body.txt"; echo "isi PR" > "$body"
+: > "$GH_DIR/log"
+OP=(open-pr "${W1[@]}" --repo-key api --dir "$AWT" --base main --title Judul --body-file "$body")
+lw "${OP[@]}" --head feat/baru > "$T/w10.json"; rc=$?
+[ $rc -eq 0 ] && check "W10 ref PR baru" "$T/w10.json" "d['ref']=='api#12'" || bad "W10 exit $rc" "$(cat "$T/w10.json")"
+[ "$(git --git-dir="$ABARE" rev-parse feat/baru 2>/dev/null)" = "$(git -C "$AWT" rev-parse HEAD)" ] && ok "W10 branch ada di bare" || bad "W10 branch absen"
+grep -qF 'pr create' "$GH_DIR/log" && ok "W10 pr create" || bad "W10 pr create" "$(cat "$GH_DIR/log")"
+MAINSHA="$(git --git-dir="$ABARE" rev-parse main)"
+lw "${OP[@]}" --head main > "$T/w10b.json"; rc=$?
+[ $rc -eq 6 ] && check "W10 --head main ditolak" "$T/w10b.json" "d['error']=='protected-branch'" || bad "W10b exit $rc" "$(cat "$T/w10b.json")"
+[ "$(git --git-dir="$ABARE" rev-parse main)" = "$MAINSHA" ] && ok "W10 main bare tak berubah" || bad "W10 main berubah"
+lw "${OP[@]}" --head feat/baru > "$T/w10c.json"; rc=$?
+[ $rc -eq 6 ] && check "W10 branch yang sudah ada ditolak" "$T/w10c.json" "d['error']=='branch-exists'" || bad "W10c exit $rc" "$(cat "$T/w10c.json")"
+
+echo tertinggal >> "$WT/a.txt"
+mkdir -p "$STATE"; echo '{}' > "$STATE/state.json"
+lw cleanup "${W1[@]}" > "$T/w11.json"; rc=$?
+[ $rc -eq 0 ] && ok "W11 cleanup exit 0" || bad "W11 exit $rc" "$(cat "$T/w11.json")"
+[ ! -e "$P/.land/f1" ] && [ ! -e "$STATE" ] && ok "W11 .land/f1 dan .claude/land/f1 hilang" || bad "W11 sisa folder"
+[ "$(git -C "$P/web" worktree list | wc -l | tr -d ' ')" = 1 ] && [ "$(git -C "$P/api" worktree list | wc -l | tr -d ' ')" = 1 ] && ok "W11 worktree terdaftar bersih" || bad "W11 worktree" "$(git -C "$P/web" worktree list)"
+
+n="$(grep -cE -- "--force|-f'|'merge', '--|pr', '(merge|close|review)'" "$SRC/land_watch.py")"
+[ "$n" = 0 ] && ok "W12 tanpa perintah merge/force/close/review" || bad "W12 ada $n baris terlarang" "$(grep -nE -- "--force|-f'|'merge', '--|pr', '(merge|close|review)'" "$SRC/land_watch.py")"
+[ "$(grep -c CLAUDE_PLUGIN_ROOT "$SRC/land_watch.py")" = 0 ] && ok "W12 tanpa CLAUDE_PLUGIN_ROOT" || bad "W12 CLAUDE_PLUGIN_ROOT"
 
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
