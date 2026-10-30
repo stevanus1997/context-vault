@@ -160,6 +160,19 @@ grep -qF 'class="map"' "$T/v6.html" && bad "V6 peta muncul tanpa map" || ok "V6 
 mut "$T/v6b.json" "d['map']={'nodes':[{'id':'LBOFE','touched':True}],'edges':[]}"; asm "$T/v6b.json" "$T/v6b.html" >/dev/null 2>&1
 grep -qF 'class="map"' "$T/v6b.html" && bad "V6 peta 1 node tetap dirender" || ok "V6 map 1 node → tanpa peta"
 
+# === W: skill review-pr (statis) ===
+SM="$SK/SKILL.md"
+[ "$(sed -n 2p "$SM" 2>/dev/null)" = "name: review-pr" ] && ok "W1 frontmatter name: review-pr" || bad "W1 frontmatter"
+for s in prs.py stale-guard.md feature-marker.md refs/cv-review assemble.py AskUserQuestion security-critic 'update-ref -d' 'gh pr diff' contracts_repos; do
+  grep -qF -- "$s" "$SM" 2>/dev/null && ok "W2 SKILL.md memuat $s" || bad "W2 SKILL.md tanpa $s"; done
+[ -f "$SK/reference.md" ] && grep -qF '"evidence"' "$SK/reference.md" && grep -qF '"lane_ok"' "$SK/reference.md" \
+  && ok "W2 reference.md: skema laporan" || bad "W2 reference.md"
+[ -f "$SM" ] && ! grep -F 'gh pr comment' "$SM" | grep -viqF 'tidak pernah' && ! grep -F 'gh pr review' "$SM" | grep -viqF 'tidak pernah' \
+  && ok "W3 gh pr comment/review hanya di kalimat larangan" || bad "W3 gh pr comment/review di luar larangan"
+grep -qE 'checkout|switch|stash' "$SM" 2>/dev/null && grep -E 'checkout|switch|stash' "$SM" | grep -vqiE 'dilarang|tidak pernah|jangan' \
+  && bad "W3 checkout/switch/stash di luar larangan" || ok "W3 checkout/switch/stash hanya larangan"
+grep -qF 'CLAUDE_PLUGIN_ROOT' "$SK"/*.py "$SK"/*.html && bad "W4 CLAUDE_PLUGIN_ROOT di script/template review-pr" || ok "W4 tanpa CLAUDE_PLUGIN_ROOT di .py/.html"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 
