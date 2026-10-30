@@ -16,7 +16,7 @@ units: [<app/pkg>]           # app/package kena (inferensi + KONFIRMASI user) �
 sensitivity: ""              # HASIL RE-EVALUASI vs invariants.md (lihat §D) — BUKAN warisan pasif
 root_cause: ""               # diisi saat diagnosed
 knowledge_touched: []        # mis. ["business/flows.md"] bila triage cabang-3 koreksi doc
-fix_pr: ""                   # diisi saat shipped (oleh ship)
+fix_pr: ""                   # diisi saat shipped (oleh ship) — "<repo-key>#<nomor>" atau list-nya
 shipped_at: ""               # diisi saat shipped (oleh ship)
 reason: ""                   # diisi saat dropped
 ```

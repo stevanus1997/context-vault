@@ -51,7 +51,7 @@ Tulis `control/features/<fitur>/fanout.md`:
 Dependency lintas-app: <... bila ada>
 Urutan: <... bila ada>
 ```
-Lalu **update `capabilities`** app terkait di `control/workspace.yaml` (tambah kapabilitas baru yang diperkenalkan fitur ini) **dan `packages[].consumers`** (tambah app yang memakai package, add-only-if-absent). **Add-only-if-absent:** kalau sudah ada, jangan tambah lagi (re-run fanout nggak boleh bikin entri ganda). Unit bertanda `NEW`/`PACKAGE NEW` **JANGAN** ditulis ke `workspace.yaml` di sini — itu jatah `add-app`/`add-package`; `fanout` cuma update `capabilities` + `consumers` unit **existing**.
+Lalu **update `capabilities`** app terkait di `control/workspace.yaml` (tambah kapabilitas baru yang diperkenalkan fitur ini) **dan `packages[].consumers`** (tambah app yang memakai package, add-only-if-absent). **Add-only-if-absent:** kalau sudah ada, jangan tambah lagi (re-run fanout nggak boleh bikin entri ganda). Unit bertanda `NEW`/`PACKAGE NEW` **JANGAN** ditulis ke `workspace.yaml` di sini — itu jatah `add-app`/`add-package`; `fanout` cuma update `capabilities` + `consumers` unit **existing**. Tiap baris capability/consumer yang ditambah diberi komentar `# feature:<fitur>` (${CLAUDE_PLUGIN_ROOT}/rules/feature-marker.md).
 
 Tampilkan `fanout.md` + perubahan capabilities → minta **approve/koreksi** (user paling tahu peta produk).
 

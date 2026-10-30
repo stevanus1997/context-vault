@@ -192,6 +192,16 @@ grep -qxF '      - survey-reschedule' "$PM/control/workspace.yaml" && ok "M5 cap
 parse_ok "$PM/control/workspace.yaml" && ok "M5 workspace.yaml tetap valid" || bad "M5 workspace.yaml rusak"
 grep -q 'feature:f2' "$PM/control/features/f2/business.md" && ok "M5 features/** tak disentuh" || bad "M5 features/** ikut di-unmark"
 
+# === T: penanda fitur (statis) ===
+FM="$ROOT/plugin/rules/feature-marker.md"
+[ -f "$FM" ] && grep -qF '<!-- feature:<fitur> -->' "$FM" && grep -qF '# feature:<fitur>' "$FM" \
+  && ok "T1 rules/feature-marker.md + dua bentuk penanda" || bad "T1 rules/feature-marker.md"
+for s in intake fanout ship drop; do
+  grep -qE 'rules/feature-marker\.md|sync_status\.py' "$ROOT/plugin/skills/$s/SKILL.md" \
+    && ok "T2 $s merujuk penanda" || bad "T2 $s tanpa rujukan penanda"; done
+grep -qF 'prs: ["<repo-key>#<nomor>"' "$ROOT/plugin/skills/ship/SKILL.md" && ok "T3 ship mencatat prs" || bad "T3 ship tanpa prs"
+grep -qF '"<repo-key>#<nomor>"' "$ROOT/plugin/skills/fix/reference.md" && ok "T3 fix_pr berformat repo-key#nomor" || bad "T3 fix/reference.md fix_pr"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 
