@@ -6,7 +6,8 @@
   siblings --root DIR --ticket T --exclude OWNER/REPO#N  PR terbuka lain dengan tiket sama di repo produk
 
 Output JSON ke stdout. Exit: 0 ok · 1 error gh lain · 2 argumen salah · 4 gh tak ada · 5 gh akun/izin
-(404/403/401/Could not resolve → kemungkinan akun gh aktif bukan akun kerja).
+(404/403/401/Could not resolve → kemungkinan akun gh aktif bukan akun kerja; belum `gh auth login`).
+Rate limit GitHub = exit 1 `gh-rate-limit` (bukan salah akun).
 """
 from __future__ import annotations
 
@@ -20,15 +21,19 @@ import json
 import re
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 HERE = Path(__file__).resolve()
 SYNC_STATUS = HERE.parents[1] / 'sync' / 'sync_status.py'
-TICKET_RE = re.compile(r'\b[A-Z][A-Z0-9]+-\d+\b')
+# Batas kiri/kanan = bukan alfanumerik (bukan \b): `_` di `feature_BLCS-12_x` juga pemisah.
+TICKET_RE = re.compile(r'(?<![A-Za-z0-9])([A-Z][A-Z0-9]+)-(\d+)(?![A-Za-z0-9])')
+NOT_TICKET = {'UTF', 'SHA', 'CVE', 'ISO', 'RFC', 'HTTP', 'TLS', 'SSL', 'PEP', 'AES', 'RSA', 'MD', 'ES', 'IPV', 'GPT'}
 REPO_URL_RE = re.compile(r'github\.com[/:]([^/\s]+)/([^/\s]+?)(?:\.git)?/?$')
 PR_URL_RE = re.compile(r'github\.com/([^/\s]+/[^/\s]+)/pull/(\d+)')
-AUTH_MARKERS = ('Could not resolve', '404', '403', 'HTTP 401')
+AUTH_MARKERS = ('Could not resolve', 'HTTP 404', 'HTTP 403', 'HTTP 401')
 HINT = 'Akun gh aktif mungkin bukan akun kerja — coba `gh auth switch`.'
+LOGIN_HINT = 'gh belum login — jalankan `gh auth login` (akun kerja).'
 PR_FIELDS = 'number,title,author,url,headRefName,headRefOid,baseRefName'
 
 
@@ -74,6 +79,11 @@ def gh(*args) -> object:
         raise GhError(1, {'error': 'gh', 'detail': str(e)}) from None
     if r.returncode:
         detail = (r.stderr.strip().splitlines() or [f'gh exit {r.returncode}'])[0]
+        if 'rate limit' in r.stderr.lower():   # 403 rate limit ≠ salah akun
+            raise GhError(1, {'error': 'gh-rate-limit', 'detail': detail,
+                              'hint': 'Kena rate limit GitHub — tunggu sebentar lalu ulangi.'})
+        if 'gh auth login' in r.stderr:
+            raise GhError(5, {'error': 'gh-auth', 'detail': detail, 'hint': LOGIN_HINT})
         if any(m in r.stderr for m in AUTH_MARKERS):
             raise GhError(5, {'error': 'gh-auth', 'detail': detail, 'hint': HINT})
         raise GhError(1, {'error': 'gh', 'detail': detail})
@@ -85,9 +95,9 @@ def gh(*args) -> object:
 
 def ticket_of(*texts) -> str | None:
     for t in texts:
-        m = TICKET_RE.search(t or '')
-        if m:
-            return m.group(0)
+        for m in TICKET_RE.finditer(t or ''):
+            if m.group(1) not in NOT_TICKET:
+                return m.group(0)
     return None
 
 
@@ -159,15 +169,23 @@ def cmd_view(args, repos) -> object:
 def cmd_siblings(args, repos) -> object:
     exclude = parse_pr(args.exclude, repos) if args.exclude else None
     exclude = (exclude[0].lower(), exclude[1]) if exclude else None
-    rx = re.compile(r'\b' + re.escape(args.ticket) + r'\b')
-    out, failed = [], []
-    for owner_repo in sorted(repos):
+    rx = re.compile(r'(?<![A-Za-z0-9])' + re.escape(args.ticket) + r'(?![A-Za-z0-9])')
+
+    def fetch(owner_repo):
         try:
-            found = gh('pr', 'list', '--repo', owner_repo, '--state', 'open', '--search', args.ticket,
-                       '--json', PR_FIELDS) or []
-        except GhError as e:   # satu repo tak terjangkau jangan menggagalkan semua — lapor di stderr
-            failed.append(e)
-            print(json.dumps({'warning': 'repo dilewati', 'repo': owner_repo, **e.payload}, ensure_ascii=False),
+            return gh('pr', 'list', '--repo', owner_repo, '--state', 'open', '--search', args.ticket,
+                      '--json', PR_FIELDS) or []
+        except GhError as e:
+            return e
+
+    names = sorted(repos)
+    with ThreadPoolExecutor(8) as ex:   # satu gh per repo — paralel, bukan berurutan
+        results = list(ex.map(fetch, names))
+    out, failed = [], []
+    for owner_repo, found in zip(names, results):
+        if isinstance(found, GhError):   # satu repo tak terjangkau jangan menggagalkan semua — lapor di stderr
+            failed.append(found)
+            print(json.dumps({'warning': 'repo dilewati', 'repo': owner_repo, **found.payload}, ensure_ascii=False),
                   file=sys.stderr)
             continue
         for pr in found:

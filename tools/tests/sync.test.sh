@@ -343,6 +343,38 @@ grep -qF 'sync-conflict' "$SK/reference.md" && grep -qF 'sync-conflict' "$ROOT/p
 # M10 — balikan sync-reader tak hilang bila SendMessage tak tersedia
 grep -qF 'SendMessage tak tersedia' "$ROOT/plugin/agents/sync-reader.md" && ok "F6 sync-reader: fallback teks akhir" || bad "F6 sync-reader tanpa fallback"
 
+# === X: perbaikan cek akhir ===
+PX="$T/px"; mkprod "$PX"
+ss init --root "$PX" --since 2000-01-01 > /dev/null
+grep -qF 'synced_at: "2000-01-01"' "$PX/control/sync.yaml" && ok "X1 init --since → synced_at = tanggal since" || bad "X1 synced_at bukan tanggal since" "$(cat "$PX/control/sync.yaml")"
+ss advance --root "$PX" --repo api --sha "$(git -C "$PX/api" rev-parse origin/main)" > /dev/null
+ss advance --root "$PX" --repo web --sha "$(git -C "$PX/web" rev-parse origin/main)" > /dev/null
+mkdir -p "$PX/control/features/fx"; printf 'status: shipped\nprs: ["api#77"]\n' > "$PX/control/features/fx/feature.yaml"
+remote_commit "$PX" api alice "feat: punya sendiri (#77)"; git -C "$PX/api" fetch -q
+ss status --root "$PX" > "$T/x2.json"
+check "X2 PR sendiri (ship) tak dihitung basi" "$T/x2.json" "($(repo api))['behind']==0 and ($(repo api))['behind_all']==1 and d['stale']==[]"
+[ -z "$(ss status --root "$PX" --format hook)" ] && ok "X2 hook diam setelah PR sendiri merge" || bad "X2 hook masih nawarin sync untuk PR sendiri"
+remote_commit "$PX" api bob "feat: punya rekan (#78)"; git -C "$PX/api" fetch -q
+ss status --root "$PX" > "$T/x3.json"
+check "X3 PR rekan tetap dihitung" "$T/x3.json" "($(repo api))['behind']==1 and d['stale']==['api']"
+PN="$T/pn"; mkprod "$PN"
+ss init --root "$PN" --force --only api > "$T/x4.out" 2> "$T/x4.err"; rc=$?
+[ "$rc" -eq 1 ] && ! grep -q Traceback "$T/x4.err" && [ ! -f "$PN/control/sync.yaml" ] \
+  && ok "X4 init --only tanpa sync.yaml → exit 1 rapi" || bad "X4 init --only tanpa sync.yaml (rc=$rc)" "$(cat "$T/x4.err")"
+$PY - "$PX/control/sync.yaml" <<'PY'
+import re, sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+s = re.sub(r'(  web:\n(?:    .*\n)*?)    synced_sha: .*\n', r'\1', s)
+open(p, 'w', encoding='utf-8').write(s)
+PY
+ss advance --root "$PX" --repo api --sha "$(git -C "$PX/api" rev-parse origin/main)" > /dev/null 2> "$T/x5.err"; rc=$?
+ss status --root "$PX" > "$T/x5.json"
+[ "$rc" -eq 0 ] && ok "X5 advance jalan walau entri lain tak lengkap" || bad "X5 advance crash (rc=$rc)" "$(cat "$T/x5.err")"
+check "X5 entri tak lengkap tetap ada" "$T/x5.json" "($(repo web))['error']=='entri sync.yaml tidak lengkap'"
+mkdir -p "$PX/control/business"; printf 'satu <!-- feature:fz -->\r\ndua\r\n' > "$PX/control/business/crlf.md"
+ss unmark --root "$PX" --feature fz > /dev/null
+[ "$(cat "$PX/control/business/crlf.md")" = "$(printf 'satu\r\ndua\r')" ] && ok "X6 unmark mempertahankan CRLF" || bad "X6 unmark mengubah line ending" "$(od -c "$PX/control/business/crlf.md" | head -3)"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

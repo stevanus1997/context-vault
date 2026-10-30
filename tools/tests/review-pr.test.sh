@@ -194,6 +194,16 @@ GH_FAIL_REPO=acme/api prs siblings --root "$P" --ticket BLCS-5302 --exclude 'acm
 [ $rc -eq 0 ] && check "Q3 satu repo tak terjangkau → repo lain tetap" "$T/q3.json" "sorted(x['number'] for x in d)==[8,10]" || bad "Q3 exit $rc" "$(cat "$T/q3.json")"
 grep -qF 'acme/api' "$T/q3.err" && ok "Q3 peringatan repo gagal di stderr" || bad "Q3 tanpa peringatan" "$(cat "$T/q3.err")"
 
+# === X: perbaikan cek akhir ===
+tk() { $PY -c 'import importlib.util,sys;sys.dont_write_bytecode=True;s=importlib.util.spec_from_file_location("p",sys.argv[1]);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);print(m.ticket_of(*sys.argv[2:]))' "$SK/prs.py" "$@"; }
+[ "$(tk 'Handle UTF-8 BOM')" = None ] && [ "$(tk 'bump SHA-256' 'fix CVE-2024')" = None ] && ok "X1 UTF-8/SHA-256/CVE bukan tiket" || bad "X1 tiket palsu: $(tk 'Handle UTF-8 BOM')"
+[ "$(tk 'feature_BLCS-12_x')" = BLCS-12 ] && [ "$(tk 'feat/TRO-5617-lanjut')" = TRO-5617 ] && ok "X2 tiket di branch ber-underscore/dash terbaca" || bad "X2 tiket branch: $(tk 'feature_BLCS-12_x')"
+[ "$(tk 'UTF-8 dan BLCS-5302')" = BLCS-5302 ] && ok "X3 lewati UTF-8, ambil tiket asli" || bad "X3 $(tk 'UTF-8 dan BLCS-5302')"
+GH_FAIL="HTTP 403: API rate limit exceeded for user" PATH="$GHPATH" $PY "$SK/prs.py" view --root "$P" --pr acme/api#3 > "$T/x4.json"; rc=$?
+[ "$rc" -eq 1 ] && check "X4 rate limit bukan salah akun" "$T/x4.json" "d['error']=='gh-rate-limit' and 'auth switch' not in json.dumps(d)" || bad "X4 rate limit rc=$rc" "$(cat "$T/x4.json")"
+GH_FAIL="To get started with GitHub CLI, please run:  gh auth login" PATH="$GHPATH" $PY "$SK/prs.py" view --root "$P" --pr acme/api#3 > "$T/x5.json"; rc=$?
+[ "$rc" -eq 5 ] && check "X5 gh belum login → exit 5 + hint login" "$T/x5.json" "'gh auth login' in d['hint']" || bad "X5 belum login rc=$rc" "$(cat "$T/x5.json")"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

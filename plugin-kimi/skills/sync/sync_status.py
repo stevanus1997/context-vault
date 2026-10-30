@@ -141,11 +141,11 @@ def write_sync(root: Path, data: dict) -> None:
         lines.append('repos:')
         for key in sorted(repos):
             e = repos[key]
-            lines += [f'  {_scalar(key)}:',
-                      f"    apps: {_flow(e.get('apps', []))}",
-                      f"    base_ref: {_scalar(e['base_ref'])}",
-                      f"    synced_sha: {_scalar(e['synced_sha'])}",
-                      f"    synced_at: {_scalar(e['synced_at'], always_quote=True)}"]
+            lines += [f'  {_scalar(key)}:', f"    apps: {_flow(e.get('apps', []))}"]
+            # entri yang diedit tangan bisa tak lengkap: tulis apa adanya (status melaporkannya), jangan crash
+            for k in ('base_ref', 'synced_sha', 'synced_at'):
+                if isinstance(e.get(k), str):
+                    lines.append(f"    {k}: {_scalar(e[k], always_quote=(k == 'synced_at'))}")
     p = root / 'control' / 'sync.yaml'
     tmp = p.with_name('.sync.yaml.tmp')
     tmp.write_text('\n'.join(lines) + '\n', encoding='utf-8')
@@ -163,7 +163,9 @@ def _is_ancestor(path: str, a: str, b: str) -> bool:
     return git(path, 'merge-base', '--is-ancestor', a, b)[0] == 0
 
 
-def repo_status(repo: dict, entry: dict | None, bots: set[str]) -> dict:
+def repo_status(repo: dict, entry: dict | None, bots: set[str], own: set[int] = frozenset()) -> dict:
+    """`behind` = commit first-parent yang bukan bot DAN bukan PR hasil ship sendiri (`own`, D12) —
+    commit sendiri tak perlu dibaca sync, jadi jangan memicu tawaran sinkron."""
     out = {'key': repo['key'], 'path': repo['path'], 'apps': repo['apps'], 'base_ref': None,
            'synced_sha': None, 'head_sha': None, 'behind': None, 'behind_all': None,
            'synced_at': None, 'error': repo['error']}
@@ -186,13 +188,13 @@ def repo_status(repo: dict, entry: dict | None, bots: set[str]) -> dict:
         out['error'] = 'patokan hilang dari riwayat'
         return out
     # satu panggilan: tiap baris = satu commit first-parent (prefix '@' agar author kosong tetap terhitung)
-    rc, log = git(repo['path'], 'log', '--first-parent', '--format=@%an', f'{synced}..{head}')
+    rc, log = git(repo['path'], 'log', '--first-parent', '--format=@%an%x1f%s', f'{synced}..{head}')
     if rc:
         out['error'] = 'gagal menghitung selisih'
         return out
-    authors = [a[1:] for a in log.splitlines() if a.startswith('@')]
-    out['behind_all'] = len(authors)
-    out['behind'] = sum(1 for a in authors if a not in bots)
+    commits = [(line[1:].split('\x1f') + [''])[:2] for line in log.splitlines() if line.startswith('@')]
+    out['behind_all'] = len(commits)
+    out['behind'] = sum(1 for a, subj in commits if a not in bots and _pr_of(subj) not in own)
     return out
 
 
@@ -218,12 +220,14 @@ def compute_status(root: Path, only: list[str] | None = None, fetch: bool = Fals
     bots = set(sync['bot_authors'])
     repos = [r for r in load_workspace(root)
              if not only or r['key'] in only or set(r['apps']) & set(only)]
+    items = _own_items(root)
+    own = {r['key']: own_prs(root, r, items) for r in repos}
     with ThreadPoolExecutor(WORKERS) as ex:
         fetched = {}
         if fetch:
             todo = [r for r in repos if not r['error'] and r['key'] in sync['repos']]
             fetched = dict(zip((r['key'] for r in todo), ex.map(lambda r: fetch_repo(r['path']), todo)))
-        res['repos'] = list(ex.map(lambda r: repo_status(r, sync['repos'].get(r['key']), bots), repos))
+        res['repos'] = list(ex.map(lambda r: repo_status(r, sync['repos'].get(r['key']), bots, own[r['key']]), repos))
     for r in res['repos']:
         if fetch:
             r['fetch_error'] = fetched.get(r['key'])
@@ -312,6 +316,9 @@ def cmd_init(args) -> int:
             return 2
         overrides[k] = v
     old = read_sync(root)
+    if args.only and old is None:
+        print('belum ada patokan (control/sync.yaml) — jalankan init tanpa --only dulu', file=sys.stderr)
+        return 1
     if old is not None and not args.force:
         print('control/sync.yaml sudah ada — pakai --force untuk baseline ulang', file=sys.stderr)
         return 1
@@ -340,8 +347,9 @@ def cmd_init(args) -> int:
         if not sha:
             print(f'gagal menentukan patokan {r["key"]}', file=sys.stderr)
             return 1
+        # --since: synced_at = tanggal itu, supaya "ketinggalan … sejak <tgl>" di hook/ringkasan benar
         entries[r['key']] = {'apps': r['apps'], 'base_ref': bases[r['key']], 'synced_sha': sha,
-                             'synced_at': today()}
+                             'synced_at': args.since or today()}
     if args.only:
         data = old
         data['repos'].update(entries)
@@ -396,11 +404,9 @@ def _pr_of(subject: str) -> int | None:
     return None
 
 
-def own_prs(root: Path, repo: dict) -> set[int]:
-    """Nomor PR repo ini yang tercatat di features/*/feature.yaml `prs` atau fixes/*/fix.yaml `fix_pr`
-    (format "<key>#<n>" atau URL …/<nama-repo>/pull/<n>)."""
-    names = {os.path.basename(repo['path']), os.path.basename(repo['key'])}
-    out = set()
+def _own_items(root: Path) -> list[str]:
+    """Isi mentah features/*/feature.yaml `prs` + fixes/*/fix.yaml `fix_pr` (dibaca sekali per pemanggilan)."""
+    items = []
     for pattern, field in (('features/*/feature.yaml', 'prs'), ('fixes/*/fix.yaml', 'fix_pr')):
         for f in sorted((root / 'control').glob(pattern)):
             try:
@@ -408,15 +414,22 @@ def own_prs(root: Path, repo: dict) -> set[int]:
             except Exception:
                 continue
             v = y.get(field) if isinstance(y, dict) else None
-            for item in (v if isinstance(v, list) else [v]):
-                if not isinstance(item, str):
-                    continue
-                k, sep, n = item.strip().rpartition('#')
-                if sep and k == repo['key'] and n.isdigit():
-                    out.add(int(n))
-                m = PR_URL_RE.search(item)
-                if m and m.group(1).removesuffix('.git') in names:
-                    out.add(int(m.group(2)))
+            items += [i.strip() for i in (v if isinstance(v, list) else [v]) if isinstance(i, str)]
+    return items
+
+
+def own_prs(root: Path, repo: dict, items: list[str] | None = None) -> set[int]:
+    """Nomor PR repo ini yang tercatat di features/*/feature.yaml `prs` atau fixes/*/fix.yaml `fix_pr`
+    (format "<key>#<n>" atau URL …/<nama-repo>/pull/<n>)."""
+    names = {os.path.basename(repo['path']), os.path.basename(repo['key'])}
+    out = set()
+    for item in (_own_items(root) if items is None else items):
+        k, sep, n = item.rpartition('#')
+        if sep and k == repo['key'] and n.isdigit():
+            out.add(int(n))
+        m = PR_URL_RE.search(item)
+        if m and m.group(1).removesuffix('.git') in names:
+            out.add(int(m.group(2)))
     return out
 
 
@@ -432,11 +445,11 @@ def cmd_range(args) -> int:
         print(f'repo tanpa patokan: {args.repo}', file=sys.stderr)
         return 1
     fetch_error = fetch_repo(repo['path']) if args.fetch else None
-    st = repo_status(repo, entry, set(sync['bot_authors']))
+    bots, own = set(sync['bot_authors']), own_prs(root, repo)
+    st = repo_status(repo, entry, bots, own)
     if st['error']:
         print(f"{args.repo}: {st['error']}", file=sys.stderr)
         return 1
-    bots, own = set(sync['bot_authors']), own_prs(root, repo)
     rc, log = git(repo['path'], 'log', '--first-parent', '--reverse', '--format=%H%x1f%an%x1f%ad%x1f%s',
                   '--date=short', f"{st['synced_sha']}..{st['head_sha']}")
     if rc:
@@ -512,16 +525,18 @@ def cmd_unmark(args) -> int:
     root = Path(args.root)
     f_esc = re.escape(args.feature)
     md = re.compile(r' ?<!-- feature:' + f_esc + r' -->')
-    ym = re.compile(r' ?#[ \t]*feature:' + f_esc + r'[ \t]*$', re.M)   # [ \t], bukan \s: jangan makan newline
+    ym = re.compile(r' ?#[ \t]*feature:' + f_esc + r'[ \t]*(?=\r?$)', re.M)   # [ \t], bukan \s: jangan makan newline/CR
     removed = 0
     for f in _knowledge_files(root):
         try:
-            text = f.read_text(encoding='utf-8')
+            with open(f, encoding='utf-8', newline='') as fh:   # newline='': line ending (CRLF) dipertahankan
+                text = fh.read()
         except (OSError, UnicodeDecodeError):
             continue
         new, n = (md if f.suffix == '.md' else ym).subn('', text)
         if n:
-            f.write_text(new, encoding='utf-8')
+            with open(f, 'w', encoding='utf-8', newline='') as fh:
+                fh.write(new)
             removed += n
     print(json.dumps({'removed': removed}))
     return 0
