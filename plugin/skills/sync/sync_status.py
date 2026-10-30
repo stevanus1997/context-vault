@@ -7,6 +7,9 @@ Satu-satunya penulis control/sync.yaml. Dipakai skill sync, penjaga basi skill l
   status  --root DIR [--repos k1,k2] [--format json|hook]
   init    --root DIR [--since YYYY-MM-DD] [--contracts a,b] [--base KEY=REF ...] [--force] [--only KEY]
   advance --root DIR --repo KEY --sha SHA
+  range   --root DIR --repo KEY [--fetch]
+  markers --root DIR [--feature F] [--status s1,s2]
+  unmark  --root DIR --feature F
 
 Exit: 0 ok · 1 gagal (pesan ke stderr) · 2 argumen salah · 3 init butuh --base (stdout {"need_base": [...]}).
 `status` tidak pernah fetch dan tidak pernah melempar error per repo (masuk field `error`).
@@ -345,6 +348,154 @@ def cmd_advance(args) -> int:
     return 0
 
 
+# --- range -----------------------------------------------------------------------------------
+
+PR_RES = (re.compile(r'\(#(\d+)\)\s*$'), re.compile(r'^Merge pull request #(\d+)'))
+PR_URL_RE = re.compile(r'/([^/\s]+)/pull/(\d+)')
+
+
+def _pr_of(subject: str) -> int | None:
+    for rx in PR_RES:
+        m = rx.search(subject)
+        if m:
+            return int(m.group(1))
+    return None
+
+
+def own_prs(root: Path, repo: dict) -> set[int]:
+    """Nomor PR repo ini yang tercatat di features/*/feature.yaml `prs` atau fixes/*/fix.yaml `fix_pr`
+    (format "<key>#<n>" atau URL …/<nama-repo>/pull/<n>)."""
+    names = {os.path.basename(repo['path']), os.path.basename(repo['key'])}
+    out = set()
+    for pattern, field in (('features/*/feature.yaml', 'prs'), ('fixes/*/fix.yaml', 'fix_pr')):
+        for f in sorted((root / 'control').glob(pattern)):
+            try:
+                y = parse_yaml(f.read_text(encoding='utf-8'))
+            except Exception:
+                continue
+            v = y.get(field) if isinstance(y, dict) else None
+            for item in (v if isinstance(v, list) else [v]):
+                if not isinstance(item, str):
+                    continue
+                k, sep, n = item.strip().rpartition('#')
+                if sep and k == repo['key'] and n.isdigit():
+                    out.add(int(n))
+                m = PR_URL_RE.search(item)
+                if m and m.group(1).removesuffix('.git') in names:
+                    out.add(int(m.group(2)))
+    return out
+
+
+def cmd_range(args) -> int:
+    root = Path(args.root)
+    sync = read_sync(root) if (root / 'control' / 'workspace.yaml').is_file() else None
+    if sync is None:
+        print('belum pernah sinkron (control/sync.yaml tidak ada)', file=sys.stderr)
+        return 1
+    repo = next((r for r in load_workspace(root) if r['key'] == args.repo), None)
+    entry = sync['repos'].get(args.repo)
+    if not repo or repo['error'] or not entry:
+        print(f'repo tanpa patokan: {args.repo}', file=sys.stderr)
+        return 1
+    fetch_error = None
+    if args.fetch:
+        try:
+            r = subprocess.run(['git', '-C', repo['path'], 'fetch', '--quiet', 'origin'],
+                               capture_output=True, text=True, timeout=60)
+            if r.returncode:
+                fetch_error = (r.stderr.strip().splitlines() or ['git fetch gagal'])[0]
+        except (OSError, subprocess.SubprocessError) as e:
+            fetch_error = f'git fetch gagal: {e}'
+    st = repo_status(repo, entry, set(sync['bot_authors']))
+    if st['error']:
+        print(f"{args.repo}: {st['error']}", file=sys.stderr)
+        return 1
+    bots, own = set(sync['bot_authors']), own_prs(root, repo)
+    rc, log = git(repo['path'], 'log', '--first-parent', '--reverse', '--format=%H%x1f%an%x1f%ad%x1f%s',
+                  '--date=short', f"{st['synced_sha']}..{st['head_sha']}")
+    if rc:
+        print(f'{args.repo}: git log gagal', file=sys.stderr)
+        return 1
+    commits = []
+    for line in log.splitlines():
+        sha, author, date, subject = (line.split('\x1f') + ['', '', ''])[:4]
+        pr = _pr_of(subject)
+        commits.append({'sha': sha, 'short': sha[:7], 'author': author, 'date': date, 'subject': subject,
+                        'pr': pr, 'bot': author in bots, 'own': pr is not None and pr in own})
+    print(json.dumps({'repo': args.repo, 'from': st['synced_sha'], 'to': st['head_sha'],
+                      'fetch_error': fetch_error, 'commits': commits}, ensure_ascii=False, indent=2))
+    return 0
+
+
+# --- penanda fitur ---------------------------------------------------------------------------
+
+MD_MARK = re.compile(r'<!-- feature:([a-z0-9][a-z0-9-]*) -->')
+YAML_MARK = re.compile(r'#\s*feature:([a-z0-9][a-z0-9-]*)\s*$')
+
+
+def _knowledge_files(root: Path) -> list[Path]:
+    ctl = root / 'control'
+    out = []
+    for f in sorted(ctl.rglob('*')):
+        rel = f.relative_to(ctl).parts
+        if f.is_file() and f.suffix in ('.md', '.yaml') and rel[0] not in ('features', 'fixes'):
+            out.append(f)
+    return out
+
+
+def _feature_status(root: Path, feature: str) -> str | None:
+    try:
+        y = parse_yaml((root / 'control' / 'features' / feature / 'feature.yaml').read_text(encoding='utf-8'))
+    except Exception:
+        return None
+    return y.get('status') if isinstance(y, dict) and isinstance(y.get('status'), str) else None
+
+
+def cmd_markers(args) -> int:
+    root = Path(args.root)
+    wanted = set(_csv(args.status))
+    statuses: dict[str, str | None] = {}
+    out = []
+    for f in _knowledge_files(root):
+        rx = MD_MARK if f.suffix == '.md' else YAML_MARK
+        try:
+            lines = f.read_text(encoding='utf-8').splitlines()
+        except (OSError, UnicodeDecodeError):
+            continue
+        for n, line in enumerate(lines, 1):
+            for m in rx.finditer(line):
+                feat = m.group(1)
+                if args.feature and feat != args.feature:
+                    continue
+                if feat not in statuses:
+                    statuses[feat] = _feature_status(root, feat)
+                if wanted and statuses[feat] not in wanted:
+                    continue
+                out.append({'file': f.relative_to(root).as_posix(), 'line': n, 'feature': feat,
+                            'status': statuses[feat], 'text': rx.sub('', line).rstrip()})
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_unmark(args) -> int:
+    root = Path(args.root)
+    f_esc = re.escape(args.feature)
+    md = re.compile(r' ?<!-- feature:' + f_esc + r' -->')
+    ym = re.compile(r' ?#\s*feature:' + f_esc + r'\s*$', re.M)
+    removed = 0
+    for f in _knowledge_files(root):
+        try:
+            text = f.read_text(encoding='utf-8')
+        except (OSError, UnicodeDecodeError):
+            continue
+        new, n = (md if f.suffix == '.md' else ym).subn('', text)
+        if n:
+            f.write_text(new, encoding='utf-8')
+            removed += n
+    print(json.dumps({'removed': removed}))
+    return 0
+
+
 # --- main ------------------------------------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
@@ -368,6 +519,20 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument('--repo', required=True)
     a.add_argument('--sha', required=True)
     a.set_defaults(fn=cmd_advance)
+    r = sub.add_parser('range')
+    r.add_argument('--root', required=True)
+    r.add_argument('--repo', required=True)
+    r.add_argument('--fetch', action='store_true')
+    r.set_defaults(fn=cmd_range)
+    m = sub.add_parser('markers')
+    m.add_argument('--root', required=True)
+    m.add_argument('--feature')
+    m.add_argument('--status')
+    m.set_defaults(fn=cmd_markers)
+    u = sub.add_parser('unmark')
+    u.add_argument('--root', required=True)
+    u.add_argument('--feature', required=True)
+    u.set_defaults(fn=cmd_unmark)
     return ap
 
 

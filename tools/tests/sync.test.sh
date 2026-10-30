@@ -144,6 +144,54 @@ check "S8 --since 2000-01-01 → commit akar" "$T/s8b.json" "$(repo api)['synced
 ss init --root "$P8" --force --since kemarin > /dev/null 2>&1; rc=$?
 [ $rc -eq 2 ] && ok "S8 --since format salah → exit 2" || bad "S8 --since salah exit $rc"
 
+# === M: range, markers, unmark ===
+PM="$T/pm"; mkprod "$PM"; ss init --root "$PM" > /dev/null
+remote_commit "$PM" api alice "feat: x (#12)"
+remote_commit "$PM" api ci-bot "chore: bump"
+git -C "$PM/api" fetch -q
+ss range --root "$PM" --repo api > "$T/m1.json"; rc=$?
+[ $rc -eq 0 ] && ok "M1 range exit 0" || bad "M1 range exit $rc"
+check "M1 2 commit urut lama→baru" "$T/m1.json" "[c['subject'] for c in d['commits']]==['feat: x (#12)','chore: bump']"
+check "M1 commit #12: pr 12, bot false, own false" "$T/m1.json" "d['commits'][0]['pr']==12 and d['commits'][0]['bot'] is False and d['commits'][0]['own'] is False and d['commits'][0]['author']=='alice'"
+check "M1 commit bot: bot true, pr null" "$T/m1.json" "d['commits'][1]['bot'] is True and d['commits'][1]['pr'] is None"
+check "M1 from/to/short/date" "$T/m1.json" "d['repo']=='api' and d['to']=='$(remote_head "$PM" api)' and d['commits'][1]['sha']==d['to'] and d['commits'][0]['short']==d['commits'][0]['sha'][:7] and d['commits'][0]['date']=='$TODAY' and d['fetch_error'] is None"
+mkdir -p "$PM/control/features/f1"
+printf 'name: f1\nstatus: shipped\nprs: ["api#12"]\n' > "$PM/control/features/f1/feature.yaml"
+ss range --root "$PM" --repo api > "$T/m2.json"
+check "M2 commit #12 own (feature.yaml prs)" "$T/m2.json" "d['commits'][0]['own'] is True and d['commits'][1]['own'] is False"
+remote_commit "$PM" api alice "fix: y (#13)"; git -C "$PM/api" fetch -q
+mkdir -p "$PM/control/fixes/x1"
+printf 'id: x1\nstatus: shipped\nfix_pr: "https://github.com/acme/api/pull/13"\n' > "$PM/control/fixes/x1/fix.yaml"
+ss range --root "$PM" --repo api > "$T/m2b.json"
+check "M2 commit #13 own (fix.yaml fix_pr URL)" "$T/m2b.json" "d['commits'][2]['pr']==13 and d['commits'][2]['own'] is True"
+git -C "$PM/api" remote set-url origin /nope
+ss range --root "$PM" --repo api --fetch > "$T/m3.json"; rc=$?
+[ $rc -eq 0 ] && ok "M3 range --fetch remote rusak exit 0" || bad "M3 exit $rc"
+check "M3 fetch_error terisi, commits tetap" "$T/m3.json" "d['fetch_error'] is not None and len(d['commits'])==3"
+mkdir -p "$PM/control/business" "$PM/control/features/f2"
+printf '# Flows\n\n- Reschedule maks 3x <!-- feature:f2 -->\n- Aturan lama\n' > "$PM/control/business/flows.md"
+$PY - "$PM/control/workspace.yaml" <<'PY2'
+import sys
+p = sys.argv[1]; s = open(p).read()
+s = s.replace('      - jadwal\n', '      - jadwal\n      - survey-reschedule # feature:f2\n')
+open(p, 'w').write(s)
+PY2
+printf 'name: f2\nstatus: active\n' > "$PM/control/features/f2/feature.yaml"
+printf 'catatan <!-- feature:f2 -->\n' > "$PM/control/features/f2/business.md"
+ss markers --root "$PM" --status active,draft > "$T/m4.json"
+check "M4 2 penanda f2 aktif (features/** tak dipindai)" "$T/m4.json" "len(d)==2 and all(m['feature']=='f2' and m['status']=='active' for m in d)"
+check "M4 file/line/text" "$T/m4.json" "sorted((m['file'],m['line']) for m in d)==[('control/business/flows.md',3),('control/workspace.yaml',9)] and any(m['text']=='- Reschedule maks 3x' for m in d)"
+ss markers --root "$PM" --feature f1 > "$T/m4b.json"
+check "M4 --feature f1 → []" "$T/m4b.json" "d==[]"
+ss markers --root "$PM" --status shipped > "$T/m4c.json"
+check "M4 --status shipped → []" "$T/m4c.json" "d==[]"
+ss unmark --root "$PM" --feature f2 > "$T/m5.json"
+check "M5 removed 2" "$T/m5.json" "d['removed']==2"
+grep -qxF -- '- Reschedule maks 3x' "$PM/control/business/flows.md" && ok "M5 teks aturan utuh tanpa token" || bad "M5 flows.md" "$(cat "$PM/control/business/flows.md")"
+grep -qxF '      - survey-reschedule' "$PM/control/workspace.yaml" && ok "M5 capability utuh tanpa komentar" || bad "M5 workspace.yaml" "$(cat "$PM/control/workspace.yaml")"
+parse_ok "$PM/control/workspace.yaml" && ok "M5 workspace.yaml tetap valid" || bad "M5 workspace.yaml rusak"
+grep -q 'feature:f2' "$PM/control/features/f2/business.md" && ok "M5 features/** tak disentuh" || bad "M5 features/** ikut di-unmark"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 
