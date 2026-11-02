@@ -1062,3 +1062,53 @@ Lakukan di repo uji, catat hasilnya di bagian "Catatan pasca-eksekusi" plan ini:
 3. Kasih komentar inline dari akun lain: sesi bangun, kotak `AskUserQuestion` muncul sesudah bangun, dan push notif masuk HP lewat Remote Control. Kalau kotak tidak muncul atau push tidak bunyi, catat dan pakai cadangan `Monitor` sesuai spec §5.2.
 4. Balasan terpasang di thread yang benar, dari akun `gh` user.
 5. Merge semua PR: status `shipped`, penanda lepas, `.land/` hilang.
+
+## Catatan pasca-eksekusi
+
+**Checklist manual Task 7 Step 8: BELUM dijalankan.** Bangun dari background, kotak `AskUserQuestion` sesudah bangun, push ke HP, dan balasan di thread nyata belum terbukti di PR sungguhan.
+
+### Rulings
+
+- Setup: Ruling: kerja in-place di branch feat/land-in-review, bukan worktree — plan Task 1 Step 1 + Global Constraints menyatakan `git switch -c`; plan/spec untracked ikut di checkout ini — kalau salah: pindah branch, tanpa kehilangan kerja.
+- Task 1: Ruling: owner/repo pakai repo_url lalu `git config remote.origin.url`, bukan `git remote get-url` — get-url menerapkan insteadOf (fixture plan jadi path lokal) dan alias SSH akun kerja tak cocok regex; urutan sama dengan prs.py — kalau salah: origin fork di repo_url beda, push tetap ditolak `fork`.
+- Task 1: Ruling: L11 memakai watcher kedua `--interval 2 --max-rounds 2`, bukan `--max-rounds 1 --interval 0` — plan minta watch.pid berisi pid terbaru DAN dihapus saat exit, keduanya tak bisa diamati dengan watcher yang langsung selesai — kalau salah: satu angka test.
+- Task 1: Ruling: bot_authors dicocokkan sesudah membuang akhiran `[bot]` di dua sisi (plan: cocok persis) — GraphQL gh menulis `renovate`, sync.yaml menulis `renovate[bot]`, jadi cocok persis gagal mengabaikan bot yang didaftarkan; tidak jadi substring — kalau salah: akun bernama sama tanpa [bot] ikut diabaikan.
+- Task 1: Ruling: thread terjawab di-seed ke state.seen_comments sekali (settle), bukan dihitung ulang tiap diff — kalau hanya di diff, komentar lama muncul lagi sesudah ack pertama (Review Focus 1) — kalau salah: seed berlebih hanya bisa dari balasan user sendiri.
+- Task 1: Ruling: tambahan di luar plan: PR dibuka lagi/konflik beres menghapus kursornya; `all_merged` selalu kejadian walau sudah di-ack; `need_pr` menghentikan watch — semua menutup jalan watcher nunggu selamanya — kalau salah: satu kejadian merged ekstra saat sesi diulang.
+- Task 1: Ruling: watcher yang diganti keluar exit 0 dengan `{kinds: [], replaced: true}`, dan pid di watch.pid dicek dulu lewat `ps` — tiap exit background membangunkan sesi; tanpa penanda model bisa menyalakan watcher lagi dan saling bunuh; tanpa cek ps, pid daur ulang bisa kena SIGTERM — diteruskan ke SKILL di Task 4 — kalau salah: satu wake sia-sia.
+- Task 2: Ruling: `git merge` ditulis `'merge', 'FETCH_HEAD', '--no-edit'` — W12 melarang literal `'merge', '--`, dan FETCH_HEAD dipakai sebagai pengganti origin/<base> karena fetch satu ref tidak menjamin origin/<base> maju — kalau salah: cuma beda teks pesan merge.
+- Task 2: Ruling: `reply --to c…` mencari komentarnya dulu lalu membalas ke akar thread (plan: langsung `<id>`) — API GitHub menolak balasan atas balasan, dan ini juga menegakkan "hanya komentar di PR terdaftar" (id tak dikenal → exit 2) — kalau salah: satu panggilan gh ekstra per balasan.
+- Task 2: Ruling: tambahan batas di luar plan: `--dir` untuk push/merge-base/open-pr harus worktree repo itu sendiri (bukan sekadar di bawah .land/<slug>); `open-pr` menolak branch yang sudah ada (`branch-exists`); `worktree` menolak fork; `log` check yang tidak gagal → exit 6 `no-check`; `worktree` kotor → exit 6 `worktree-dirty` — tanpa ini commit satu repo bisa ter-push ke branch repo lain, dan open-pr bisa menulis ke branch orang — kalau salah: kasus yang sebelumnya lolos harus lewat user.
+- Task 2: Ruling: `cleanup` memakai `git worktree remove` lalu rmtree + prune, tanpa flag paksa — W12 melarangnya; rmtree membereskan worktree kotor — kalau salah: perubahan uncommitted di worktree hilang saat penutupan, yang memang tahap akhir.
+- Task 3: Ruling: test L memakai remote_commit + fetch, bukan gcommit lokal seperti cuplikan plan — base_ref hasil init adalah origin/main, commit lokal tak pernah terlihat — kalau salah: tidak ada, fixture lebih dekat kenyataan.
+- Task 3: Ruling: `_own_items` direfaktor ke `_manifests` (dipakai land_pending), dan PR yang repo-nya tak dikenal membuat item tidak dianggap merge — semua PR harus terbukti merge — kalau salah: reminder tidak muncul, /land tetap bisa dijalankan manual.
+- Task 4: Ruling: SKILL §2 menulis `python3 .claude/land_watch.py watch <scope>` utuh, bukan `LW watch` — test D1 plan mencari literal itu — kalau salah: tidak ada.
+- Task 4: Ruling: SKILL §2 ditambah aturan `replaced: true` diabaikan dan `need_pr: true` balik ke §1 (di luar "isi persis") — tanpa ini sesi yang dibangunkan watcher lama bisa menyalakan watcher lagi dan saling bunuh, menghabiskan token — kalau salah: satu kalimat ekstra.
+- Task 5: Ruling: test T2 dan F5 di sync.test.sh dipindah dari ship ke land, sesuai izin Step 4 plan; `sync/SKILL.md` ("`ship` fitur itu yang membereskannya") dan komentar `sync_status.py` ikut diubah walau tidak ada di plan — ship tak lagi membereskan sync-conflict, teks lama menyesatkan — kalau salah: dua frasa.
+- Task 6: Ruling: `plugin/agents/sync-reader.md` ikut diubah ke `active,draft,in_review` walau tidak ada di plan — test D9 plan menemukannya, dan tanpa itu subagent sync menimpa catatan fitur in_review (masalah 3 spec §1) — kalau salah: satu kata.
+- Task 7: Ruling: output build-kimi 29 skills, bukan 25 seperti Expected plan — HEAD punya 28 skill Kimi, plus land = 29; angka plan basi — kalau salah: tidak ada.
+- Task 7: Ruling: pin versi I4 di sync.test.sh dinaikkan ke 0.30.0 — test lama mengunci versi rilis — kalau salah: tidak ada.
+- Final: Ruling: `<repo-slug>` diturunkan dari key, bukan basename seperti Global Constraints plan — basename membuat `fe/app` dan `be/app` berbagi worktree dan commit bisa ke repo yang salah; repo satu tingkat tetap `web` — kalau salah: nama folder di .land/ beda untuk repo bersarang.
+- Final: Ruling: `worktree` melaporkan `dirty` dan menambah `--discard`, bukan menolak `worktree-dirty` seperti saran reviewer — penolakan saja tidak memberi jalan keluar; `--discard` hanya dipanggil setelah user memilih Buang di kotak — kalau salah: perubahan worktree terbuang atas pilihan user.
+- Final: Ruling: fork (origin = fork user, PR ke upstream) tidak ditangani khusus — spec membatasi land pada repo produk dan PR dari ship; orang yang memakainya dapat error, bukan tulisan ke branch salah — kalau salah: alur fork perlu `repo_url` diisi.
+- Final: Ruling: dua PR satu repo dalam satu work-item berbagi worktree — ship membuat satu PR per repo, jadi tidak tercapai lewat alur normal — kalau salah: worktree disusulkan bergantian antar-PR.
+- Final: Ruling: status resolved thread tidak dibaca saat state dibangun ulang — spec §5.7 menerimanya, komentar lama tetap lewat konfirmasi — kalau salah: laporan lebih panjang sesudah state hilang.
+- Final: Ruling: perilaku `gh pr view --json comments` di atas 100 komentar tidak dicek — gh memuat halaman sendiri, dan tak ada PR nyata di test — kalau salah: komentar paling lama terlewat.
+- Final: Ruling: bangun dari background, AskUserQuestion sesudah bangun, dan push HP belum terbukti di versi ini — itu checklist manual Task 7 Step 8, belum dijalankan — kalau salah: spec §5.2 punya cadangan Monitor lalu cek-sekali.
+- Final: Ruling: isi `plugin-kimi/` tidak direview baris per baris — hasil generate, generator-nya dites build-kimi.test.sh — kalau salah: ketahuan di test generator.
+- Final: Ruling: `_active_items` di build_status.py tetap tanpa `in_review` — spec §6 menyatakan tidak perlu — kalau salah: panel build tidak menampilkan fitur in_review, yang memang bukan tujuan v1.
+- Final: Ruling: allowlist `Bash(python3 .claude/land_watch.py:*)` selebar seluruh skrip — desain eksplisit spec §5.6, batasnya ada di kode skrip — kalau salah: bug di skrip berjalan tanpa prompt.
+
+### Minor yang ditunda
+
+- fork refusal di `worktree --pr` belum dites (W4 cuma push).
+- SKILL §6 jalur merge bersih menyuruh `LW commit`, padahal merge sudah ter-commit dan hasilnya exit 6 `no-changes`.
+- `log` memakai seluruh `--log-failed` run, bukan job check itu.
+- repo tanpa owner/repo (origin non-GitHub tanpa repo_url) menghasilkan pesan gh yang membingungkan; sebaiknya ditolak lebih awal.
+- SKILL tidak menulis flag `commit`/`push`/`reply`; cek allowlist §1 belum membaca `settings.local.json`.
+- teks basi `sync/reference.md:39` (ship → land), `render-docs/SKILL.md:40`, `share/reference.md:322` (`shipped_at` pada in_review).
+- deskripsi `plugin.json`/`marketplace.json` belum menyebut `land`.
+- komentar di PR yang sudah MERGED tetap jadi kejadian `comments`; SKILL §5 belum punya cabangnya.
+- SKILL §1 `shipped` → STOP tanpa cleanup; sesi putus di antara §7 langkah 4 dan 6 meninggalkan worktree dan state.
+- `attempts` bertahan lintas sesi, lebih ketat dari "run land ini" di spec.
+- file tmp `_write_json` bisa tertinggal saat SIGTERM; pesan merge "Merge commit …"; gagal gh kelas exit 1 diulang tanpa batas.

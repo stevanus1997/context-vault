@@ -13,10 +13,12 @@ Selalu attended, tidak ada mode unattended/headless. `land` **tidak pernah merge
 
 Di bawah, `LW` = `python3 .claude/land_watch.py` dan `<scope>` = `--root . --work-item features/<fitur>` (fix: `fixes/<id>`), atau `--root . --links <url,url>` untuk mode link (§8). Semua `gh`/`git` milik `land` lewat `LW`. Jangan panggil `git push` atau `gh api` langsung.
 
+Worktree baru belum punya dependensi: pasang sesuai `stack` di `workspace.yaml` sebelum quality gate. Quality gate tak bisa dijalankan → jalur konfirmasi user. `LW worktree` mengembalikan `dirty` tidak kosong → itu sisa kerja sesi lama: tampilkan daftarnya, kotak **Lanjutkan** / **Buang** (`LW worktree <scope> --pr <ref> --discard`), jangan langsung di-commit.
+
 ## 1. Mulai
 1. Baca manifest (status harus `in_review`). `shipped` → bilang sudah selesai, STOP. Status lain → arahkan ke `ship`, STOP. `.claude/land_watch.py` absen → arahkan ke `/upgrade`, STOP. Allowlist `Bash(python3 .claude/land_watch.py:*)` belum ada di `.claude/settings.json` → sebut satu kalimat, sarankan `/upgrade`, lanjut.
 2. Baca seperlunya: `business.md` atau `root_cause`, `plans/<unit>.md` terkait, `sensitivity`. Bukan riwayat `build`.
-3. `LW scan <scope>`. `need_pr: true` → minta link PR ke user (teks biasa), catat ke `prs`/`fix_pr`, ulang. Exit 5 → sampaikan `hint`, STOP. Jangan ganti akun `gh` sendiri.
+3. `LW scan <scope>`. `need_pr: true` → minta link PR ke user (teks biasa), catat ke `prs`/`fix_pr`, ulang. Exit 5 → sampaikan `hint` dan `detail`, STOP. Jangan ganti akun `gh` sendiri.
 4. Satu kalimat: "Nyalain accept-edits (Shift+Tab) kalau mau fix pipeline jalan tanpa prompt." Tanpa kotak.
 5. Ada kejadian → §3. Tidak ada → §2.
 
@@ -30,7 +32,7 @@ Bangun → baca `.claude/land/<slug>/event.json`, lanjut §3. Output watcher ber
 ## 3. Tangani kejadian
 Urutan kalau beberapa terjadi bareng: `auth` → `merged`/`closed` → `conflict` → `checks_failed` → `comments`. Setelah semua ditangani: `LW ack <scope>`, lalu balik ke §2.
 
-- `auth` → sampaikan `hint`, STOP.
+- `auth` → sampaikan `hint` dan `detail`, STOP.
 - `merged`, `all_merged: false` → lapor satu kalimat.
 - `all_merged: true` → §7.
 - `closed` → §7 cabang PR ditutup.

@@ -177,6 +177,17 @@ fresh
 view acme_web-7 "d['mergeable']='CONFLICTING'"
 lw scan "${W1[@]}" > "$T/l10e.json"
 check "L10 konflik" "$T/l10e.json" "'conflict' in d['kinds']"
+lw ack "${W1[@]}" > /dev/null
+view acme_web-7 "d['mergeable']='UNKNOWN'"
+lw scan "${W1[@]}" > /dev/null
+view acme_web-7 "d['mergeable']='CONFLICTING'"
+lw scan "${W1[@]}" > "$T/l10f.json"
+check "L10 GitHub menghitung ulang (UNKNOWN) → konflik sama tidak diulang" "$T/l10f.json" "d['kinds']==[]"
+view acme_web-7
+lw scan "${W1[@]}" > /dev/null
+view acme_web-7 "d['mergeable']='CONFLICTING'"
+lw scan "${W1[@]}" > "$T/l10g.json"
+check "L10 konflik beres lalu muncul lagi → kejadian baru" "$T/l10g.json" "'conflict' in d['kinds']"
 
 fresh
 PATH="$GHPATH" $PY "$LW" watch "${W1[@]}" --interval 30 > "$T/l11a.json" & W_OLD=$!
@@ -205,6 +216,7 @@ fresh
 GH_FAIL='HTTP 404: Not Found' lw watch "${W1[@]}" --interval 0 --max-rounds 2 > "$T/l13.json"; rc=$?
 [ $rc -eq 0 ] && check "L13 watch: auth jadi kejadian + hint" "$T/l13.json" "d['kinds']==['auth'] and bool(d['hint'])" || bad "L13 watch exit $rc" "$(cat "$T/l13.json")"
 check "L13 event.json berisi auth" "$STATE/event.json" "d['kinds']==['auth']"
+check "L13 kejadian auth membawa pesan asli gh" "$T/l13.json" "'HTTP 404' in d['detail']"
 GH_FAIL='HTTP 404: Not Found' lw scan "${W1[@]}" > "$T/l13b.json"; rc=$?
 [ $rc -eq 5 ] && ok "L13 scan exit 5" || bad "L13 scan exit $rc (harap 5)"
 
@@ -311,7 +323,8 @@ echo konflik >> "$WT/log.txt"; lw commit "${W1[@]}" --dir "$WT" --message-file "
 lw merge-base "${W1[@]}" --pr web#7 --dir "$WT" > "$T/w7b.json"; rc=$?
 [ $rc -eq 0 ] && check "W7 konflik" "$T/w7b.json" "d['clean'] is False and d['conflicts']==['log.txt']" || bad "W7b exit $rc" "$(cat "$T/w7b.json")"
 [ -f "$WT/.git" ] && git -C "$WT" rev-parse -q --verify MERGE_HEAD >/dev/null && ok "W7 konflik tidak di-abort" || bad "W7 merge di-abort"
-sed -i.bak '/^<<<<<<<\|^=======\|^>>>>>>>/d' "$WT/log.txt" 2>/dev/null; rm -f "$WT/log.txt.bak"
+lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > "$T/w7m.json"; rc=$?
+[ $rc -eq 6 ] && check "W7 penanda konflik tidak boleh ter-commit" "$T/w7m.json" "d['error']=='conflict-markers' and d['files']==['log.txt']" || bad "W7m exit $rc" "$(cat "$T/w7m.json")"
 printf 'selesai\n' > "$WT/log.txt"
 lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > "$T/w7c.json"; rc=$?
 [ $rc -eq 0 ] && [ -z "$(git -C "$WT" rev-parse -q --verify MERGE_HEAD)" ] && ok "W7 commit menutup merge" || bad "W7c exit $rc" "$(cat "$T/w7c.json")"
@@ -367,16 +380,46 @@ lw cleanup "${W1[@]}" > "$T/w11.json"; rc=$?
 [ ! -e "$P/.land/f1" ] && [ ! -e "$STATE" ] && ok "W11 .land/f1 dan .claude/land/f1 hilang" || bad "W11 sisa folder"
 [ "$(git -C "$P/web" worktree list | wc -l | tr -d ' ')" = 1 ] && [ "$(git -C "$P/api" worktree list | wc -l | tr -d ' ')" = 1 ] && ok "W11 worktree terdaftar bersih" || bad "W11 worktree" "$(git -C "$P/web" worktree list)"
 
+# === R: perbaikan review akhir ===
+PRSHA="$(bare_sha)"; pv
+lw worktree "${W1[@]}" --pr web#7 > /dev/null
+echo sisa >> "$WT/a.txt"; echo baru > "$WT/sisa.txt"
+OLDHEAD="$(git -C "$WT" rev-parse HEAD)"
+oth_push tiga
+lw worktree "${W1[@]}" --pr web#7 > "$T/r1.json"; rc=$?
+[ $rc -eq 0 ] && check "R1 sisa kerja sesi lama dilaporkan" "$T/r1.json" "d['dirty']==['a.txt','sisa.txt']" || bad "R1 exit $rc" "$(cat "$T/r1.json")"
+[ "$(git -C "$WT" rev-parse HEAD)" = "$OLDHEAD" ] && [ -f "$WT/sisa.txt" ] && ok "R1 sisa kerja tidak disentuh" || bad "R1 worktree berubah"
+lw worktree "${W1[@]}" --pr web#7 --discard > "$T/r1b.json"; rc=$?
+[ $rc -eq 0 ] && check "R1 --discard membuang sisa" "$T/r1b.json" "d['dirty']==[]" || bad "R1b exit $rc" "$(cat "$T/r1b.json")"
+[ ! -e "$WT/sisa.txt" ] && [ "$(git -C "$WT" rev-parse HEAD)" = "$(bare_sha)" ] && ok "R1 worktree bersih di head terbaru" || bad "R1 belum bersih"
+lw cleanup "${W1[@]}" > /dev/null
+
+Q="$T/q"; mkdir -p "$Q/control/features/f1" "$Q/.claude"
+cp "$SRC/land_watch.py" "$SRC/build_status.py" "$Q/.claude/"
+for a in fe be; do
+  mkdir -p "$Q/$a" "$Q.origin/$a"; git init -q --bare -b main "$Q.origin/$a/app.git"
+  git clone -q "$Q.origin/$a/app.git" "$Q/$a/app" 2>/dev/null
+  gcommit "$Q/$a/app" alice "init $a"; git -C "$Q/$a/app" push -q -u origin main 2>/dev/null
+done
+printf 'product: Q\napps:\n  - name: fe\n    path: fe/app\n  - name: be\n    path: be/app\npackages: []\n' > "$Q/control/workspace.yaml"
+printf 'status: in_review\nprs: []\n' > "$Q/control/features/f1/feature.yaml"
+QW=(--root "$Q" --work-item features/f1)
+PATH="$GHPATH" $PY "$Q/.claude/land_watch.py" worktree "${QW[@]}" --repo-key fe/app --base main > "$T/r2a.json"
+PATH="$GHPATH" $PY "$Q/.claude/land_watch.py" worktree "${QW[@]}" --repo-key be/app --base main > "$T/r2b.json"
+[ "$(j "$T/r2a.json" "d['dir']")" != "$(j "$T/r2b.json" "d['dir']")" ] && [ -e "$Q/.land/f1/fe-app/.git" ] && [ -e "$Q/.land/f1/be-app/.git" ] \
+  && ok "R2 dua repo berakhiran sama punya worktree sendiri" || bad "R2 worktree bertabrakan" "$(cat "$T/r2a.json" "$T/r2b.json")"
+
 n="$(grep -cE -- "--force|-f'|'merge', '--|pr', '(merge|close|review)'" "$SRC/land_watch.py")"
 [ "$n" = 0 ] && ok "W12 tanpa perintah merge/force/close/review" || bad "W12 ada $n baris terlarang" "$(grep -nE -- "--force|-f'|'merge', '--|pr', '(merge|close|review)'" "$SRC/land_watch.py")"
 [ "$(grep -c CLAUDE_PLUGIN_ROOT "$SRC/land_watch.py")" = 0 ] && ok "W12 tanpa CLAUDE_PLUGIN_ROOT" || bad "W12 CLAUDE_PLUGIN_ROOT"
 
 # === D: dokumen ===
 SK="$ROOT/plugin/skills/land/SKILL.md"
-for kw in 'name: land' 'land_watch.py watch' 'run_in_background' 'Mode cek-sekali' 'anti-yes-man.md' 'security-critic' 'sync-conflict' 'unmark' 'abandoned_prs' 'tidak pernah merge' 'replaced: true'; do
+for kw in 'name: land' 'land_watch.py watch' 'run_in_background' 'Mode cek-sekali' 'anti-yes-man.md' 'security-critic' 'sync-conflict' 'unmark' 'abandoned_prs' 'tidak pernah merge' 'replaced: true' '--discard' 'Worktree baru belum punya dependensi'; do
   grep -qF -- "$kw" "$SK" && ok "D1 land memuat: $kw" || bad "D1 land tanpa: $kw"
 done
 grep -cF 'CLAUDE_PLUGIN_ROOT}/rules/ask-user.md' "$SK" | grep -qx 1 && ok "D2 rujukan ask-user" || bad "D2 rujukan ask-user"
+[ "$(grep -cF 'sampaikan `hint` dan `detail`' "$SK")" = 2 ] && ok "D2 auth menyampaikan detail di dua tempat" || bad "D2 auth detail"
 
 S="$ROOT/plugin/skills/ship/SKILL.md"
 grep -qF '`status: in_review` + `in_review_at: <YYYY-MM-DD>`' "$S" && ok "D3 ship pasang in_review" || bad "D3 ship pasang in_review"

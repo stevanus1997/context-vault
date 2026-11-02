@@ -9,7 +9,7 @@ allowlist cukup satu baris dan batasnya ada di sini, bisa dites.
   ack     …                                                        tandai isi event.json sudah diproses
   attempt … --pr REF --check NAME [--reset]                        hitung percobaan fix pipeline
   log     … --pr REF --check NAME                                  400 baris terakhir log check gagal
-  worktree … (--pr REF | --repo-key KEY --base BASE)               buat/sinkronkan .land/<slug>/<repo>
+  worktree … (--pr REF | --repo-key KEY --base BASE) [--discard]    buat/sinkronkan .land/<slug>/<repo>
   merge-base … --pr REF --dir D                                    merge branch tujuan ke worktree
   commit  … --dir D --message-file F                               commit semua perubahan worktree
   push    … --pr REF --dir D                                       push ke head-ref PR, cuma fast-forward
@@ -277,7 +277,7 @@ def fetch_pr(pr: dict) -> dict:
 
 def blank_event(login: str = '', need_pr: bool = False) -> dict:
     return {'kinds': [], 'need_pr': need_pr, 'all_merged': False, 'any_closed': False, 'login': login,
-            'hint': None, 'prs': []}
+            'hint': None, 'detail': None, 'prs': []}
 
 
 def _answered(comments: list[dict], login: str) -> list[str]:
@@ -297,7 +297,7 @@ def settle(state: dict, prs: list[dict], login: str) -> None:
     for p in prs:
         if p['state'] == 'OPEN':
             state.get('seen_state', {}).pop(p['ref'], None)
-        if p['mergeable'] != 'CONFLICTING':
+        if p['mergeable'] == 'MERGEABLE':   # UNKNOWN = GitHub lagi menghitung ulang, bukan konflik beres
             state.get('seen_conflict', {}).pop(p['ref'], None)
 
 
@@ -448,7 +448,7 @@ def _watch_loop(args, scope: Scope) -> dict:
         except Fail as e:
             if e.code == 5:
                 event = blank_event()
-                event.update(kinds=['auth'], hint=e.payload.get('hint'))
+                event.update(kinds=['auth'], hint=e.payload.get('hint'), detail=e.payload.get('detail'))
                 _write_json(scope.state_dir / 'event.json', event)
                 return event
             if e.code != 1:
@@ -507,14 +507,19 @@ def _input_file(path: str) -> str:
     return path
 
 
-def _check_dir(scope: Scope, d: str, repo_path: str | None = None) -> str:
-    """`--dir` harus worktree `.land/<slug>/<repo-slug>`; `repo_path` → harus worktree repo itu, supaya
+def _worktree_dir(scope: Scope, repo: dict) -> Path:
+    """Dari key, bukan basename path: `fe/app` dan `be/app` harus dapat worktree sendiri-sendiri."""
+    return scope.work_dir / (repo['key'].strip('./').replace('/', '-') or os.path.basename(repo['path']))
+
+
+def _check_dir(scope: Scope, d: str, repo: dict | None = None) -> str:
+    """`--dir` harus worktree `.land/<slug>/<repo-slug>`; `repo` → harus worktree repo itu, supaya
     commit satu repo tidak ter-push ke branch repo lain."""
     real, base = os.path.realpath(d), os.path.realpath(scope.work_dir)
-    want = os.path.join(base, os.path.basename(repo_path)) if repo_path else real
+    want = os.path.realpath(_worktree_dir(scope, repo)) if repo else real
     rc, top = git(real, 'rev-parse', '--show-toplevel')
     if os.path.dirname(real) != base or real != want or rc or os.path.realpath(top) != real:
-        raise Fail(2, {'error': 'dir', 'detail': f'--dir harus worktree di {want if repo_path else base}: {d}'})
+        raise Fail(2, {'error': 'dir', 'detail': f'--dir harus worktree di {want if repo else base}: {d}'})
     return real
 
 
@@ -540,22 +545,33 @@ def _push(d: str, head: str) -> None:
         raise Fail(1, {'error': 'git', 'detail': (err.splitlines() or ['git push gagal'])[0]})
 
 
-def _open_worktree(scope: Scope, repo_path: str, ref: str) -> dict:
-    d = scope.work_dir / os.path.basename(repo_path)
+def _dirty(d) -> list[str]:
+    changed = git(d, 'diff', 'HEAD', '--name-only')[1].splitlines()
+    return sorted({*changed, *git(d, 'ls-files', '--others', '--exclude-standard')[1].splitlines()})
+
+
+def _open_worktree(scope: Scope, repo: dict, ref: str, discard: bool = False) -> dict:
+    """Sisa kerja sesi yang putus (`ahead`, `dirty`) tidak disentuh dan dilaporkan: `commit` memakai
+    `add -A`, jadi diam-diam menyusulkannya berarti ikut ter-push tanpa pernah dilihat user."""
+    repo_path = repo['path']
+    d = _worktree_dir(scope, repo)
     sha = _fetch_ref(repo_path, ref)
     if (d / '.git').exists():
-        ahead = int(git(d, 'rev-list', '--count', f'{sha}..HEAD')[1] or 0)
-        if ahead:
-            return {'dir': str(d), 'ahead': ahead}
+        if discard:
+            git(d, 'reset', '--quiet', '--hard')
+            git(d, 'clean', '-dfq')
+        ahead, dirty = int(git(d, 'rev-list', '--count', f'{sha}..HEAD')[1] or 0), _dirty(d)
+        if ahead or dirty:
+            return {'dir': str(d), 'ahead': ahead, 'dirty': dirty}
         if git(d, 'checkout', '--quiet', '--detach', sha)[0]:
-            _refuse('worktree-dirty', f'{d} punya perubahan belum di-commit')
-        return {'dir': str(d), 'ahead': 0}
+            _refuse('worktree-dirty', f'{d} gagal disusulkan ke {ref}')
+        return {'dir': str(d), 'ahead': 0, 'dirty': []}
     d.parent.mkdir(parents=True, exist_ok=True)
     git(repo_path, 'worktree', 'prune')
     rc, _, err = run_git(repo_path, 'worktree', 'add', '--quiet', '--detach', str(d), sha)
     if rc:
         raise Fail(1, {'error': 'git', 'detail': (err.splitlines() or ['git worktree gagal'])[0]})
-    return {'dir': str(d), 'ahead': 0}
+    return {'dir': str(d), 'ahead': 0, 'dirty': []}
 
 
 def cmd_worktree(args, scope: Scope) -> int:
@@ -564,15 +580,15 @@ def cmd_worktree(args, scope: Scope) -> int:
         p = fetch_pr(pr)
         if p['cross_repo']:
             _refuse('fork', f"{pr['ref']} dari fork: head-ref bukan branch di origin")
-        return _emit(_open_worktree(scope, pr['repo_path'], p['head_ref']))
+        return _emit(_open_worktree(scope, scope.repo(pr['repo_key']), p['head_ref'], args.discard))
     if args.pr or not (args.repo_key and args.base):
         raise Fail(2, {'error': 'arg', 'detail': 'pakai --pr, atau --repo-key + --base'})
-    return _emit(_open_worktree(scope, scope.repo(args.repo_key)['path'], args.base))
+    return _emit(_open_worktree(scope, scope.repo(args.repo_key), args.base, args.discard))
 
 
 def cmd_merge_base(args, scope: Scope) -> int:
     pr = scope.pr(args.pr)
-    d = _check_dir(scope, args.dir, pr['repo_path'])
+    d = _check_dir(scope, args.dir, scope.repo(pr['repo_key']))
     _fetch_ref(d, fetch_pr(pr)['base_ref'])
     rc, out, err = run_git(d, 'merge', 'FETCH_HEAD', '--no-edit')
     conflicts = git(d, 'diff', '--name-only', '--diff-filter=U')[1].splitlines()
@@ -588,6 +604,11 @@ def cmd_commit(args, scope: Scope) -> int:
     merging = git(d, 'rev-parse', '-q', '--verify', 'MERGE_HEAD')[0] == 0
     if not merging and git(d, 'diff', '--cached', '--quiet')[0] == 0:
         _refuse('no-changes', 'tidak ada perubahan')
+    if merging:   # `--check` juga melapor whitespace: yang dipakai cuma penanda konflik
+        rows = git(d, 'diff', '--cached', '--check')[1].splitlines()
+        files = sorted({x.split(':')[0] for x in rows if x.endswith('leftover conflict marker')})
+        if files:
+            _refuse('conflict-markers', 'masih ada penanda konflik', files=files)
     rc, out, err = run_git(d, 'commit', '--quiet', '-F', os.path.realpath(msg), timeout=300)
     if rc:
         raise Fail(1, {'error': 'git', 'detail': err or out})
@@ -596,7 +617,7 @@ def cmd_commit(args, scope: Scope) -> int:
 
 def cmd_push(args, scope: Scope) -> int:
     pr = scope.pr(args.pr)
-    d = _check_dir(scope, args.dir, pr['repo_path'])
+    d = _check_dir(scope, args.dir, scope.repo(pr['repo_key']))
     p = fetch_pr(pr)
     head = p['head_ref']
     if p['state'] != 'OPEN':
@@ -642,7 +663,7 @@ def cmd_reply(args, scope: Scope) -> int:
 
 def cmd_open_pr(args, scope: Scope) -> int:
     repo = scope.repo(args.repo_key)
-    d = _check_dir(scope, args.dir, repo['path'])
+    d = _check_dir(scope, args.dir, repo)
     body = _input_file(args.body_file)
     if args.head == args.base or args.head == _default_branch(repo['path'], repo['owner_repo']):
         _refuse('protected-branch', f'{args.head} tidak bisa jadi branch PR')
@@ -705,6 +726,7 @@ def build_parser() -> argparse.ArgumentParser:
     wt.add_argument('--pr')
     wt.add_argument('--repo-key')
     wt.add_argument('--base')
+    wt.add_argument('--discard', action='store_true', help='buang perubahan belum di-commit di worktree')
     mb = _parser(sub, 'merge-base', cmd_merge_base)
     mb.add_argument('--pr', required=True)
     mb.add_argument('--dir', required=True)
