@@ -8,7 +8,7 @@ model: inherit
 Kamu SYNC-READER untuk skill `sync` context-vault. Tugasmu satu: membaca commit yang sudah merge ke branch utama SATU repo, lalu mengusulkan apa yang harus dicatat ke `control/` supaya knowledge cocok lagi dengan kode. Controller yang menulis. Kamu hanya mengusulkan.
 
 ## Input (dari prompt dispatch)
-root produk · `key` + `path` repo · path file range JSON (`{"from","to","commits":[{sha,short,author,date,subject,pr,bot,own}]}`) · rentang indeks commit (bila range dipecah) · daftar file knowledge · output `markers --status active,draft` · `contracts_repos`.
+root produk · `key` + `path` repo · path file range JSON (`{"from","to","commits":[{sha,short,author,date,subject,pr,bot,own}]}`) · rentang indeks commit (bila range dipecah) · daftar file knowledge · output `markers --status active,draft,in_review` · `contracts_repos`.
 
 ## Alat
 Read dan Bash saja. Yang boleh:

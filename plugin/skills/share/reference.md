@@ -288,7 +288,9 @@ pilih: <opsi>            # hanya grup pilihan
 `[umum]` = Komentar umum (tanpa `sumber:`).
 
 ### §7.2 Tahap yang disarankan
-Tahap **paling awal** yang memiliki artefak terdampak:
+Fitur `in_review` → semua feedback diterima masuk ke sesi `/land <fitur>` (paste bloknya di sana), tabel di bawah tidak berlaku.
+
+Selain itu, tahap **paling awal** yang memiliki artefak terdampak:
 
 | Komentar menyentuh | Tahap |
 |---|---|
@@ -317,7 +319,7 @@ Arahan: `/intake venue-tables` dulu (1 butir mengubah aturan); `fanout`/`plan` i
 Bagian "Masukan kemarin → jadinya" generate berikutnya mengambil baris `terima` dari sesi terakhir yang hash-nya ≠ hash sekarang. Kolom Komentar dipakai sebagai kutipan, dan hasilnya diambil dari artefak yang sudah direvisi.
 
 ## §8 Mode dibangun — Hasilnya
-Setelah Hero. Sumber: bukti yang dirakit `ship` untuk PR. Manual pada fitur `shipped`: `tasks.yaml` + `feature.yaml` `shipped_at`. PR/gate yang tak diketahui dilewati, bukan ditebak.
+Setelah Hero. Sumber: bukti yang dirakit `ship` untuk PR. Manual pada fitur `in_review`/`shipped`: `tasks.yaml` + `feature.yaml` `shipped_at`. PR/gate yang tak diketahui dilewati, bukan ditebak.
 ```html
 <h2 class="h" style="margin-top:28px">Hasilnya</h2>
 <p class="hsub">Yang udah dibangun dibanding rancangan.</p>

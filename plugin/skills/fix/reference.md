@@ -6,7 +6,7 @@ Dibaca oleh skill `fix`. SKILL.md tetap ramping; detail skema & template ada di 
 
 ```yaml
 id: <slug>                   # mis. kupon-expired
-status: open                 # open → diagnosed → shipped (+ dropped)
+status: open                 # open → diagnosed → in_review → shipped (+ dropped)
 severity: normal             # normal | urgent  (metadata: urutan render-docs + sinyal)
 reported_at: <YYYY-MM-DD>
 reported: "<gejala dari user, 1 baris>"
@@ -16,8 +16,9 @@ units: [<app/pkg>]           # app/package kena (inferensi + KONFIRMASI user) �
 sensitivity: ""              # HASIL RE-EVALUASI vs invariants.md (lihat §D) — BUKAN warisan pasif
 root_cause: ""               # diisi saat diagnosed
 knowledge_touched: []        # mis. ["business/flows.md"] bila triage cabang-3 koreksi doc
-fix_pr: ""                   # diisi saat shipped (oleh ship) — "<repo-key>#<nomor>" atau list-nya
-shipped_at: ""               # diisi saat shipped (oleh ship)
+fix_pr: ""                   # diisi saat in_review (oleh ship) — "<repo-key>#<nomor>" atau list-nya
+in_review_at: ""             # diisi saat PR dibuka (oleh ship)
+shipped_at: ""               # diisi saat shipped (oleh land)
 reason: ""                   # diisi saat dropped
 ```
 

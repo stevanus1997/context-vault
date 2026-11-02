@@ -385,6 +385,12 @@ grep -qF 'sync_status.py unmark' "$S" && bad "D5 ship masih unmark" || ok "D5 un
 grep -qF 'Pelepas penanda: `land`' "$ROOT/plugin/rules/feature-marker.md" && ok "D6 pelepas penanda land" || bad "D6 pelepas penanda land"
 grep -qF '/context-vault:land <fitur>' "$S" && ok "D7 ship mengarahkan ke land" || bad "D7 ship mengarahkan ke land"
 
+for f in build/SKILL.md fix/SKILL.md fix/reference.md drop/SKILL.md share/SKILL.md share/reference.md render-docs/SKILL.md sync/SKILL.md sync/reference.md review-pr/SKILL.md ask/SKILL.md; do
+  grep -qF 'in_review' "$ROOT/plugin/skills/$f" && ok "D8 $f kenal in_review" || bad "D8 $f"
+done
+left="$(grep -rn 'active,draft' "$ROOT/plugin" --include='*.md' | grep -v in_review)"
+[ -z "$left" ] && ok "D9 semua markers memuat in_review" || bad "D9 markers lama tersisa" "$left"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 
