@@ -30,6 +30,9 @@ if [ "$1" = api ]; then
   case "$2" in
     user) echo '{"login": "me"}'; exit 0 ;;
     */replies) echo '{"id": 99, "html_url": "https://x/c99"}'; exit 0 ;;
+    repos/*/actions/jobs/*/logs)
+      [ -n "${GH_LOGS_FAIL:-}" ] && { echo "HTTP 410: Gone" >&2; exit 1; }
+      for i in $(seq 1 500); do echo "baris-$i"; done; exit 0 ;;
     repos/*/pulls/*/comments)
       key="${2#repos/}"; r="${key%/pulls/*}"; pr="${key#*/pulls/}"; pr="${pr%/comments}"
       f="$GH_DIR/inline-${r//\//_}-$pr.ndjson"; [ -f "$f" ] && cat "$f"; exit 0 ;;
@@ -39,9 +42,12 @@ case "$1 $2" in
   "pr view")
     f="$GH_DIR/view-${repo//\//_}-$3"
     if [ -f "$f.$GH_ROUND.json" ]; then cat "$f.$GH_ROUND.json"; else cat "$f.json"; fi ;;
-  "run view") for i in $(seq 1 500); do echo "baris-$i"; done ;;
+  "run view") echo "log-run" ;;
   "pr comment") echo "https://x/i99" ;;
-  "pr create") echo "https://github.com/acme/api/pull/12" ;;
+  "pr create")
+    [ -n "${GH_CREATE_FAIL:-}" ] && { echo "pull request create failed: GraphQL: validation" >&2; exit 1; }
+    echo "https://github.com/acme/api/pull/12" ;;
+  "pr list") f="$GH_DIR/prlist.json"; [ -f "$f" ] && cat "$f" || echo '[]' ;;
   "repo view") echo '{"defaultBranchRef": {"name": "main"}}' ;;
   *) echo "stub gh: tak dikenal: $*" >&2; exit 1 ;;
 esac
@@ -79,7 +85,11 @@ manifest '["web#7", "api#3"]'
 printf 'status: in_review\nfix_pr: ""\n' > "$P/control/fixes/y/fix.yaml"
 STATE="$P/.claude/land/f1"
 W1=(--root "$P" --work-item features/f1)
-lw() { PATH="$GHPATH" $PY "$LW" "$@"; }
+lw() { # file pesan yang sah hidup di .land/<slug>/_msg/; cleanup menghapusnya, jadi disalin ulang tiap panggilan
+  [ -d "$T/mf" ] && mkdir -p "$P/.land/f1/_msg" && cp "$T/mf/"* "$P/.land/f1/_msg/"
+  PATH="$GHPATH" $PY "$LW" "$@"
+}
+mf() { mkdir -p "$T/mf"; printf '%s\n' "$2" > "$T/mf/$1"; echo "$P/.land/f1/_msg/$1"; }
 fresh() { rm -rf "$STATE"; reset_gh; }
 
 # === L: baca PR + deteksi kejadian ===
@@ -259,7 +269,7 @@ oth_push() { # commit lain langsung ke branch PR di remote
   echo "$1" >> "$T/oth/lain.txt"; git -C "$T/oth" add lain.txt; git -C "$T/oth" commit -q -m "lain: $1"; git -C "$T/oth" push -q origin feat/x 2>/dev/null
 }
 WT="$P/.land/f1/web"
-msg="$T/msg.txt"; echo "fix: test" > "$msg"
+msg="$(mf msg.txt 'fix: test')"
 BEFORE_ST="$(git -C "$P/web" status --porcelain=v1 -b)"
 lw worktree "${W1[@]}" --pr web#7 > "$T/w1.json"; rc=$?
 [ $rc -eq 0 ] && check "W1 worktree di .land/f1/web" "$T/w1.json" "os.path.realpath(d['dir'])==os.path.realpath('$WT')" 2>/dev/null || bad "W1 exit $rc" "$(cat "$T/w1.json")"
@@ -329,7 +339,7 @@ printf 'selesai\n' > "$WT/log.txt"
 lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > "$T/w7c.json"; rc=$?
 [ $rc -eq 0 ] && [ -z "$(git -C "$WT" rev-parse -q --verify MERGE_HEAD)" ] && ok "W7 commit menutup merge" || bad "W7c exit $rc" "$(cat "$T/w7c.json")"
 
-reply="$T/reply.txt"; echo "Done" > "$reply"
+reply="$(mf reply.txt 'siap')"
 cat > "$GH_DIR/inline-acme_web-7.ndjson" <<'JSON'
 {"id": 55, "user": {"login": "bob"}, "body": "ganti", "path": "a.ts", "line": 8, "html_url": "https://x/c55", "created_at": "2026-10-30T01:00:00Z"}
 {"id": 58, "in_reply_to_id": 55, "user": {"login": "bob"}, "body": "tambah", "path": "a.ts", "line": 8, "html_url": "https://x/c58", "created_at": "2026-10-30T01:00:00Z"}
@@ -359,7 +369,7 @@ lw worktree "${W1[@]}" --repo-key api --base main > "$T/w10a.json"; rc=$?
 AWT="$P/.land/f1/api"
 [ $rc -eq 0 ] && [ -d "$AWT" ] && ok "W10 worktree repo baru" || bad "W10 worktree exit $rc" "$(cat "$T/w10a.json")"
 echo baru > "$AWT/n.txt"; lw commit "${W1[@]}" --dir "$AWT" --message-file "$msg" > /dev/null
-body="$T/body.txt"; echo "isi PR" > "$body"
+body="$(mf body.txt 'isi PR')"
 : > "$GH_DIR/log"
 OP=(open-pr "${W1[@]}" --repo-key api --dir "$AWT" --base main --title Judul --body-file "$body")
 lw "${OP[@]}" --head feat/baru > "$T/w10.json"; rc=$?
@@ -370,6 +380,7 @@ MAINSHA="$(git --git-dir="$ABARE" rev-parse main)"
 lw "${OP[@]}" --head main > "$T/w10b.json"; rc=$?
 [ $rc -eq 6 ] && check "W10 --head main ditolak" "$T/w10b.json" "d['error']=='protected-branch'" || bad "W10b exit $rc" "$(cat "$T/w10b.json")"
 [ "$(git --git-dir="$ABARE" rev-parse main)" = "$MAINSHA" ] && ok "W10 main bare tak berubah" || bad "W10 main berubah"
+echo beda >> "$AWT/n.txt"; lw commit "${W1[@]}" --dir "$AWT" --message-file "$msg" > /dev/null
 lw "${OP[@]}" --head feat/baru > "$T/w10c.json"; rc=$?
 [ $rc -eq 6 ] && check "W10 branch yang sudah ada ditolak" "$T/w10c.json" "d['error']=='branch-exists'" || bad "W10c exit $rc" "$(cat "$T/w10c.json")"
 
@@ -408,6 +419,124 @@ PATH="$GHPATH" $PY "$Q/.claude/land_watch.py" worktree "${QW[@]}" --repo-key fe/
 PATH="$GHPATH" $PY "$Q/.claude/land_watch.py" worktree "${QW[@]}" --repo-key be/app --base main > "$T/r2b.json"
 [ "$(j "$T/r2a.json" "d['dir']")" != "$(j "$T/r2b.json" "d['dir']")" ] && [ -e "$Q/.land/f1/fe-app/.git" ] && [ -e "$Q/.land/f1/be-app/.git" ] \
   && ok "R2 dua repo berakhiran sama punya worktree sendiri" || bad "R2 worktree bertabrakan" "$(cat "$T/r2a.json" "$T/r2b.json")"
+
+# === X: temuan cek akhir ===
+# X1 — file pesan di luar .land/<slug>/_msg ditolak: allowlist membuat skrip ini lolos tanpa prompt
+fresh; PRSHA="$(bare_sha)"; pv
+echo RAHASIA > "$T/secret.txt"
+: > "$GH_DIR/log"
+lw reply "${W1[@]}" --pr web#7 --to i9 --body-file "$T/secret.txt" > "$T/x1.json"; rc=$?
+[ $rc -eq 6 ] && check "X1 reply file di luar ditolak" "$T/x1.json" "d['error']=='file-outside'" || bad "X1 exit $rc" "$(cat "$T/x1.json")"
+grep -qF 'pr comment' "$GH_DIR/log" && bad "X1 reply tetap terkirim" || ok "X1 tak ada yang terkirim"
+ln -sf "$T/secret.txt" "$P/.land/f1/_msg/lnk.txt"
+lw reply "${W1[@]}" --pr web#7 --to i9 --body-file "$P/.land/f1/_msg/lnk.txt" > "$T/x1b.json"; rc=$?
+[ $rc -eq 6 ] && ok "X1 symlink ke luar ditolak" || bad "X1 symlink exit $rc"
+rm -f "$P/.land/f1/_msg/lnk.txt"
+lw worktree "${W1[@]}" --pr web#7 > /dev/null
+echo x >> "$WT/a.txt"
+lw commit "${W1[@]}" --dir "$WT" --message-file "$T/secret.txt" > "$T/x1c.json"; rc=$?
+[ $rc -eq 6 ] && check "X1 commit file di luar ditolak" "$T/x1c.json" "d['error']=='file-outside'" || bad "X1c exit $rc"
+lw worktree "${W1[@]}" --pr web#7 --discard > /dev/null
+
+# X2 — commit sisa sesi putus: dilaporkan, tidak disusulkan, dan --discard benar-benar membuangnya
+echo y >> "$WT/a.txt"; lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > /dev/null
+lw worktree "${W1[@]}" --pr web#7 > "$T/x2.json"
+check "X2 ahead dilaporkan" "$T/x2.json" "d['ahead']==1"
+oth_push empat
+lw worktree "${W1[@]}" --pr web#7 --discard > "$T/x2b.json"; rc=$?
+[ $rc -eq 0 ] && check "X2 --discard membuang commit" "$T/x2b.json" "d['ahead']==0 and d['dirty']==[]" || bad "X2b exit $rc" "$(cat "$T/x2b.json")"
+[ "$(git -C "$WT" rev-parse HEAD)" = "$(bare_sha)" ] && ok "X2 worktree di head remote terbaru" || bad "X2 HEAD beda"
+
+# X3 — log per job: `gh run view --log-failed` menolak run yang job lainnya masih jalan
+PRSHA="$(bare_sha)"
+pv "d['statusCheckRollup']=[{'__typename':'CheckRun','name':'test','status':'COMPLETED','conclusion':'FAILURE','detailsUrl':'https://github.com/acme/web/actions/runs/123/job/9'},{'__typename':'CheckRun','name':'lama','status':'COMPLETED','conclusion':'FAILURE','detailsUrl':'https://github.com/acme/web/actions/runs/124'}]"
+: > "$GH_DIR/log"
+lw log "${W1[@]}" --pr web#7 --check test > "$T/x3.json"; rc=$?
+[ $rc -eq 0 ] && grep -qF 'actions/jobs/9/logs' "$GH_DIR/log" && ! grep -qF 'run view' "$GH_DIR/log" && ok "X3 log lewat job" || bad "X3 exit $rc" "$(cat "$GH_DIR/log")"
+lw log "${W1[@]}" --pr web#7 --check lama > "$T/x3b.json"; rc=$?
+[ $rc -eq 0 ] && check "X3 tanpa job id → log run" "$T/x3b.json" "d['log']=='log-run'" || bad "X3b exit $rc" "$(cat "$T/x3b.json")"
+GH_LOGS_FAIL=1 lw log "${W1[@]}" --pr web#7 --check test > "$T/x3c.json"; rc=$?
+[ $rc -eq 6 ] && check "X3 log kedaluwarsa → no-log + link" "$T/x3c.json" "d['error']=='no-log' and '410' in d['detail'] and d['link'].endswith('/job/9')" || bad "X3c exit $rc" "$(cat "$T/x3c.json")"
+
+# X4 — watcher tidak boleh buta diam-diam
+fresh
+printf '{"id": 70, "user": {"login": "bob"}, "body": "a\xc2\x85b", "path": "a.ts", "line": 1, "html_url": "u", "created_at": "t"}\n' > "$GH_DIR/inline-acme_web-7.ndjson"
+lw scan "${W1[@]}" > "$T/x4.json"; rc=$?
+[ $rc -eq 0 ] && check "X4 U+0085 di komentar tetap terbaca" "$T/x4.json" "d['prs'][0]['comments'][0]['id']=='c70'" || bad "X4 exit $rc" "$(cat "$T/x4.json")"
+fresh
+GH_FAIL='HTTP 502: Bad Gateway' lw watch "${W1[@]}" --interval 0 --stuck-after 0 --max-rounds 5 > "$T/x4b.json"; rc=$?
+[ $rc -eq 0 ] && check "X4 gagal terus → kejadian stuck" "$T/x4b.json" "d['kinds']==['stuck'] and '502' in d['detail']" || bad "X4b exit $rc" "$(cat "$T/x4b.json")"
+check "X4 event.json berisi stuck" "$STATE/event.json" "d['kinds']==['stuck']"
+fresh
+echo '[1]' > "$GH_DIR/view-acme_web-7.json"
+lw watch "${W1[@]}" --interval 0 --max-rounds 3 > "$T/x4c.json"; rc=$?
+[ $rc -eq 0 ] && check "X4 crash tak terduga → stuck, bukan mati diam" "$T/x4c.json" "d['kinds']==['stuck'] and bool(d['detail'])" || bad "X4c exit $rc" "$(cat "$T/x4c.json")"
+reset_gh; PRSHA="$(bare_sha)"; pv
+
+# X5 — ditolak server ≠ branch berubah
+lw worktree "${W1[@]}" --pr web#7 --discard > /dev/null
+echo z >> "$WT/a.txt"; lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" > /dev/null
+printf '#!/bin/sh\nexit 1\n' > "$BARE/hooks/pre-receive"; chmod +x "$BARE/hooks/pre-receive"
+lw push "${W1[@]}" --pr web#7 --dir "$WT" > "$T/x5.json"; rc=$?
+rm -f "$BARE/hooks/pre-receive"
+[ $rc -eq 6 ] && check "X5 push-rejected + alasan server" "$T/x5.json" "d['error']=='push-rejected' and 'declined' in d['detail']" || bad "X5 exit $rc" "$(cat "$T/x5.json")"
+
+# X6 — open-pr bisa diulang sesudah `gh pr create` gagal
+ABR="feat/ulang"
+lw worktree "${W1[@]}" --repo-key api --base main > /dev/null
+AWX="$P/.land/f1/api"; echo u >> "$AWX/u.txt"; lw commit "${W1[@]}" --dir "$AWX" --message-file "$msg" > /dev/null
+OX=(open-pr "${W1[@]}" --repo-key api --dir "$AWX" --base main --title Judul --body-file "$body" --head "$ABR")
+GH_CREATE_FAIL=1 lw "${OX[@]}" > "$T/x6.json"; rc=$?
+[ $rc -eq 1 ] && ok "X6 pr create gagal" || bad "X6 exit $rc" "$(cat "$T/x6.json")"
+lw "${OX[@]}" > "$T/x6b.json"; rc=$?
+[ $rc -eq 0 ] && check "X6 ulang sukses" "$T/x6b.json" "d['ref']=='api#12'" || bad "X6b exit $rc" "$(cat "$T/x6b.json")"
+echo '[{"number": 12, "url": "https://github.com/acme/api/pull/12"}]' > "$GH_DIR/prlist.json"
+: > "$GH_DIR/log"
+lw "${OX[@]}" > "$T/x6c.json"; rc=$?
+[ $rc -eq 0 ] && ! grep -qF 'pr create' "$GH_DIR/log" && check "X6 PR sudah ada → dipakai" "$T/x6c.json" "d['ref']=='api#12'" || bad "X6c exit $rc" "$(cat "$T/x6c.json")"
+rm -f "$GH_DIR/prlist.json"
+echo u2 >> "$AWX/u.txt"; lw commit "${W1[@]}" --dir "$AWX" --message-file "$msg" > /dev/null
+lw "${OX[@]}" > "$T/x6d.json"; rc=$?
+[ $rc -eq 6 ] && check "X6 branch remote beda isi ditolak" "$T/x6d.json" "d['error']=='branch-exists'" || bad "X6d exit $rc" "$(cat "$T/x6d.json")"
+
+# X7 — fix pipeline otomatis cuma boleh file yang sudah ada di diff PR
+lw worktree "${W1[@]}" --pr web#7 --discard > /dev/null
+pv "d['files']=[{'path': 'a.txt'}]"
+echo lock > "$WT/package-lock.json"; echo ok >> "$WT/a.txt"
+lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" --only-pr-files web#7 > "$T/x7.json"; rc=$?
+[ $rc -eq 6 ] && check "X7 file di luar diff ditolak" "$T/x7.json" "d['error']=='outside-pr' and d['files']==['package-lock.json']" || bad "X7 exit $rc" "$(cat "$T/x7.json")"
+[ -z "$(git -C "$WT" diff --cached --name-only)" ] && ok "X7 index kembali kosong" || bad "X7 masih ter-stage"
+rm "$WT/package-lock.json"
+lw commit "${W1[@]}" --dir "$WT" --message-file "$msg" --only-pr-files web#7 > "$T/x7b.json"; rc=$?
+[ $rc -eq 0 ] && check "X7 commit melaporkan file" "$T/x7b.json" "d['files']==['a.txt']" || bad "X7b exit $rc" "$(cat "$T/x7b.json")"
+pv
+
+# X8 — ack cuma menandai kejadian yang benar-benar dibaca
+fresh
+printf '{"id": 71, "user": {"login": "bob"}, "body": "b", "path": "a.ts", "line": 1, "html_url": "u", "created_at": "t"}\n' > "$GH_DIR/inline-acme_web-7.ndjson"
+lw scan "${W1[@]}" > "$T/x8.json"
+EID="$(j "$T/x8.json" "d['id']")"
+lw ack "${W1[@]}" --event-id beda > "$T/x8b.json"
+check "X8 id beda tidak di-ack" "$T/x8b.json" "d['acked'] is False and d['stale'] is True"
+[ -f "$STATE/event.json" ] && ok "X8 event.json tetap ada" || bad "X8 event.json hilang"
+lw ack "${W1[@]}" --event-id "$EID" > "$T/x8c.json"
+check "X8 id cocok di-ack" "$T/x8c.json" "d['acked'] is True"
+lw scan "${W1[@]}" > "$T/x8d.json"
+check "X8 sesudah ack kosong" "$T/x8d.json" "d['kinds']==[]"
+
+# X9 — repo tanpa owner/repo ditolak di awal, dengan pesan jelas
+printf 'status: in_review\nprs: ["fe/app#1"]\n' > "$Q/control/features/f1/feature.yaml"
+PATH="$GHPATH" $PY "$Q/.claude/land_watch.py" scan "${QW[@]}" > "$T/x9.json"; rc=$?
+[ $rc -eq 2 ] && check "X9 no-remote" "$T/x9.json" "d['error']=='no-remote'" || bad "X9 exit $rc" "$(cat "$T/x9.json")"
+lw cleanup "${W1[@]}" > /dev/null
+
+# X10 — skill mengikuti skrip
+S10="$ROOT/plugin/skills/land/SKILL.md"
+for kw in '`ahead`' '_msg/' '`stuck`' 'push-rejected' '--only-pr-files' '--event-id' 'no-log' 'outside-pr' '`clean: true`'; do
+  grep -qF -- "$kw" "$S10" && ok "X10 land memuat: $kw" || bad "X10 land tanpa: $kw"
+done
+grep -qF 'dan `ship` bisa menemukannya' "$ROOT/plugin/skills/sync/reference.md" && bad "X10 sync/reference basi" || ok "X10 sync/reference"
+grep -qF '`in_review_at`' "$ROOT/plugin/skills/share/reference.md" && ok "X10 share/reference" || bad "X10 share/reference basi"
 
 n="$(grep -cE -- "--force|-f'|'merge', '--|pr', '(merge|close|review)'" "$SRC/land_watch.py")"
 [ "$n" = 0 ] && ok "W12 tanpa perintah merge/force/close/review" || bad "W12 ada $n baris terlarang" "$(grep -nE -- "--force|-f'|'merge', '--|pr', '(merge|close|review)'" "$SRC/land_watch.py")"

@@ -5,19 +5,21 @@ Disalin ke `.claude/` produk (pola build_status.py). Satu-satunya pintu land ke 
 allowlist cukup satu baris dan batasnya ada di sini, bisa dites.
 
   scan    --root DIR (--work-item W | --links U[,U…])              satu putaran, cetak kejadian
-  watch   … [--interval 120] [--max-rounds N]                      ulang sampai ada kejadian, lalu exit
-  ack     …                                                        tandai isi event.json sudah diproses
+  watch   … [--interval 120] [--max-rounds N] [--stuck-after 3600] ulang sampai ada kejadian, lalu exit
+  ack     … [--event-id ID]                                        tandai isi event.json sudah diproses
   attempt … --pr REF --check NAME [--reset]                        hitung percobaan fix pipeline
   log     … --pr REF --check NAME                                  400 baris terakhir log check gagal
   worktree … (--pr REF | --repo-key KEY --base BASE) [--discard]    buat/sinkronkan .land/<slug>/<repo>
   merge-base … --pr REF --dir D                                    merge branch tujuan ke worktree
-  commit  … --dir D --message-file F                               commit semua perubahan worktree
+  commit  … --dir D --message-file F [--only-pr-files REF]          commit semua perubahan worktree
   push    … --pr REF --dir D                                       push ke head-ref PR, cuma fast-forward
   reply   … --pr REF --to ID --body-file F                         balas komentar di PR terdaftar
   open-pr … --repo-key KEY --dir D --head B --base BASE --title T --body-file F   PR baru, branch baru
   cleanup …                                                        hapus worktree dan state slug ini
 
 W = `features/<fitur>` atau `fixes/<id>`. REF = `<repo-key>#<n>`. Output JSON ke stdout.
+`--message-file`/`--body-file` harus di `.land/<slug>/_msg/`: skrip ini lolos allowlist tanpa prompt, jadi
+isinya tidak boleh bisa diambil dari sembarang file.
 Exit: 0 ok · 1 gagal · 2 argumen salah · 4 gh tak ada · 5 gh akun/izin · 6 ditolak batas `land`.
 Skrip ini sengaja tidak punya perintah merge PR, approve, atau menutup PR.
 """
@@ -28,6 +30,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -40,9 +43,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve()
 BACKOFF_MAX = 600     # detik; gangguan sementara: lipat dua sampai sini
+STUCK_AFTER = 3600    # detik gagal berturut-turut sebelum user dikabari: watcher jangan buta diam-diam
 REPO_URL_RE = re.compile(r'github\.com[/:]([^/\s]+)/([^/\s]+?)(?:\.git)?/?$')
 PR_URL_RE = re.compile(r'github\.com/([^/\s]+/[^/\s]+)/pull/(\d+)')
 RUN_RE = re.compile(r'/actions/runs/(\d+)')
+JOB_RE = re.compile(r'/job/(\d+)')
 WORK_ITEM_RE = re.compile(r'^(features|fixes)/([A-Za-z0-9][A-Za-z0-9._-]*)$')
 AUTH_MARKERS = ('Could not resolve', 'HTTP 404', 'HTTP 403', 'HTTP 401')
 HINT = 'Akun gh aktif mungkin bukan akun kerja — coba `gh auth switch`.'
@@ -52,7 +57,7 @@ PR_FIELDS = ('number,state,url,headRefName,headRefOid,baseRefName,mergeable,revi
 RUN_FAILED = {'FAILURE', 'TIMED_OUT', 'CANCELLED', 'ACTION_REQUIRED', 'STARTUP_FAILURE'}
 STATUS_FAILED = {'FAILURE', 'ERROR'}
 STATUS_PENDING = {'PENDING', 'EXPECTED'}
-KINDS = ('auth', 'merged', 'closed', 'conflict', 'checks_failed', 'comments')
+KINDS = ('auth', 'stuck', 'merged', 'closed', 'conflict', 'checks_failed', 'comments')
 
 _bs = None
 
@@ -96,7 +101,7 @@ def git(cwd, *args) -> tuple[int, str]:
 
 def gh(*args, ndjson: bool = False, raw: bool = False) -> object:
     try:
-        r = subprocess.run(['gh', *args], capture_output=True, text=True, timeout=60)
+        r = subprocess.run(['gh', *args], capture_output=True, encoding='utf-8', errors='replace', timeout=60)
     except (OSError, subprocess.SubprocessError) as e:
         raise Fail(1, {'error': 'gh', 'detail': str(e)}) from None
     if r.returncode:
@@ -112,7 +117,8 @@ def gh(*args, ndjson: bool = False, raw: bool = False) -> object:
         return r.stdout
     try:
         if ndjson:
-            return [json.loads(line) for line in r.stdout.splitlines() if line.strip()]
+            # bukan splitlines(): U+0085 di komentar tidak di-escape `gh` dan ikut memecah baris
+            return [json.loads(line) for line in r.stdout.split('\n') if line.strip()]
         return json.loads(r.stdout or 'null')
     except json.JSONDecodeError:
         raise Fail(1, {'error': 'gh', 'detail': 'output gh bukan JSON'}) from None
@@ -179,6 +185,9 @@ def parse_ref(item: str, repos: list[dict]) -> dict:
             raise Fail(2, {'error': 'arg', 'detail': f'PR tidak dikenal: {item}'})
     for r in repos:
         if name == r['key'] or name.lower() == (r['owner_repo'] or '').lower():
+            if not r['owner_repo']:
+                raise Fail(2, {'error': 'no-remote', 'detail': f"{r['key']} bukan repo GitHub",
+                               'hint': 'Isi `repo_url` di workspace.yaml atau remote origin ke GitHub.'})
             return {'ref': f"{r['key']}#{n}", 'owner_repo': r['owner_repo'], 'number': int(n),
                     'repo_key': r['key'], 'repo_path': r['path']}
     raise Fail(2, {'error': 'unknown-repo', 'detail': f'{item} bukan repo produk',
@@ -241,8 +250,9 @@ def _checks(rollup: list) -> tuple[list[dict], int]:
             name, link = c.get('name'), c.get('detailsUrl')
             bad, wait = c.get('conclusion') in RUN_FAILED, c.get('status') != 'COMPLETED'
         if bad:
-            m = RUN_RE.search(link or '')
-            failed.append({'name': name, 'link': link, 'run_id': m.group(1) if m else None})
+            run, job = RUN_RE.search(link or ''), JOB_RE.search(link or '')
+            failed.append({'name': name, 'link': link, 'run_id': run.group(1) if run else None,
+                           'job_id': job.group(1) if job and run else None})
         elif wait:
             pending += 1
     return failed, pending
@@ -370,6 +380,12 @@ def _write_json(path: Path, data: dict) -> None:
     os.replace(tmp, path)
 
 
+def _save_event(scope: Scope, event: dict) -> None:
+    """`id` = isi kejadian: `ack --event-id` menolak menandai kejadian yang belum dibaca sesi."""
+    event['id'] = hashlib.sha256(json.dumps(event, sort_keys=True).encode()).hexdigest()[:12]
+    _write_json(scope.state_dir / 'event.json', event)
+
+
 def scan_round(scope: Scope) -> dict:
     if not scope.prs:
         return blank_event(need_pr=True)
@@ -383,7 +399,7 @@ def scan_round(scope: Scope) -> dict:
         _write_json(path, state)
     event = diff_event(prs, state, login, scope.bots)
     if event['kinds']:
-        _write_json(scope.state_dir / 'event.json', event)
+        _save_event(scope, event)
     return event
 
 
@@ -436,24 +452,34 @@ def _on_term(*_):
     raise Replaced
 
 
+def _alert(scope: Scope, kind: str, detail, hint=None) -> dict:
+    event = blank_event()
+    event.update(kinds=[kind], hint=hint, detail=detail)
+    _save_event(scope, event)
+    return event
+
+
 def _watch_loop(args, scope: Scope) -> dict:
-    rounds, delay = 0, args.interval
+    rounds, delay, failing_since = 0, args.interval, None
     while True:
         rounds += 1
         try:
             event = scan_round(scope)
-            delay = args.interval
+            delay, failing_since = args.interval, None
             if event['kinds'] or event['need_pr']:
                 return event
+        except Replaced:
+            raise
         except Fail as e:
+            detail = e.payload.get('detail')
             if e.code == 5:
-                event = blank_event()
-                event.update(kinds=['auth'], hint=e.payload.get('hint'), detail=e.payload.get('detail'))
-                _write_json(scope.state_dir / 'event.json', event)
-                return event
-            if e.code != 1:
-                raise
+                return _alert(scope, 'auth', detail, e.payload.get('hint'))
+            failing_since = time.monotonic() if failing_since is None else failing_since
+            if e.code != 1 or time.monotonic() - failing_since >= args.stuck_after:
+                return _alert(scope, 'stuck', detail)
             delay = min(BACKOFF_MAX, delay * 2)
+        except Exception as e:   # bug atau output tak terduga: kabari, jangan mati tanpa kejadian
+            return _alert(scope, 'stuck', f'{type(e).__name__}: {e}')
         if args.max_rounds and rounds >= args.max_rounds:
             return blank_event()
         time.sleep(delay)
@@ -479,6 +505,8 @@ def cmd_ack(args, scope: Scope) -> int:
     event = _read_json(ev_path)
     if not event:
         return _emit({'acked': False})
+    if args.event_id and event.get('id') != args.event_id:
+        return _emit({'acked': False, 'stale': True})
     _write_json(st_path, apply_ack(_read_json(st_path), event))
     ev_path.unlink(missing_ok=True)
     return _emit({'acked': True})
@@ -501,10 +529,13 @@ def _refuse(error: str, detail: str, **extra):
     raise Fail(6, {'error': error, 'detail': detail, **extra})
 
 
-def _input_file(path: str) -> str:
-    if not os.path.isfile(path):
+def _input_file(scope: Scope, path: str) -> str:
+    real, base = os.path.realpath(path), os.path.realpath(scope.work_dir / '_msg') + os.sep
+    if not real.startswith(base):
+        _refuse('file-outside', f'file pesan harus di {base}: {path}')
+    if not os.path.isfile(real):
         raise Fail(2, {'error': 'arg', 'detail': f'file tidak ada: {path}'})
-    return path
+    return real
 
 
 def _worktree_dir(scope: Scope, repo: dict) -> Path:
@@ -540,8 +571,10 @@ def _default_branch(repo_path: str, owner_repo: str) -> str | None:
 def _push(d: str, head: str) -> None:
     rc, _, err = run_git(d, 'push', '--quiet', 'origin', f'HEAD:refs/heads/{head}', timeout=300)
     if rc:
-        if 'rejected' in err or 'non-fast-forward' in err:
+        if 'non-fast-forward' in err or 'fetch first' in err:
             _refuse('non-fast-forward', f'{head} berubah di remote')
+        if 'rejected' in err:   # branch protection / hook server: branch-nya tidak berubah
+            _refuse('push-rejected', err)
         raise Fail(1, {'error': 'git', 'detail': (err.splitlines() or ['git push gagal'])[0]})
 
 
@@ -558,7 +591,7 @@ def _open_worktree(scope: Scope, repo: dict, ref: str, discard: bool = False) ->
     sha = _fetch_ref(repo_path, ref)
     if (d / '.git').exists():
         if discard:
-            git(d, 'reset', '--quiet', '--hard')
+            git(d, 'reset', '--quiet', '--hard', sha)
             git(d, 'clean', '-dfq')
         ahead, dirty = int(git(d, 'rev-list', '--count', f'{sha}..HEAD')[1] or 0), _dirty(d)
         if ahead or dirty:
@@ -599,20 +632,28 @@ def cmd_merge_base(args, scope: Scope) -> int:
 
 def cmd_commit(args, scope: Scope) -> int:
     d = _check_dir(scope, args.dir)
-    msg = _input_file(args.message_file)
+    msg = _input_file(scope, args.message_file)
     git(d, 'add', '-A')
     merging = git(d, 'rev-parse', '-q', '--verify', 'MERGE_HEAD')[0] == 0
-    if not merging and git(d, 'diff', '--cached', '--quiet')[0] == 0:
+    files = git(d, '-c', 'core.quotepath=off', 'diff', '--cached', '--name-only')[1].splitlines()
+    if not merging and not files:
         _refuse('no-changes', 'tidak ada perubahan')
+    if args.only_pr_files:
+        pr = scope.pr(args.only_pr_files)
+        raw = gh('pr', 'view', str(pr['number']), '--repo', pr['owner_repo'], '--json', 'files') or {}
+        extra = sorted(set(files) - {f.get('path') for f in _as_list(raw.get('files'))})
+        if extra:
+            git(d, 'reset', '--quiet')
+            _refuse('outside-pr', 'ada file di luar diff PR', files=extra)
     if merging:   # `--check` juga melapor whitespace: yang dipakai cuma penanda konflik
         rows = git(d, 'diff', '--cached', '--check')[1].splitlines()
         files = sorted({x.split(':')[0] for x in rows if x.endswith('leftover conflict marker')})
         if files:
             _refuse('conflict-markers', 'masih ada penanda konflik', files=files)
-    rc, out, err = run_git(d, 'commit', '--quiet', '-F', os.path.realpath(msg), timeout=300)
+    rc, out, err = run_git(d, 'commit', '--quiet', '-F', msg, timeout=300)
     if rc:
         raise Fail(1, {'error': 'git', 'detail': err or out})
-    return _emit({'sha': git(d, 'rev-parse', 'HEAD')[1]})
+    return _emit({'sha': git(d, 'rev-parse', 'HEAD')[1], 'files': files})
 
 
 def cmd_push(args, scope: Scope) -> int:
@@ -640,14 +681,20 @@ def cmd_log(args, scope: Scope) -> int:
         _refuse('no-check', f'{args.check} tidak gagal di {pr["ref"]}')
     if not c['run_id']:
         _refuse('no-log', 'check ini log-nya tidak bisa dibaca gh', link=c['link'])
-    text = gh('run', 'view', c['run_id'], '--repo', pr['owner_repo'], '--log-failed', raw=True)
+    # per job: `gh run view --log-failed` menolak selama job lain di run itu masih jalan
+    cmd = (('api', f"repos/{pr['owner_repo']}/actions/jobs/{c['job_id']}/logs") if c['job_id'] else
+           ('run', 'view', c['run_id'], '--repo', pr['owner_repo'], '--log-failed'))
+    try:
+        text = gh(*cmd, raw=True)
+    except Fail as e:   # log kedaluwarsa, belum tersedia, atau tak ada izin
+        _refuse('no-log', e.payload.get('detail') or 'log tidak bisa dibaca', link=c['link'])
     return _emit({'log': '\n'.join(text.splitlines()[-400:])})
 
 
 def cmd_reply(args, scope: Scope) -> int:
     pr = scope.pr(args.pr)
     r, n = pr['owner_repo'], pr['number']
-    body = _input_file(args.body_file)
+    body = _input_file(scope, args.body_file)
     if args.to.startswith('c'):
         inline = gh('api', f'repos/{r}/pulls/{n}/comments', '--paginate', '--jq', '.[]', ndjson=True)
         c = next((c for c in inline if f"c{c.get('id')}" == args.to), None)
@@ -664,12 +711,19 @@ def cmd_reply(args, scope: Scope) -> int:
 def cmd_open_pr(args, scope: Scope) -> int:
     repo = scope.repo(args.repo_key)
     d = _check_dir(scope, args.dir, repo)
-    body = _input_file(args.body_file)
+    body = _input_file(scope, args.body_file)
     if args.head == args.base or args.head == _default_branch(repo['path'], repo['owner_repo']):
         _refuse('protected-branch', f'{args.head} tidak bisa jadi branch PR')
-    if git(d, 'ls-remote', '--heads', 'origin', f'refs/heads/{args.head}')[1]:
+    remote = (git(d, 'ls-remote', '--heads', 'origin', f'refs/heads/{args.head}')[1].split() or [None])[0]
+    if remote and remote != git(d, 'rev-parse', 'HEAD')[1]:
         _refuse('branch-exists', f'{args.head} sudah ada di remote')
-    _push(d, args.head)
+    if remote:   # percobaan sebelumnya berhenti sesudah push: sambung, jangan macet di branch sendiri
+        found = gh('pr', 'list', '--repo', repo['owner_repo'], '--head', args.head, '--state', 'open',
+                   '--json', 'number,url') or []
+        if found:
+            return _emit({'ref': f"{repo['key']}#{found[0]['number']}", 'url': found[0]['url']})
+    else:
+        _push(d, args.head)
     url = gh('pr', 'create', '--repo', repo['owner_repo'], '--head', args.head, '--base', args.base,
              '--title', args.title, '--body-file', body, raw=True).strip()
     m = re.search(r'/pull/(\d+)', url)
@@ -714,7 +768,9 @@ def build_parser() -> argparse.ArgumentParser:
     w = _parser(sub, 'watch', cmd_watch)
     w.add_argument('--interval', type=int, default=120)
     w.add_argument('--max-rounds', type=int)
-    _parser(sub, 'ack', cmd_ack, needs_gh=False)
+    w.add_argument('--stuck-after', type=int, default=STUCK_AFTER)
+    k = _parser(sub, 'ack', cmd_ack, needs_gh=False)
+    k.add_argument('--event-id')
     a = _parser(sub, 'attempt', cmd_attempt, needs_gh=False)
     a.add_argument('--pr', required=True)
     a.add_argument('--check', required=True)
@@ -733,6 +789,7 @@ def build_parser() -> argparse.ArgumentParser:
     c = _parser(sub, 'commit', cmd_commit, needs_gh=False)
     c.add_argument('--dir', required=True)
     c.add_argument('--message-file', required=True)
+    c.add_argument('--only-pr-files', metavar='REF', help='tolak file di luar diff PR ini (fix pipeline otomatis)')
     pu = _parser(sub, 'push', cmd_push)
     pu.add_argument('--pr', required=True)
     pu.add_argument('--dir', required=True)

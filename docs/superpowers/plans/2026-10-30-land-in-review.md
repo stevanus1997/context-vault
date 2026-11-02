@@ -1112,3 +1112,22 @@ Lakukan di repo uji, catat hasilnya di bagian "Catatan pasca-eksekusi" plan ini:
 - SKILL §1 `shipped` → STOP tanpa cleanup; sesi putus di antara §7 langkah 4 dan 6 meninggalkan worktree dan state.
 - `attempts` bertahan lintas sesi, lebih ketat dari "run land ini" di spec.
 - file tmp `_write_json` bisa tertinggal saat SIGTERM; pesan merge "Merge commit …"; gagal gh kelas exit 1 diulang tanpa batas.
+
+### Cek akhir (sesi desain, 2026-11-02)
+
+Reviewer independen + `scan` read-only ke PR publik nyata (`cli/cli`, gh 2.92.0): bentuk JSON `gh pr view` / `--paginate --jq` cocok dengan stub. Diperbaiki, masing-masing dengan test `X1`–`X10` di `tools/tests/land.test.sh`:
+
+- `--message-file`/`--body-file` wajib di `.land/<slug>/_msg/` (realpath, symlink keluar ditolak) — sebelumnya file apa pun bisa ter-post tanpa prompt.
+- `worktree --discard` reset ke head PR, dan SKILL menangani `ahead` (commit sesi putus) selain `dirty`.
+- `log` per job lewat `gh api repos/R/actions/jobs/<id>/logs` — `gh run view --log-failed` (juga `--job`) menolak selama job lain di run itu masih jalan; log gagal dibaca → `no-log` + link.
+- NDJSON dipecah di `\n` (U+0085 mentah di output gh memecah `splitlines`); gagal berturut-turut ≥ `--stuck-after` (3600 dtk) atau error tak terduga → kejadian `stuck`, bukan retry diam selamanya.
+- push ditolak server → `push-rejected` + pesan server, bukan `non-fast-forward`.
+- `open-pr` bisa diulang sesudah `gh pr create` gagal (branch remote = HEAD → sambung; PR sudah ada → dipakai).
+- `commit --only-pr-files REF` untuk fix pipeline otomatis (tolak `outside-pr`, mis. lockfile hasil install); `commit` melaporkan `files`.
+- `ack --event-id` menolak kejadian yang belum dibaca (`stale: true`).
+- repo tanpa owner/repo → `no-remote` di awal.
+- SKILL: flag lengkap tiap perintah, `cd` balik ke root, `clean: true` di §6 tanpa commit, komentar di PR merged, `shipped` → cleanup, cek allowlist juga `settings.local.json`; teks basi `sync/reference.md`, `share/reference.md`.
+
+Ditolak: blokir push di mode link (spec membolehkan push sesudah konfirmasi), `CANCELLED` bukan gagal (definisi plan), race dua watcher start bersamaan (jendela sangat sempit).
+
+Masih terbuka: checklist manual Task 7 Step 8 belum dijalankan.
