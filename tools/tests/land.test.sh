@@ -371,6 +371,13 @@ n="$(grep -cE -- "--force|-f'|'merge', '--|pr', '(merge|close|review)'" "$SRC/la
 [ "$n" = 0 ] && ok "W12 tanpa perintah merge/force/close/review" || bad "W12 ada $n baris terlarang" "$(grep -nE -- "--force|-f'|'merge', '--|pr', '(merge|close|review)'" "$SRC/land_watch.py")"
 [ "$(grep -c CLAUDE_PLUGIN_ROOT "$SRC/land_watch.py")" = 0 ] && ok "W12 tanpa CLAUDE_PLUGIN_ROOT" || bad "W12 CLAUDE_PLUGIN_ROOT"
 
+# === D: dokumen ===
+SK="$ROOT/plugin/skills/land/SKILL.md"
+for kw in 'name: land' 'land_watch.py watch' 'run_in_background' 'Mode cek-sekali' 'anti-yes-man.md' 'security-critic' 'sync-conflict' 'unmark' 'abandoned_prs' 'tidak pernah merge' 'replaced: true'; do
+  grep -qF -- "$kw" "$SK" && ok "D1 land memuat: $kw" || bad "D1 land tanpa: $kw"
+done
+grep -cF 'CLAUDE_PLUGIN_ROOT}/rules/ask-user.md' "$SK" | grep -qx 1 && ok "D2 rujukan ask-user" || bad "D2 rujukan ask-user"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

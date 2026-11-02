@@ -127,5 +127,9 @@ run "skill review-pr + args" \
   "$(pj '/context-vault:review-pr bfi/lbofe#1482')" \
   "$(title 'review-pr: bfi/lbofe#1482')"
 
+run "skill land + args" \
+  "$(pj '/context-vault:land checkout')" \
+  "$(title 'land: checkout')"
+
 echo "---"; echo "pass=$PASS fail=$FAIL"
 [ "$FAIL" -eq 0 ]
