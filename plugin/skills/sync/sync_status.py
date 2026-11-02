@@ -505,7 +505,7 @@ def cmd_range(args) -> int:
 MD_MARK = re.compile(r'<!-- feature:([a-z0-9][a-z0-9-]*) -->')
 YAML_MARK = re.compile(r'#\s*feature:([a-z0-9][a-z0-9-]*)\s*$')
 # Baris versi master yang ditulis sync di samping baris ber-penanda fitur aktif (bentrok, D25).
-# Dibereskan ship sebelum unmark; unmark sendiri tidak menyentuhnya.
+# Dibereskan land sebelum unmark; unmark sendiri tidak menyentuhnya.
 MD_CONFLICT = re.compile(r'<!-- sync-conflict:([a-z0-9][a-z0-9-]*) [0-9a-f]{7,40} \d{4}-\d{2}-\d{2} -->')
 YAML_CONFLICT = re.compile(r'#\s*sync-conflict:([a-z0-9][a-z0-9-]*) [0-9a-f]{7,40} \d{4}-\d{2}-\d{2}[ \t]*$')
 

@@ -378,6 +378,13 @@ for kw in 'name: land' 'land_watch.py watch' 'run_in_background' 'Mode cek-sekal
 done
 grep -cF 'CLAUDE_PLUGIN_ROOT}/rules/ask-user.md' "$SK" | grep -qx 1 && ok "D2 rujukan ask-user" || bad "D2 rujukan ask-user"
 
+S="$ROOT/plugin/skills/ship/SKILL.md"
+grep -qF '`status: in_review` + `in_review_at: <YYYY-MM-DD>`' "$S" && ok "D3 ship pasang in_review" || bad "D3 ship pasang in_review"
+grep -qF 'status: shipped` + `shipped_at' "$S" && bad "D4 ship masih pasang shipped" || ok "D4 ship tak pasang shipped"
+grep -qF 'sync_status.py unmark' "$S" && bad "D5 ship masih unmark" || ok "D5 unmark pindah"
+grep -qF 'Pelepas penanda: `land`' "$ROOT/plugin/rules/feature-marker.md" && ok "D6 pelepas penanda land" || bad "D6 pelepas penanda land"
+grep -qF '/context-vault:land <fitur>' "$S" && ok "D7 ship mengarahkan ke land" || bad "D7 ship mengarahkan ke land"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

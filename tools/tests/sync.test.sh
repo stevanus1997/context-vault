@@ -196,7 +196,7 @@ grep -q 'feature:f2' "$PM/control/features/f2/business.md" && ok "M5 features/**
 FM="$ROOT/plugin/rules/feature-marker.md"
 [ -f "$FM" ] && grep -qF '<!-- feature:<fitur> -->' "$FM" && grep -qF '# feature:<fitur>' "$FM" \
   && ok "T1 rules/feature-marker.md + dua bentuk penanda" || bad "T1 rules/feature-marker.md"
-for s in intake fanout ship drop; do
+for s in intake fanout land drop; do
   grep -qE 'rules/feature-marker\.md|sync_status\.py' "$ROOT/plugin/skills/$s/SKILL.md" \
     && ok "T2 $s merujuk penanda" || bad "T2 $s tanpa rujukan penanda"; done
 grep -qF 'prs: ["<repo-key>#<nomor>"' "$ROOT/plugin/skills/ship/SKILL.md" && ok "T3 ship mencatat prs" || bad "T3 ship tanpa prs"
@@ -338,8 +338,8 @@ ss markers --root "$PU" --feature f9 > "$T/f5.json"
 check "F5 markers: kind feature + conflict" "$T/f5.json" "sorted((m['kind'],m['line']) for m in d if m['file']=='control/business/flows.md')==[('conflict',2),('feature',1)] and all(m['feature']=='f9' for m in d)"
 ss unmark --root "$PU" --feature f9 > /dev/null
 grep -qF 'sync-conflict:f9' "$PU/control/business/flows.md" && ok "F5 unmark tak menghapus penanda bentrok" || bad "F5 unmark ikut menghapus sync-conflict"
-grep -qF 'sync-conflict' "$SK/reference.md" && grep -qF 'sync-conflict' "$ROOT/plugin/skills/ship/SKILL.md" \
-  && ok "F5 sync menulis sync-conflict, ship membereskannya" || bad "F5 sync/ship tanpa sync-conflict"
+grep -qF 'sync-conflict' "$SK/reference.md" && grep -qF 'sync-conflict' "$ROOT/plugin/skills/land/SKILL.md" \
+  && ok "F5 sync menulis sync-conflict, land membereskannya" || bad "F5 sync/land tanpa sync-conflict"
 # M10 — balikan sync-reader tak hilang bila SendMessage tak tersedia
 grep -qF 'SendMessage tak tersedia' "$ROOT/plugin/agents/sync-reader.md" && ok "F6 sync-reader: fallback teks akhir" || bad "F6 sync-reader tanpa fallback"
 
