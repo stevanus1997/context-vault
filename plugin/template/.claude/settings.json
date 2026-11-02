@@ -16,6 +16,7 @@
       "Bash(git commit:*)",
       "Bash(git checkout:*)",
       "Bash(python3 .claude/build_status.py:*)",
+      "Bash(python3 .claude/land_watch.py:*)",
       "Read(~/.claude/plugins/cache/**)",
       "Read(~/.claude/plugins/installed_plugins.json)"
     ],

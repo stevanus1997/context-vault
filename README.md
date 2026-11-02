@@ -78,7 +78,7 @@ Skills update these files as part of their normal work, so knowledge grows as yo
 |---|---|---|
 | **1 · Shape the product** | `/discovery` → `/init` → `/roadmap` | a validated idea, the `control/` scaffold, an ordered backlog |
 | **2 · Lay the foundation** | `/architect` → `/wire` | stack + platform invariants, an empty skeleton that runs |
-| **3 · Ship features** *(repeat)* | `/feature` → `/breakdown` → `/build` → `/ship` | business rules, per-app plans, tested code, PRs |
+| **3 · Ship features** *(repeat)* | `/feature` → `/breakdown` → `/build` → `/ship` → `/land` | business rules, per-app plans, tested code, merged PRs |
 
 Already have code? `/init` adopts an existing monorepo or multi-repo, and `/extract` back-fills business knowledge from it. Side lanes, any time: `/tweak` small changes · `/fix` bugs · `/debt` tech debt · `/drop` cancel a feature · `/ask` questions.
 
@@ -105,6 +105,7 @@ Already have code? `/init` adopts an existing monorepo or multi-repo, and `/extr
 | `/breakdown` | Splits the plan into small ordered tasks with test cases |
 | `/build` | Executes tasks with one implementer subagent per task (TDD) plus review; resumable, can run unattended |
 | `/ship` | Review, quality and security gates, an alignment check against `business.md`, then one PR per repo |
+| `/land` | Watches those PRs from a fresh session until they merge: fixes reasonable pipeline failures on its own, sorts reviewer comments and confirms with you before pushing or replying, then marks the feature shipped |
 | `/drop` | Cancels a feature and keeps the reason as a decision record |
 
 **Grow the product**: `/feature` calls these automatically when fanout finds something new.

@@ -1,6 +1,6 @@
 ---
 name: drop
-description: Use untuk membatalkan fitur yang lagi direncanakan/dibangun (status draft/active) — tandai dropped + alasan, review knowledge yang sempat dipromosikan, simpan folder sebagai memori keputusan. Trigger — "drop <fitur>", "batalin fitur <fitur>", "cancel <fitur>". Jalankan dari root produk yang punya control/.
+description: Use untuk membatalkan fitur yang lagi direncanakan/dibangun (status draft/active, atau in_review selama belum ada PR merge) — tandai dropped + alasan, review knowledge yang sempat dipromosikan, simpan folder sebagai memori keputusan. Trigger — "drop <fitur>", "batalin fitur <fitur>", "cancel <fitur>". Jalankan dari root produk yang punya control/.
 ---
 
 > **Harness Kimi Code:** sebelum dispatch subagent apa pun, baca `${KIMI_SKILL_DIR}/../../rules/kimi-harness.md` (mapping critic/implementer → sub-agent bawaan Kimi).
@@ -36,7 +36,7 @@ dropped_at: <YYYY-MM-DD>
 **JANGAN hapus folder** — simpan sebagai memori keputusan (`render-docs` akan memfilter status `dropped` dari doc stakeholder).
 
 ### 5. Ingatkan kode/branch
-Bila implementasi sudah mulai (status `active`), ingatkan user untuk revert/hapus branch terkait. `drop` TIDAK menyentuh kode app (git urusan user).
+Bila implementasi sudah mulai (status `active`), ingatkan user untuk revert/hapus branch terkait. Status `in_review`: cek dulu tidak ada PR yang merge (ada → arahkan ke `/land`, jangan drop), lalu ingatkan user menutup PR yang masih terbuka. `drop` TIDAK menyentuh kode app (git urusan user).
 
 ## Catatan
 - Folder fitur `dropped` tetap ada agar keputusan & alasannya tidak dibahas ulang di kemudian hari.

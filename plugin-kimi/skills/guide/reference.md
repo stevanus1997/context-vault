@@ -14,7 +14,7 @@ init → roadmap? → architect → wire → feature → breakdown → build →
 ```
 **Brownfield (repo existing):**
 ```
-init → architect → extract(opsional) → wire → feature → breakdown → build → ship
+init → architect → extract(opsional) → wire → feature → breakdown → build → ship → land
 ```
 `feature` = konduktor yang menjalankan `intake → fanout → plan`. `roadmap?` = opsional — susun/re-plan backlog fitur terurut (`control/roadmap.md`); brownfield pun boleh panggil standalone kapan saja. Lane samping bisa kapan saja: `fix` (bug), `tweak` (perubahan kecil), `debt` (utang teknis), `ask` (tanya produk), `drop` (batalin fitur), `sync` (nyusulin `control/` dari kode rekan yang sudah merge), `review-pr` (review PR rekan).
 
@@ -44,6 +44,7 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 | File review fitur buat rekan + triase feedback-nya | `/share <fitur>` |
 | Abis pull, susulin catatan dari kerjaan rekan | `/sync` |
 | Review PR rekan | `/review-pr` |
+| Jagain PR lu sampai merge (pipeline + feedback review) | `/land <fitur>` di sesi baru |
 | Susulin produk lama ke template terbaru | `/upgrade` |
 | Dikabarin di HP tiap skill nunggu lo (attended, Remote Control) | sekali: `/config` → **Push when actions required** |
 
@@ -76,7 +77,8 @@ init → architect → extract(opsional) → wire → feature → breakdown → 
 - `/plan` — fase teknis per-app: baca kode tiap app + Q&A teknis → plan implementasi.
 - `/breakdown` — pecah plan flat → `tasks.yaml` (task kecil berurutan, tanpa kode).
 - `/build` — eksekusi `tasks.yaml` → kode lulus-test: implementer subagent per task (TDD) + review + gate; resumable; mode `--unattended` = gate ditunda ke antrian `gates.yaml` (review pagi via `/build` attended = drain), blocker cuma nahan subtree-nya. Pantau progres (panel cuma di Claude Code): panel `🔨 build` (auto saat build jalan, `/cv-panel` manual) + status line + toast; unattended: baris progres live di terminal `drive.sh`. Hemat context (0.28): controller pegang peta dari `build_status.py`, brief dirakit subagent `brief-writer`, titipan antar-task di `carry.yaml`; produk lama → `/upgrade`.
-- `/ship` — finishing gate: review + quality + security (sensitivity-scaled) + cek alignment ke business → PR → tandai shipped.
+- `/ship` — finishing gate: review + quality + security (sensitivity-scaled) + cek alignment ke business → PR → tandai `in_review`.
+- `/land` — kawal PR sampai merge dari sesi baru: standby tanpa token, pipeline gagal yang wajar dibenerin sendiri, feedback reviewer dipilah lalu dikonfirmasi, `shipped` saat semua PR merge.
 
 ### Lane samping
 - `/fix` — lane bugfix: auto-deteksi in-flight (fitur active) / post-ship (`control/fixes/<id>/`); reproduce → root-cause → TDD fix → verify.

@@ -208,7 +208,7 @@ def fetch_repo(path: str) -> str | None:
 
 
 def compute_status(root: Path, only: list[str] | None = None, fetch: bool = False) -> dict:
-    res = {'initialized': False, 'reason': None, 'repos': [], 'stale': [], 'needs_baseline': []}
+    res = {'initialized': False, 'reason': None, 'repos': [], 'stale': [], 'needs_baseline': [], 'land_pending': []}
     if not (root / 'control' / 'workspace.yaml').is_file():
         res['reason'] = 'bukan produk context-vault'
         return res
@@ -218,8 +218,8 @@ def compute_status(root: Path, only: list[str] | None = None, fetch: bool = Fals
         return res
     res['initialized'] = True
     bots = set(sync['bot_authors'])
-    repos = [r for r in load_workspace(root)
-             if not only or r['key'] in only or set(r['apps']) & set(only)]
+    workspace = load_workspace(root)
+    repos = [r for r in workspace if not only or r['key'] in only or set(r['apps']) & set(only)]
     items = _own_items(root)
     own = {r['key']: own_prs(root, r, items) for r in repos}
     with ThreadPoolExecutor(WORKERS) as ex:
@@ -233,13 +233,15 @@ def compute_status(root: Path, only: list[str] | None = None, fetch: bool = Fals
             r['fetch_error'] = fetched.get(r['key'])
     res['stale'] = [r['key'] for r in res['repos'] if r['behind']]
     res['needs_baseline'] = [r['key'] for r in res['repos'] if r['error'] in NEEDS_BASELINE]
+    res['land_pending'] = land_pending(root, sync, workspace)
     return res
 
 
 def hook_text(res: dict) -> str | None:
     stale = [r for r in res['repos'] if r['behind']]
     rebase = res.get('needs_baseline') or []
-    if not stale and not rebase:
+    pending = res.get('land_pending') or []
+    if not stale and not rebase and not pending:
         return None
     parts = []
     if stale:
@@ -249,8 +251,12 @@ def hook_text(res: dict) -> str | None:
         parts.append(f'control/ ketinggalan {total} commit (di luar bot) sejak {since}: {per}.')
     if rebase:
         parts.append(f"Repo yang patokan sinkronnya perlu diulang (branch utama di-force-push / app baru): {', '.join(rebase)}.")
-    return ('[context-vault] ' + ' '.join(parts) +
-            ' Jangan sinkron sendiri — skill feature/plan/fix/tweak/review-pr akan menawarkan /sync dulu.')
+    if parts:
+        parts.append('Jangan sinkron sendiri — skill feature/plan/fix/tweak/review-pr akan menawarkan /sync dulu.')
+    if pending:
+        cmds = ', '.join(f"/land {n.removeprefix('fix:')}" for n in pending)
+        parts.append(f"Fitur/fix in_review yang PR-nya sudah merge: {', '.join(pending)} — jalankan {cmds}.")
+    return '[context-vault] ' + ' '.join(parts)
 
 
 def _csv(s: str | None) -> list[str]:
@@ -265,7 +271,7 @@ def cmd_status(args) -> int:
         if args.format == 'hook':
             return 1
         res = {'initialized': False, 'reason': f'gagal membaca control/: {e}', 'repos': [], 'stale': [],
-               'needs_baseline': []}
+               'needs_baseline': [], 'land_pending': []}
     if args.format == 'hook':
         text = hook_text(res)
         if text:
@@ -404,18 +410,21 @@ def _pr_of(subject: str) -> int | None:
     return None
 
 
-def _own_items(root: Path) -> list[str]:
-    """Isi mentah features/*/feature.yaml `prs` + fixes/*/fix.yaml `fix_pr` (dibaca sekali per pemanggilan)."""
-    items = []
-    for pattern, field in (('features/*/feature.yaml', 'prs'), ('fixes/*/fix.yaml', 'fix_pr')):
+def _manifests(root: Path):
+    """(nama, isi manifest, isi mentah prs/fix_pr) tiap fitur dan fix; nama fix = `fix:<id>`."""
+    for pattern, field, prefix in (('features/*/feature.yaml', 'prs', ''), ('fixes/*/fix.yaml', 'fix_pr', 'fix:')):
         for f in sorted((root / 'control').glob(pattern)):
             try:
                 y = parse_yaml(f.read_text(encoding='utf-8'))
             except Exception:
                 continue
             v = y.get(field) if isinstance(y, dict) else None
-            items += [i.strip() for i in (v if isinstance(v, list) else [v]) if isinstance(i, str)]
-    return items
+            yield prefix + f.parent.name, y, [i.strip() for i in (v if isinstance(v, list) else [v]) if isinstance(i, str)]
+
+
+def _own_items(root: Path) -> list[str]:
+    """Isi mentah features/*/feature.yaml `prs` + fixes/*/fix.yaml `fix_pr` (dibaca sekali per pemanggilan)."""
+    return [i for _, _, items in _manifests(root) for i in items]
 
 
 def own_prs(root: Path, repo: dict, items: list[str] | None = None) -> set[int]:
@@ -430,6 +439,31 @@ def own_prs(root: Path, repo: dict, items: list[str] | None = None) -> set[int]:
         m = PR_URL_RE.search(item)
         if m and m.group(1).removesuffix('.git') in names:
             out.add(int(m.group(2)))
+    return out
+
+
+def land_pending(root: Path, sync: dict, repos: list[dict]) -> list[str]:
+    """Work-item `in_review` yang semua PR-nya sudah tercatat di branch utama, dari commit lokal (tanpa
+    network). Rebase-merge tanpa nomor PR di subjek tidak terdeteksi. Log dibaca sekali per repo, dan hanya
+    kalau ada item `in_review`: dipanggil hook SessionStart."""
+    merged: dict[str, set[int]] = {}
+
+    def merged_in(repo: dict) -> set[int]:
+        if repo['key'] not in merged:
+            base = (sync['repos'].get(repo['key']) or {}).get('base_ref')
+            rc, log = git(repo['path'], 'log', '--first-parent', '-n', '500', '--format=%s', str(base))
+            merged[repo['key']] = {_pr_of(s) for s in log.splitlines()} if rc == 0 and base else set()
+        return merged[repo['key']]
+
+    out = []
+    for name, y, items in _manifests(root):
+        items = {i for i in items if i}
+        if not items or not isinstance(y, dict) or y.get('status') != 'in_review':
+            continue
+        wanted = {r['key']: own_prs(root, r, items) for r in repos if not r['error']}
+        if sum(map(len, wanted.values())) == len(items) and \
+                all(prs <= merged_in(r) for r in repos if (prs := wanted.get(r['key']))):
+            out.append(name)
     return out
 
 
@@ -471,7 +505,7 @@ def cmd_range(args) -> int:
 MD_MARK = re.compile(r'<!-- feature:([a-z0-9][a-z0-9-]*) -->')
 YAML_MARK = re.compile(r'#\s*feature:([a-z0-9][a-z0-9-]*)\s*$')
 # Baris versi master yang ditulis sync di samping baris ber-penanda fitur aktif (bentrok, D25).
-# Dibereskan ship sebelum unmark; unmark sendiri tidak menyentuhnya.
+# Dibereskan land sebelum unmark; unmark sendiri tidak menyentuhnya.
 MD_CONFLICT = re.compile(r'<!-- sync-conflict:([a-z0-9][a-z0-9-]*) [0-9a-f]{7,40} \d{4}-\d{2}-\d{2} -->')
 YAML_CONFLICT = re.compile(r'#\s*sync-conflict:([a-z0-9][a-z0-9-]*) [0-9a-f]{7,40} \d{4}-\d{2}-\d{2}[ \t]*$')
 

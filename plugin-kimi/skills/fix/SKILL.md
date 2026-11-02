@@ -24,6 +24,7 @@ Tentukan target nyangkut apa, lalu pilih mode:
 |---|---|---|
 | 1 fitur `active` (punya `tasks.yaml`, branch hidup) | **in-flight** (§2) | corrective task ke `tasks.yaml` fitur |
 | fitur `shipped` | **post-ship** (§3) | `control/fixes/<id>/` |
+| fitur `in_review` | **ARAHKAN** | PR masih terbuka → `/land <fitur>`, perbaikan masuk PR yang sama. Konfirmasi dulu kalau user bilang ini bug lain di luar PR → post-ship |
 | TAK nyangkut fitur (bug skeleton `wire`/shared util) | **post-ship** (§3) | `fixes/<id>/`, `relates_to: []`, sensitivity dievaluasi dari nol |
 | fitur `draft` (belum `build`, belum ada kode) | **TOLAK** | bukan bug — fitur belum dikerjakan; arahkan lanjut `/feature` |
 | DUA fitur (`active` + `shipped`) | **TANYA** | bug di kode yang sedang di-build → in-flight; selain itu post-ship. Konfirmasi, jangan tebak diam-diam |
@@ -62,6 +63,6 @@ Konteks: bug produksi; tak ada branch hidup; fitur `shipped` (atau tanpa-fitur).
 ## Catatan
 - `fix` **tak pernah** auto-`ship` & tak bikin PR — jatah `/ship` (terpisah, eksplisit). `fix` cuma sampai IJO.
 - Utang teknis (benar tapi jelek) **bukan** defect → bukan jatah `fix` untuk men-*catat*; itu `control/debt.yaml` (di-capture `build` pintu ke-4, dikelola `/debt`). `fix` hanya **melunasi** utang `open` yang kebetulan satu-area lewat task `kind: debt` (§1 debt-aware) — sibling `kind: fix`.
-- BUKAN urusannya: kapabilitas/kontrak/vendor BARU (→ `/feature`); nentuin stack (→ `architect`); bikin PR/`shipped` (→ `ship`).
+- BUKAN urusannya: kapabilitas/kontrak/vendor BARU (→ `/feature`); nentuin stack (→ `architect`); bikin PR (→ `ship`); tandai `shipped` (→ `land`).
 - Hemat konteks: reproduce + root-cause + implementasi semua di subagent; sesi `fix` cuma nampung kesimpulan + status.
 - Perubahan kecil yang BUKAN defect (ganti kebijakan/konstanta) → `/tweak`, bukan `fix`.

@@ -14,7 +14,7 @@ Isi, katalog komponen, strategi tangkap layar, Mermaid, format feedback & `revie
 ## Deteksi mode
 - Argumen memuat `=== FEEDBACK share:` → **Mode Triase** (§B).
 - `share <fitur> feedback` → minta user paste blok, lalu Mode Triase.
-- `share <fitur>` → **Mode Generate** (§A). Mode halaman `dibangun` bila dipanggil `ship` atau `feature.yaml` `status: shipped`; selain itu `rancangan`.
+- `share <fitur>` → **Mode Generate** (§A). Mode halaman `dibangun` bila dipanggil `ship` atau `feature.yaml` `status` `in_review`/`shipped`; selain itu `rancangan`.
 - Tanpa nama fitur → daftar fitur di `control/features/` yang punya `business.md`, minta pilih.
 
 ## A. Mode Generate

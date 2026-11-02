@@ -86,6 +86,8 @@ else bad "banner unattended hilang/salah posisi di build/SKILL.md"; fi
 # Note D5 di build/reference.md (setelah heading unattended pertama)
 grep -q 'Harness Kimi Code' "$DST/skills/build/reference/g-lapor-keluar.md" && grep -q 'Harness Kimi Code' "$DST/skills/build/reference/h-driver.md" \
   && ok "note unattended di build/reference/{g,h}-*.md" || bad "note unattended hilang di build/reference/{g,h}-*.md"
+sed -n '1,/^# /p' "$DST/skills/land/SKILL.md" | grep -qF 'HARNESS KIMI CODE — `land` cuma mode cek-sekali' \
+  && ok "banner land di atas H1" || bad "banner land hilang/salah posisi"
 
 # --- 7. deterministik: dua kali jalan → identik ---
 TMP="$(mktemp -d)"

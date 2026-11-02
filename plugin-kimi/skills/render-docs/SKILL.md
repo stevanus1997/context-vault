@@ -37,7 +37,7 @@ Ganti tiap penanda `<!-- SLOT:x -->` + section contohnya dengan konten nyata:
 - Render markdown sederhana (heading, list, bold, inline code) jadi HTML yang sesuai.
 
 ### 4. FILTER status fitur
-Fitur ber-status `dropped` JANGAN ditampilkan di bagian utama. (Opsional: bagian kecil "Diarsipkan" di akhir, tapi default sembunyikan.) Fitur `active`/`shipped` boleh tampil (mis. badge `.status`). **Bila badge `shipped` ditampilkan, sertakan keterangan makna** (legend statis dekat badge): `shipped` = sudah di-PR / siap-kirim, **bukan** indikator merged / ter-deploy / live (cermin induk §3/§16 Future "in-review"). `render-docs` tak punya sinyal CI/deploy — jangan klaim status produksi. Untuk fix: `dropped` JANGAN ditampilkan; `open`/`diagnosed` = "Known Issues"; `shipped` = "Riwayat". `render-docs` dipicu `ship` (fix shipped) **dan** oleh `fix` saat status fix berubah jadi `open`/`diagnosed` (biar Known Issues muncul tanpa nunggu ship lain). Untuk utang teknis: `dropped` JANGAN ditampilkan; `open`/`scheduled` = "Known Issues / Utang Teknis" (jaring — utang `open` selalu kelihatan walau areanya tak disentuh `plan`/`fix` lagi); `shipped` = "Riwayat".
+Fitur ber-status `dropped` JANGAN ditampilkan di bagian utama. (Opsional: bagian kecil "Diarsipkan" di akhir, tapi default sembunyikan.) Fitur `active`/`in_review`/`shipped` boleh tampil (mis. badge `.status`). **Bila badge `shipped` ditampilkan, sertakan keterangan makna** (legend statis dekat badge): `in_review` = PR terbuka, `shipped` = sudah merge ke branch utama, **bukan** indikator ter-deploy / live. `render-docs` tak punya sinyal CI/deploy — jangan klaim status produksi. Untuk fix: `dropped` JANGAN ditampilkan; `open`/`diagnosed` = "Known Issues"; `shipped` = "Riwayat". `render-docs` dipicu `ship` (fix shipped) **dan** oleh `fix` saat status fix berubah jadi `open`/`diagnosed` (biar Known Issues muncul tanpa nunggu ship lain). Untuk utang teknis: `dropped` JANGAN ditampilkan; `open`/`scheduled` = "Known Issues / Utang Teknis" (jaring — utang `open` selalu kelihatan walau areanya tak disentuh `plan`/`fix` lagi); `shipped` = "Riwayat".
 
 ### 5. Tulis output
 Tulis hasil ke `control/docs/site/index.html` (buat folder bila belum ada). Pastikan self-contained (CSS inline dari template, tanpa file eksternal).
@@ -47,4 +47,4 @@ Sebutkan path output + cara buka (double-click / `open control/docs/site/index.h
 
 ## Catatan
 - Sumber kebenaran = knowledge `control/`. JANGAN pernah suruh user edit HTML langsung — edit knowledge lalu regenerate.
-- Dipanggil `ship` setelah fitur shipped, atau manual kapan saja untuk preview.
+- Dipanggil `ship` setelah PR dibuat dan `land` saat semua PR merge, atau manual kapan saja untuk preview.

@@ -391,6 +391,13 @@ done
 left="$(grep -rn 'active,draft' "$ROOT/plugin" --include='*.md' | grep -v in_review)"
 [ -z "$left" ] && ok "D9 semua markers memuat in_review" || bad "D9 markers lama tersisa" "$left"
 
+jq -e '.permissions.allow | index("Bash(python3 .claude/land_watch.py:*)")' "$ROOT/plugin/template/.claude/settings.json" >/dev/null && ok "D10 allowlist" || bad "D10 allowlist"
+for kw in '`.land/`' '`.claude/land/`'; do
+  grep -qF -- "$kw" "$ROOT/plugin/skills/init/SKILL.md" && grep -qF -- "$kw" "$ROOT/plugin/skills/upgrade/SKILL.md" && ok "D11 gitignore $kw" || bad "D11 gitignore $kw"
+done
+grep -qF '.claude/land_watch.py' "$ROOT/plugin/skills/upgrade/SKILL.md" && ok "D12 upgrade susulin land_watch" || bad "D12 upgrade susulin land_watch"
+grep -qF '`/land`' "$ROOT/plugin/skills/guide/reference.md" && grep -qF '`/land`' "$ROOT/README.md" && grep -qF '`/land`' "$ROOT/README.id.md" && ok "D13 dokumen" || bad "D13 dokumen"
+
 # === lingkungan ===
 [ -z "$(find "$ROOT/plugin" -name __pycache__ 2>/dev/null)" ] && ok "Z __pycache__ tak ada di plugin/" || bad "Z ada __pycache__ di plugin/"
 

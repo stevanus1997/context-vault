@@ -39,7 +39,7 @@ Unattended/headless → **STOP** dengan satu kalimat ("sync tidak pernah jalan o
 Dispatch `context-vault:sync-reader` **paralel, satu per repo basi** (dengan `name: sync-<slug>`). Isi prompt:
 - root produk, `key`, `path` repo, path file range JSON;
 - daftar file knowledge yang ada (`control/business/*.md`, `invariants.md`, `conventions.md`, `integrations.md`, `design-system.md`, `schema/*.md`, `workspace.yaml`);
-- output `SS markers --root . --status active,draft`, dan `contracts_repos` dari `sync.yaml`;
+- output `SS markers --root . --status active,draft,in_review`, dan `contracts_repos` dari `sync.yaml`;
 - `Balikan SEKALI: SendMessage ke main, lalu teks akhir persis "." (SendMessage tak tersedia → JSON jadi teks akhir)`.
 
 Balikan tak datang lewat pesan → pakai teks akhir agent itu. Teks akhir `.` tanpa pesan apa pun → dispatch ulang repo itu sekali, lalu lewati (patokan repo itu tidak maju).
@@ -49,7 +49,7 @@ Range > 60 commit non-bot/non-own → pecah per 60 (sebut rentang indeks di prom
 ### 4. Tulis ke `control/`
 Controller (bukan subagent) menerapkan usulan tulis sesuai `reference.md` §2:
 - Tiap baris yang ditulis diberi jejak `<!-- sync <sha7> <YYYY-MM-DD> -->` (Markdown) / `# sync <sha7> <YYYY-MM-DD>` (YAML).
-- **Penanda fitur menang:** usulan yang mengenai baris ber-penanda fitur `draft`/`active` (daftar `markers`) **tidak diterapkan**. Tulis versi master **di baris baru di sampingnya** dengan penanda bentrok `<!-- sync-conflict:<f> <sha7> <YYYY-MM-DD> -->` / `# sync-conflict:<f> <sha7> <YYYY-MM-DD>` (bukan jejak sync biasa), lalu masukkan ke `conflicts` ringkasan. `ship` fitur itu yang membereskannya.
+- **Penanda fitur menang:** usulan yang mengenai baris ber-penanda fitur `draft`/`active`/`in_review` (daftar `markers`) **tidak diterapkan**. Tulis versi master **di baris baru di sampingnya** dengan penanda bentrok `<!-- sync-conflict:<f> <sha7> <YYYY-MM-DD> -->` / `# sync-conflict:<f> <sha7> <YYYY-MM-DD>` (bukan jejak sync biasa), lalu masukkan ke `conflicts` ringkasan. `land` fitur itu yang membereskannya.
 - **Larangan (D8):** jangan menambah entri app/package/vendor baru (jadikan `pointers` → `/add-app`, `/add-package`, `/add-integration`), dan jangan menyentuh `control/features/**` / `control/fixes/**`.
 - Usulan yang `old`-nya tidak ketemu persis satu kali → jangan ditebak. Lewati, sebut di chat.
 

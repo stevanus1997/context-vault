@@ -110,6 +110,14 @@ EOF
 inject_below_frontmatter "$DST/skills/build/SKILL.md" "$BANNER_FILE"
 rm -f "$BANNER_FILE"
 
+# --- 8a. Banner land — Kimi belum terbukti bangun dari proses background ---
+LAND_BANNER="$(mktemp)"
+cat > "$LAND_BANNER" <<'EOF'
+> ⛔ **HARNESS KIMI CODE — `land` cuma mode cek-sekali.** Jangan menyalakan `watch`: selalu pakai `scan`, tangani kejadian, lalu selesai. User menjalankan `/land` lagi kapan mau.
+EOF
+inject_below_frontmatter "$DST/skills/land/SKILL.md" "$LAND_BANNER"
+rm -f "$LAND_BANNER"
+
 # --- 8b. Note D5 — build/reference/*.md, sesudah heading pertama ber-'unattended' di tiap file ---
 n_ref=0
 for REF in "$DST"/skills/build/reference/*.md; do

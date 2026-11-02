@@ -30,7 +30,7 @@ Per PR:
 - Dilarang checkout, switch, atau stash di repo user: working tree user tidak boleh berubah.
 - Di akhir (sukses maupun gagal): `git -C <path repo> update-ref -d refs/cv-review/<n>` untuk tiap ref yang dibuat.
 
-Knowledge: `control/conventions.md`, `invariants.md`, `business/flows.md`·`domain.md`, `integrations.md`, `workspace.yaml` (consumer/producer), `schema/<app>.md`. Penanda fitur: `python3 -B ${KIMI_SKILL_DIR}/../../skills/sync/sync_status.py markers --root . --status active,draft`.
+Knowledge: `control/conventions.md`, `invariants.md`, `business/flows.md`·`domain.md`, `integrations.md`, `workspace.yaml` (consumer/producer), `schema/<app>.md`. Penanda fitur: `python3 -B ${KIMI_SKILL_DIR}/../../skills/sync/sync_status.py markers --root . --status active,draft,in_review`.
 
 Kontrak: repo di `contracts_repos` (`control/sync.yaml`). Bandingkan versi di `origin/<base>` **ditambah** versi di PR saudara bila ada (perubahan kontrak satu tiket belum merge). `sync.yaml` absen / tanpa kunci itu → anggap tidak ada repo kontrak, sebut sekali "jalankan `/sync` buat nentuin repo kontrak".
 
@@ -41,7 +41,7 @@ Detail cek per lapis: `reference.md` §1.
 3. **Alur lintas-repo** (`alur`): `business/flows.md`, `invariants.md`, dan consumer/producer lain di `workspace.yaml` yang mestinya ikut berubah tapi tidak ada di PR mana pun.
 4. **Kontrak** (`kontrak`): PR di repo kontrak → kejelasan (nama field, wajib/opsional, versi, dampak ke consumer). PR consumer → field/tipe yang dipakai cocok dengan kontrak (base + PR saudara).
 
-**Penanda fitur** (`${KIMI_SKILL_DIR}/../../rules/feature-marker.md`): entri knowledge ber-penanda fitur `draft`/`active` belum berlaku di master → **bukan** dasar tuduhan. PR yang bentrok dengannya → temuan `level: info` "bakal bentrok sama fitur lo <f>" (tidak memengaruhi vonis).
+**Penanda fitur** (`${KIMI_SKILL_DIR}/../../rules/feature-marker.md`): entri knowledge ber-penanda fitur `draft`/`active`/`in_review` belum berlaku di master → **bukan** dasar tuduhan. PR yang bentrok dengannya → temuan `level: info` "bakal bentrok sama fitur lo <f>" (tidak memengaruhi vonis).
 
 **Tingkat:** `harus` = perilaku salah / langgar aturan tercatat / kontrak putus. `saran` = mutu (error handling, test kurang, keterbacaan). Selera bukan temuan (`${KIMI_SKILL_DIR}/../../rules/anti-yes-man.md`). Tiap temuan menyebut lokasi konkret (`<label> <file>:<baris>`).
 

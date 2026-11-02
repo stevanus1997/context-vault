@@ -78,7 +78,7 @@ Skill-skillnya ngupdate file-file ini sambil kerja, jadi knowledge-nya ikut tumb
 |---|---|---|
 | **1 · Bentuk produknya** | `/discovery` → `/init` → `/roadmap` | ide yang udah divalidasi, scaffold `control/`, backlog terurut |
 | **2 · Pasang fondasi** | `/architect` → `/wire` | stack + invarian platform, skeleton kosong yang udah jalan |
-| **3 · Kirim fitur** *(diulang)* | `/feature` → `/breakdown` → `/build` → `/ship` | aturan bisnis, plan per app, kode yang lulus test, PR |
+| **3 · Kirim fitur** *(diulang)* | `/feature` → `/breakdown` → `/build` → `/ship` → `/land` | aturan bisnis, plan per app, kode yang lulus test, PR yang merge |
 
 Udah punya kode? `/init` bisa ngadopsi monorepo atau multi-repo yang udah ada, dan `/extract` ngisi knowledge bisnis dari kodenya. Jalur samping, kapan aja: `/tweak` perubahan kecil · `/fix` bug · `/debt` utang teknis · `/drop` batalin fitur · `/ask` nanya.
 
@@ -105,6 +105,7 @@ Udah punya kode? `/init` bisa ngadopsi monorepo atau multi-repo yang udah ada, d
 | `/breakdown` | Mecah plan jadi task kecil berurutan lengkap sama test case |
 | `/build` | Eksekusi task, satu subagent implementer per task (TDD) plus review; bisa dilanjut lintas sesi, bisa jalan tanpa diawasi |
 | `/ship` | Gate review, kualitas, dan keamanan, cek keselarasan sama `business.md`, terus satu PR per repo |
+| `/land` | Jagain PR itu dari sesi baru sampai merge: pipeline gagal yang wajar dibenerin sendiri, komentar reviewer dipilah dan dikonfirmasi ke lu sebelum push atau balas, terus tandai fitur shipped |
 | `/drop` | Batalin fitur dan nyimpen alasannya sebagai catatan keputusan |
 
 **Numbuhin produk**: `/feature` manggil ini otomatis kalau fanout nemu hal baru.

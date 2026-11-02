@@ -21,7 +21,7 @@ Tujuan: bantu siapa pun **paham plugin context-vault** — ada skill apa aja, fl
 Keluarkan langkah 1–4 saja dulu (ringkas, muat layar), lalu tawarkan dalami:
 
 1. **Sapaan + apa itu** (1 paragraf): context-vault = lapisan AI + knowledge (bukan kode) buat ngelola produk multi-app bareng Claude Code.
-2. **Peta flow ringkas** (1 baris): `discovery → init → architect → wire → feature → breakdown → build → ship`, plus sebut sekilas lane samping (`fix`/`tweak`/`debt`/`ask`). (Detail tiga varian flow ada di `reference.md`.)
+2. **Peta flow ringkas** (1 baris): `discovery → init → architect → wire → feature → breakdown → build → ship → land`, plus sebut sekilas lane samping (`fix`/`tweak`/`debt`/`ask`). (Detail tiga varian flow ada di `reference.md`.)
 3. **Cheatsheet inti** — tabel pendek "mau X → pakai `/Y`" buat aksi paling umum (mulai produk, bikin fitur, ada bug, perubahan kecil, tanya produk vs tanya plugin). Ambil dari `reference.md`, potong yang paling sering dipakai.
 4. **Mulai dari mana**: `/discovery` (ide masih mentah) atau `/init` (udah jelas / brownfield).
 5. **Tawarkan dalami** (menu): "Mau gw dalemin yang mana? (1) pipeline fitur (2) lane samping fix/tweak/debt (3) scaffolding add-app/package/integration/design-system (4) docs & maintenance (5) tanya bebas". Baru di giliran berikutnya, tarik grup katalog terkait dari `reference.md` dan jelasin.
