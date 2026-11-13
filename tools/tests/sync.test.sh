@@ -269,11 +269,11 @@ grep -qF '/sync' "$ROOT/plugin/skills/guide/reference.md" && grep -qF '/review-p
   && ok "I2 guide menyebut /sync + /review-pr" || bad "I2 guide"
 for r in README.md README.id.md; do
   grep -qF '`/sync`' "$ROOT/$r" && grep -qF '`/review-pr`' "$ROOT/$r" && ok "I3 $r menyebut /sync + /review-pr" || bad "I3 $r"; done
-[ "$(jq -r .version "$ROOT/plugin/.claude-plugin/plugin.json")" = "0.30.0" ] && jq -r .description "$ROOT/plugin/.claude-plugin/plugin.json" | grep -qF 'review-pr (review PR rekan' \
-  && ok "I4 plugin.json 0.30.0 + description" || bad "I4 plugin.json"
-[ "$(jq -r '.metadata.version + " " + .plugins[0].version' "$ROOT/.claude-plugin/marketplace.json")" = "0.30.0 0.30.0" ] \
+[ "$(jq -r .version "$ROOT/plugin/.claude-plugin/plugin.json")" = "0.31.0" ] && jq -r .description "$ROOT/plugin/.claude-plugin/plugin.json" | grep -qF 'review-pr (review PR rekan' \
+  && ok "I4 plugin.json 0.31.0 + description" || bad "I4 plugin.json"
+[ "$(jq -r '.metadata.version + " " + .plugins[0].version' "$ROOT/.claude-plugin/marketplace.json")" = "0.31.0 0.31.0" ] \
   && jq -r '.plugins[0].description' "$ROOT/.claude-plugin/marketplace.json" | grep -qF 'sync & review-pr' \
-  && ok "I4 marketplace.json 0.30.0" || bad "I4 marketplace.json"
+  && ok "I4 marketplace.json 0.31.0" || bad "I4 marketplace.json"
 [ -f "$ROOT/plugin-kimi/skills/sync/sync_status.py" ] && [ -f "$ROOT/plugin-kimi/skills/review-pr/prs.py" ] && [ -f "$ROOT/plugin-kimi/agents/sync-reader.md" ] \
   && [ ! -e "$ROOT/plugin-kimi/hooks" ] && ok "I5 plugin-kimi memuat sync + review-pr, tanpa hooks" || bad "I5 plugin-kimi belum diregen"
 grep -qF 'context-vault:sync-reader' "$ROOT/plugin-kimi/rules/kimi-harness.md" 2>/dev/null && ok "I5 kimi-harness memetakan sync-reader" || bad "I5 kimi-harness tanpa sync-reader"
