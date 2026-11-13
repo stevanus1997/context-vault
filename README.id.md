@@ -19,13 +19,18 @@ Ada storefront, API, admin panel, mungkin juga app mobile. Claude Code cuma ngel
   fanout  → kena storefront, api, admin
   plan    → plans/storefront.md · plans/api.md · plans/admin.md
 
-> /breakdown checkout-v2         → tasks.yaml (14 task kecil, masing-masing ada test case)
+> /breakdown checkout-v2         → tasks.yaml (14 task kecil ber-test case + 1 task acceptance)
 > /build checkout-v2 --unattended   # jalan semalaman, gate berisiko nunggu review lo
+  acceptance → flow business.md dijalanin ke app hidup        ✔ 6/6 teramati
 
 > /ship checkout-v2
   ✔ code review   ✔ security gate   ✔ sesuai business.md
-  → PR: acme/web#212 · acme/api#87 · acme/admin#45
+  → PR: acme/web#212 · acme/api#87 · acme/admin#45   (in review)
   → halaman review buat rekan · doc produk di-render ulang
+
+> /land checkout-v2              # sesi baru, nunggu di background
+  → CI api#87 dibenerin · 2 komentar reviewer dibalas (tiap-tiapnya lo setujui)
+  → 3 PR merge semua → checkout-v2 shipped
 ```
 <sub>Contoh output.</sub>
 
@@ -54,12 +59,16 @@ control/
 ├─ design-system.md  # token, motion, komponen primitif
 ├─ roadmap.md        # backlog terurut
 ├─ debt.yaml         # catatan utang teknis
+├─ sync.yaml         # patokan terakhir control/ nyusul branch utama tiap repo
+├─ fixes/            # fix bug pasca-ship, satu folder per fix
 └─ features/
    └─ checkout-v2/
+      ├─ feature.yaml    # status: draft → active → in_review → shipped
       ├─ business.md     # alasan + aturannya
       ├─ fanout.md       # app mana aja yang kena
       ├─ plans/api.md    # satu plan per app
-      └─ tasks.yaml      # yang dieksekusi /build
+      ├─ tasks.yaml      # yang dieksekusi /build
+      └─ gates.yaml      # gate yang diantriin build unattended
 ```
 
 Skill-skillnya ngupdate file-file ini sambil kerja, jadi knowledge-nya ikut tumbuh tiap lo bikin fitur, bukan basi di wiki.
@@ -70,7 +79,9 @@ Skill-skillnya ngupdate file-file ini sambil kerja, jadi knowledge-nya ikut tumb
 - **Agent red-team, bukan yes-man.** `critic` nyerang proposal di gate penting; `security-critic` me-review diff yang nyentuh pembayaran atau data pribadi.
 - **Security gate sesuai tingkat risiko.** `/ship` nge-scan tiap fitur buat secret yang bocor dan PII di log, terus jalanin security review penuh kalau fiturnya ngurus uang atau data pribadi.
 - **Knowledge yang nggak melenceng.** `/ask` jawab dari `control/` lengkap sama sumbernya, nandain catatan yang beda sama kode, terus nunjukin skill yang bisa benerin.
+- **Dites ke app beneran.** Tiap fitur ditutup task acceptance: AI nyalain app-nya terus jalanin tiap flow `business.md`, dengan observasi nyata per kasus. Kasus yang gagal jadi task fix, dan acceptance diulang tiap kali kodenya berubah sesudahnya.
 - **Build semalaman yang bisa dipercaya.** `/build --unattended` terus jalan, sementara langkah berisiko (migrasi destructive, perubahan sensitif keamanan) nunggu di antrian review buat pagi.
+- **Ngerti kerja tim.** Kalau rekan merge kode tanpa nyentuh `control/`, cek di awal sesi bakal nyadar, dan skill yang mutusin sesuatu dari knowledge nawarin `/sync` dulu, jadi nggak ada yang dituduh "melanggar aturan" yang ternyata udah dilangkahi kodenya.
 
 ## Alur kerja
 
@@ -80,11 +91,11 @@ Skill-skillnya ngupdate file-file ini sambil kerja, jadi knowledge-nya ikut tumb
 | **2 · Pasang fondasi** | `/architect` → `/wire` | stack + invarian platform, skeleton kosong yang udah jalan |
 | **3 · Kirim fitur** *(diulang)* | `/feature` → `/breakdown` → `/build` → `/ship` → `/land` | aturan bisnis, plan per app, kode yang lulus test, PR yang merge |
 
-Udah punya kode? `/init` bisa ngadopsi monorepo atau multi-repo yang udah ada, dan `/extract` ngisi knowledge bisnis dari kodenya. Jalur samping, kapan aja: `/tweak` perubahan kecil · `/fix` bug · `/debt` utang teknis · `/drop` batalin fitur · `/ask` nanya.
+Udah punya kode? `/init` bisa ngadopsi monorepo atau multi-repo yang udah ada, dan `/extract` ngisi knowledge bisnis dari kodenya. Jalur samping, kapan aja: `/tweak` perubahan kecil · `/fix` bug · `/debt` utang teknis · `/drop` batalin fitur · `/ask` nanya. Kerja tim: `/sync` abis pull · `/review-pr` buat PR rekan.
 
 ## Isinya apa aja
 
-26 skill, 2 agent red-team, dan seperangkat rules yang bikin mereka tetap jujur.
+29 skill (`/intake`, `/fanout`, dan `/plan` biasanya jalan di dalam `/feature`), 2 agent red-team, dan seperangkat rules yang bikin mereka tetap jujur.
 
 **Mulai produk**
 
@@ -164,6 +175,27 @@ Terus:
 **Pantau progres:** di Claude Code, panel **🔨 build** kebuka sendiri waktu ada build jalan (`/cv-panel` buat buka/tutup manual): task ke berapa, lane yang jalan paralel, yang ketahan + alasannya, gate yang antri, dan estimasi sisa waktu (rentang, muncul sesudah 3 task kelar). Ada juga status line satu baris plus toast kalau ada yang nyangkut, dan `drive.sh` nampilin baris progres live di terminal. Read-only, butuh `python3`. Panelnya cuma ada di Claude Code (di Kimi cuma baris `drive.sh`).
 
 `/breakdown` juga bisa nyatet kerja non-file (`actions:` buat migrasi, install, env) dan langkah manusia (`manual:` / `needs_human`). `/build` ngejalanin dan verifikasi semuanya (migrasi lewat gate; yang additive bisa auto-apply kalau lo opt-in) plus jalanin test integrasi lintas-app. `/build` dan `/ship` ngerti multi-repo: satu branch dan satu PR per repo.
+</details>
+
+<details>
+<summary><b>Ngawal PR sampai merge (/land)</b></summary>
+
+`/ship` berhenti di `in_review`; `/land <fitur>` lanjutin dari situ, idealnya di sesi baru. Dia nyalain watcher di background (nggak makan token selama nunggu) dan bangun kalau ada kejadian di PR-nya. Pipeline gagal yang fix-nya wajar dibenerin, dites, dan di-push sendiri, di worktree terpisah. Komentar reviewer dipilah dan dikonfirmasi ke lo dulu sebelum ada yang di-push atau dibalas di GitHub. Konflik merge ditawarin **Beresin** / **Biar gw aja**, nggak pernah di-rebase atau force-push. Begitu semua PR merge, fiturnya ditandai `shipped` dan doc di-render ulang.
+
+- `/land <fitur> sekali` ngecek sekali terus selesai, tanpa watcher.
+- `/land <link PR> …` jagain PR tanpa fitur (cuma jaga dan konfirmasi, nggak pernah push sendiri).
+- Laptop ketutup? Jalanin `/land <fitur>` lagi; keadaannya disusul dari GitHub.
+- Butuh `gh` yang udah login dan `python3`. Produk yang dibikin sebelum 0.30 perlu `/upgrade` dulu.
+</details>
+
+<details>
+<summary><b>Kerja bareng tim</b></summary>
+
+Rekan merge kode tanpa ngupdate `control/`, jadi catatannya pelan-pelan basi. `/sync` nyusulin: bandingin branch utama tiap repo sama patokan terakhir di `control/sync.yaml`, baca commit yang bukan dari bot aja, terus nyatet yang berubah (fitur baru, aturan bisnis, aturan coding) ke file knowledge yang pas, lalu buka ringkasan bisnis satu halaman. Catatan milik fitur yang belum merge nggak disentuh.
+
+Nggak perlu inget buat jalanin: hook di awal sesi nyadar kalau `control/` ketinggalan (cuma git lokal, tanpa fetch), dan `/feature`, `/plan`, `/fix`, `/tweak`, `/review-pr` nawarin sinkron dulu sebelum mutusin apa pun. Kalau di-skip, temuan yang bersandar ke catatan basi dikasih label begitu.
+
+`/review-pr` me-review PR rekan terhadap `control/` dan branch utama, ngegabungin PR satu tiket di repo lain jadi satu review, dan ngasih draft komentar tinggal copy. Nggak pernah posting ke GitHub.
 </details>
 
 <details>

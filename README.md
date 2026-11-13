@@ -19,13 +19,18 @@ A storefront, an API, an admin panel, maybe a mobile app. Claude Code only sees 
   fanout  → touches storefront, api, admin
   plan    → plans/storefront.md · plans/api.md · plans/admin.md
 
-> /breakdown checkout-v2         → tasks.yaml (14 small tasks, each with test cases)
+> /breakdown checkout-v2         → tasks.yaml (14 small tasks with test cases + 1 acceptance task)
 > /build checkout-v2 --unattended   # runs overnight, risky gates wait for your review
+  acceptance → business.md flows run against the live apps   ✔ 6/6 observed
 
 > /ship checkout-v2
   ✔ code review   ✔ security gate   ✔ matches business.md
-  → PRs: acme/web#212 · acme/api#87 · acme/admin#45
+  → PRs: acme/web#212 · acme/api#87 · acme/admin#45   (in review)
   → review page for teammates · product docs re-rendered
+
+> /land checkout-v2              # fresh session, waits in the background
+  → api#87 CI fixed · 2 reviewer comments answered (you approved each)
+  → all 3 PRs merged → checkout-v2 shipped
 ```
 <sub>Illustrative output.</sub>
 
@@ -54,12 +59,16 @@ control/
 ├─ design-system.md  # tokens, motion, primitive components
 ├─ roadmap.md        # ordered backlog
 ├─ debt.yaml         # tech-debt registry
+├─ sync.yaml         # where control/ last caught up with each repo's main branch
+├─ fixes/            # post-ship bug fixes, one folder each
 └─ features/
    └─ checkout-v2/
+      ├─ feature.yaml    # status: draft → active → in_review → shipped
       ├─ business.md     # the why + the rules
       ├─ fanout.md       # which apps are touched
       ├─ plans/api.md    # one plan per app
-      └─ tasks.yaml      # what /build executes
+      ├─ tasks.yaml      # what /build executes
+      └─ gates.yaml      # gates queued by unattended builds
 ```
 
 Skills update these files as part of their normal work, so knowledge grows as you build features instead of rotting in a wiki.
@@ -70,7 +79,9 @@ Skills update these files as part of their normal work, so knowledge grows as yo
 - **Red-team agents, not yes-men.** `critic` attacks proposals at key gates; `security-critic` reviews diffs that touch payments or personal data.
 - **Security gate scaled to risk.** `/ship` scans every feature for leaked secrets and PII in logs, and runs a full security review when the feature handles money or personal data.
 - **Knowledge that doesn't drift.** `/ask` answers from `control/` with sources, flags notes that disagree with the code, and points you to the skill that fixes them.
+- **Tested against the real app.** Every feature ends with an acceptance task: the AI boots the apps and runs each `business.md` flow, with a real observation per case. A failing case becomes a fix task, and acceptance re-runs whenever the code changes after it.
 - **Overnight builds you can trust.** `/build --unattended` keeps going while risky steps (destructive migrations, security-sensitive changes) wait in a review queue for the morning.
+- **Team-aware.** When teammates merge code without touching `control/`, a session-start check notices, and skills that decide from knowledge offer `/sync` first, so nobody gets flagged for "breaking a rule" that the code already moved past.
 
 ## The workflow
 
@@ -80,11 +91,11 @@ Skills update these files as part of their normal work, so knowledge grows as yo
 | **2 · Lay the foundation** | `/architect` → `/wire` | stack + platform invariants, an empty skeleton that runs |
 | **3 · Ship features** *(repeat)* | `/feature` → `/breakdown` → `/build` → `/ship` → `/land` | business rules, per-app plans, tested code, merged PRs |
 
-Already have code? `/init` adopts an existing monorepo or multi-repo, and `/extract` back-fills business knowledge from it. Side lanes, any time: `/tweak` small changes · `/fix` bugs · `/debt` tech debt · `/drop` cancel a feature · `/ask` questions.
+Already have code? `/init` adopts an existing monorepo or multi-repo, and `/extract` back-fills business knowledge from it. Side lanes, any time: `/tweak` small changes · `/fix` bugs · `/debt` tech debt · `/drop` cancel a feature · `/ask` questions. In a team: `/sync` after pulling · `/review-pr` for teammates' PRs.
 
 ## What's inside
 
-26 skills, 2 red-team agents, and a set of rules that keep them honest.
+29 skills (`/intake`, `/fanout` and `/plan` usually run inside `/feature`), 2 red-team agents, and a set of rules that keep them honest.
 
 **Start a product**
 
@@ -164,6 +175,27 @@ Then:
 **Watch progress:** in Claude Code, the **🔨 build** panel opens by itself while a build runs (`/cv-panel` toggles it): current task, parallel lanes, what's held and why, queued gates, and a remaining-time range (shown after 3 tasks finish). There's a one-line status line plus a toast when something gets stuck, and `drive.sh` prints a live progress line in the terminal. Read-only, needs `python3`. The panel is Claude Code only (Kimi gets the `drive.sh` line).
 
 `/breakdown` can also describe non-file work (`actions:` for migrations, installs, env) and human steps (`manual:` / `needs_human`). `/build` runs and verifies them (migrations go through a gate; additive ones can auto-apply when you opt in) and runs cross-app integration tests. `/build` and `/ship` are multi-repo aware: one branch and one PR per repo.
+</details>
+
+<details>
+<summary><b>Landing PRs (/land)</b></summary>
+
+`/ship` stops at `in_review`; `/land <feature>` takes it from there, ideally in a fresh session. It runs a watcher in the background (no tokens spent while waiting) and wakes up when something happens on the PRs. Pipeline failures with a reasonable fix get fixed, tested and pushed on their own, in a separate worktree. Reviewer comments are sorted and confirmed with you before anything is pushed or replied to on GitHub. Merge conflicts are offered as **fix it** / **I'll do it**, never rebased or force-pushed. When every PR is merged, the feature is marked `shipped` and the docs are re-rendered.
+
+- `/land <feature> sekali` checks once and exits, no watcher.
+- `/land <PR link> …` watches PRs without a feature (watch and confirm only, never pushes on its own).
+- Closed the laptop? Run `/land <feature>` again; it catches up from GitHub.
+- Needs `gh` signed in and `python3`. Products created before 0.30 need `/upgrade` first.
+</details>
+
+<details>
+<summary><b>Working in a team</b></summary>
+
+Teammates merge code without updating `control/`, so the notes drift. `/sync` catches them up: it compares each repo's main branch with the last sync point in `control/sync.yaml`, reads only the non-bot commits, and writes what changed (new features, business rules, coding rules) to the right knowledge files, then opens a one-page business summary. Notes owned by a feature that hasn't merged yet are left alone.
+
+You don't have to remember to run it: a session-start hook notices when `control/` is behind (local git only, no fetch), and `/feature`, `/plan`, `/fix`, `/tweak` and `/review-pr` offer to sync before they decide anything. Skip it, and findings based on stale notes are labelled as such.
+
+`/review-pr` reviews a teammate's PR against `control/` and the main branch, groups PRs from the same ticket across repos into one review, and gives you copy-ready comments. It never posts to GitHub.
 </details>
 
 <details>
