@@ -10,6 +10,17 @@ Beberapa test nge-grep `README.md` (versi Inggris), jadi string ini wajib tetap 
 - `/share` (`tools/tests/share.test.sh` W6)
 - `Push when actions required` (`tools/tests/ask-user.test.sh` D2)
 
+## Rilis: tag + GitHub Release
+
+Tiap versi punya tag `v<versi>` di commit bump-nya + GitHub Release berisi catatan update **bahasa Inggris** (buat pengguna plugin, bukan daftar commit). Urutan, sesudah commit bump versi (plugin.json + marketplace.json) dan regen Kimi:
+
+1. Push commit-nya ke `main` dulu (script menolak commit yang belum ada di remote).
+2. `bash tools/release.sh draft` → versi, tag sebelumnya, semua commit sejak tag itu, plus kerangka catatan.
+3. Tulis catatan ke file di luar repo (mis. `/tmp/v0.32.0.md`): baris pertama `title: <judul ≤60 karakter>`, lalu `Released <tgl>.`, satu-dua kalimat, seksi `### New` / `### Changed` / `### Fixed` / `### Docs` (yang kosong dibuang), terakhir baris `**Full diff:**`. Gabung commit yang berkaitan; spec/plan/regen Kimi/bump nggak jadi poin sendiri.
+4. Akun gh aktif harus punya akses tulis ke repo (`gh auth switch --user <pemilik>`; script ngecek & nolak kalau nggak). `bash tools/release.sh publish /tmp/v0.32.0.md --dry-run`, lalu tanpa `--dry-run`. Switch akun balik kalau perlu.
+
+`publish` bikin tag beranotasi (tanggal = tanggal commit), push tag lewat credential helper gh, lalu `gh release create … --latest`. Gagal di tengah → jalankan ulang perintah yang sama (tag di commit yang sama dipakai lagi). Backfill versi lama: `--ref <sha> --version <v> --not-latest`. Test: `bash tools/tests/release.test.sh`.
+
 ## Kimi Code: sumber kebenaran & ritual rilis
 
 Plugin ini juga bisa dipakai di [Kimi Code CLI](https://www.kimi.com/code/docs/en/) (MoonshotAI) lewat tree hasil generate `plugin-kimi/`. Source of truth tetap `plugin/` (format Claude Code) — **jangan edit `plugin-kimi/` langsung**; edit `plugin/` lalu regen.
