@@ -102,7 +102,7 @@ Udah punya kode? `/init` bisa ngadopsi monorepo atau multi-repo yang udah ada, d
 | Skill&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Fungsinya |
 |---|---|
 | `/feature` | Ngejalanin pipeline fitur, ada gate di tiap tahap: `/intake` (bisnis) → `/fanout` (app mana) → `/plan` (plan teknis per app) |
-| `/breakdown` | Mecah plan jadi task kecil berurutan lengkap sama test case |
+| `/breakdown` | Mecah plan jadi task kecil berurutan lengkap sama test case, ditutup task acceptance wajib: AI ngejalanin flow `business.md` di app yang lagi jalan |
 | `/build` | Eksekusi task, satu subagent implementer per task (TDD) plus review; bisa dilanjut lintas sesi, bisa jalan tanpa diawasi |
 | `/ship` | Gate review, kualitas, dan keamanan, cek keselarasan sama `business.md`, terus satu PR per repo |
 | `/land` | Jagain PR itu dari sesi baru sampai merge: pipeline gagal yang wajar dibenerin sendiri, komentar reviewer dipilah dan dikonfirmasi ke lu sebelum push atau balas, terus tandai fitur shipped |

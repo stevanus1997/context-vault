@@ -102,7 +102,7 @@ Already have code? `/init` adopts an existing monorepo or multi-repo, and `/extr
 | Skill&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | What it does |
 |---|---|
 | `/feature` | Runs the feature pipeline, with a gate at each stage: `/intake` (business) → `/fanout` (which apps) → `/plan` (per-app technical plan) |
-| `/breakdown` | Splits the plan into small ordered tasks with test cases |
+| `/breakdown` | Splits the plan into small ordered tasks with test cases, closed by a mandatory acceptance task where the AI runs the `business.md` flows against the live app |
 | `/build` | Executes tasks with one implementer subagent per task (TDD) plus review; resumable, can run unattended |
 | `/ship` | Review, quality and security gates, an alignment check against `business.md`, then one PR per repo |
 | `/land` | Watches those PRs from a fresh session until they merge: fixes reasonable pipeline failures on its own, sorts reviewer comments and confirms with you before pushing or replying, then marks the feature shipped |

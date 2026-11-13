@@ -48,3 +48,5 @@ Balikan chat: status + commit SHA + 1 baris hasil test + concern.
 
 ### Task integrasi (`unit: integration`)
 Brief-writer merakit brief-nya (pola file-handoff sama): app mana yang di-boot (path/stack dari `workspace.yaml`), kontrak `_shared.md` yang diuji, kasus `test` roundtrip. Subagent menjalankan kedua app bareng (mis. start `api`, panggil dari `web`/HTTP), assert shape data cocok dua sisi. Status sama (DONE/BLOCKED/...). Konteks berat (boot+log) tetap di subagent.
+
+**`kind: acceptance`:** brief memuat app yang di-boot (unit `apps[]` dari `deps`, path/stack `workspace.yaml`), path `business.md` fitur (dibaca subagent — slot `Flow/Skenario` + `Aturan` sebagai konteks kasus), daftar kasus `test` verbatim, catatan "tak diuji otomatis" dari `approach`, dan format report wajib: SATU baris per kasus = `lulus|gagal` + observasi nyata (request/response status+shape, atau path screenshot). Subagent TIDAK mengubah kode app; boleh menulis + commit test e2e HANYA bila repo sudah punya infra e2e (`conventions.md`). Kasus gagal → laporkan apa adanya (DONE_WITH_CONCERNS + daftar gagal), jangan dibenerin sendiri.

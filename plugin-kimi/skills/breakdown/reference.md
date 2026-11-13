@@ -57,6 +57,20 @@ milestones:
           - <roundtrip nyata; shape data cocok di dua sisi kontrak _shared.md>
         deps: [<id sisi A>, <id sisi B>]   # KEDUA sisi kontrak
         status: pending
+  # Milestone terakhir — task acceptance (WAJIB tiap fitur, juga 1-app; §D-7)
+  - id: M_ACC
+    title: Acceptance — AI ngetes hasil jadi
+    tasks:
+      - id: T_ACC
+        unit: integration           # pseudo-unit yang sama: boot app NYATA dari unit task di deps
+        kind: acceptance
+        desc: <uji flow business.md di app hidup>
+        approach: boot app runnable dari unit di deps (path/stack workspace.yaml), jalankan tiap kasus test terhadap app hidup, catat observasi
+        test:                      # transkripsi business.md Flow/Skenario + Aturan yang teramati
+          - <happy-path: langkah → hasil yang teramati>
+          - <skenario edge/gagal: kondisi → yang terjadi>
+        deps: [<SEMUA id task lain>]
+        status: pending
 ```
 
 ## B. Aturan granularitas & enrich
@@ -74,7 +88,7 @@ milestones:
 - **`actions:` untuk kerja non-file.** Migrasi DB, `npm install`, wiring env/secret, perintah infra TIDAK boleh terkubur di `approach` — taruh di `actions:` biar `build` eksekusi & verifikasi eksplisit. `install`/`cmd` auto; `migrate` lewat GATE saat attended — unattended: `kind: additive` auto-apply bila perintah apply di-allowlist (`wire` 5.5), `destructive`/`backfill` di-hold `needs_human` (amandemen 2026-08-27); `env` ditulis `build` (nilai dari `manual:`/user). **Tugas `migrate` WAJIB bawa `kind`(additive|destructive|backfill)+`affects`([tabel/Table.kolom])** (§A & §D-1) — basis gate dampak H3 (`rules/migration-impact.md`); WAJIB di sisi **penulis**, **bukan** validasi runtime (gate tetap advisory; degrade kalau tak ada).
 - **`manual:` untuk langkah AI-nggak-bisa.** Bikin OAuth app, set secret produksi, provision DB → daftar di `manual:`; `build` pause (`needs_human`) & lapor checklist.
 - **`test:` boleh non-unit.** Untuk task non-unit-testable (config, scaffold, shared types), `test:` boleh berisi kriteria seperti "typecheck hijau"/"build sukses"/"file ada & ke-import"; size-nya "satu artifact koheren".
-- **Metadata `kind:` (traceability, tak ubah eksekusi).** Task tanpa `kind` = implicit `feat`. `kind: fix` (+ `corrects: <id-task>` + `observed:`) = korektif defect (lane `fix`/embed `build`). `kind: debt` (+ `pays_debt: <id-debt>` + `observed:`) = pelunasan utang teknis dari `control/debt.yaml` (refactor: perilaku TETAP sama, `test` membuktikan tak ada regresi). `build` memperlakukan `kind`/`corrects`/`observed`/`pays_debt` sebagai metadata. Task `kind: fix`/`kind: debt` yang tak ber-asal-`plan` **dipertahankan** saat re-breakdown (SKILL.md §7).
+- **Metadata `kind:` (traceability, tak ubah eksekusi).** Task tanpa `kind` = implicit `feat`. `kind: fix` (+ `corrects: <id-task>` + `observed:`) = korektif defect (lane `fix`/embed `build`). `kind: debt` (+ `pays_debt: <id-debt>` + `observed:`) = pelunasan utang teknis dari `control/debt.yaml` (refactor: perilaku TETAP sama, `test` membuktikan tak ada regresi). `kind: acceptance` (HANYA di `unit: integration`, satu per fitur) = task penutup yang ngetes flow `business.md` di app hidup (§D-7) — beda dari `kind` lain, ini MENGUBAH verifikasi `build` (`build/SKILL.md` step 4). `build` memperlakukan `kind`/`corrects`/`observed`/`pays_debt` sebagai metadata. Task `kind: fix`/`kind: debt` yang tak ber-asal-`plan` **dipertahankan** saat re-breakdown (SKILL.md §7).
 
 ## C. Contoh (fitur `auth`, 2 app — api + web)
 
@@ -189,22 +203,43 @@ milestones:
     title: OAuth Google (login+register, 1 flow)
     tasks: []   # T13 api callback, T14 web button
   # M4 Facebook, M5 Apple — pola sama
+  - id: M_ACC
+    title: Acceptance — AI ngetes hasil jadi
+    tasks:
+      - id: T_ACC
+        unit: integration
+        kind: acceptance
+        desc: flow auth business.md di api + web hidup
+        approach: boot api + web, jalankan tiap kasus lewat web (UI) atau HTTP ke api, catat status/shape/screenshot
+        test:
+          - daftar email baru di halaman register → masuk sebagai user itu, cookie session ada
+          - daftar pakai email yang sudah dipakai → pesan "email sudah terdaftar", tak ada user ganda di DB
+          - login password salah → pesan error, tetap di halaman login
+          - logout → balik ke halaman login, akses halaman ber-login ditolak
+        deps: [T1, T2, T3, T4, T5, T6, T_PKG]   # + task M2/M3 saat diisi
+        status: pending
 ```
 
 ## D. Kerja non-file, langkah manual, & task integrasi
 
 1. **`actions` (kerja AI bisa, non-file).** Jenis: `install` (auto), `cmd` (auto), `migrate` (attended: GATE; unattended: additive auto-apply bila di-allowlist, destructive/backfill hold `needs_human` — amandemen 2026-08-27), `env` (build tulis ke `.env`). `build` mengeksekusi + memverifikasi tiap action sebagai bagian dari `done`. **`migrate` membawa `kind`+`affects`** (§A): `kind` = additive|destructive|backfill (action-scoped `migrate.kind`, beda dari `kind:` level-task), `affects` = [tabel, Table.kolom]. **`migrate` cuma sah di unit pemilik skema (amandemen 2026-09-14):** `unit` task ini HARUS `== schema_owner(unit)` (`${KIMI_SKILL_DIR}/../../rules/db-ownership.md`) — di-tegakkan sebagai STOP di gate validasi unit (SKILL.md step 1). Larangan lama tetap berlaku dan ortogonal: `unit: <package>` DILARANG `actions: [migrate]` (§D-4). Dibaca gate dampak H3 (`${KIMI_SKILL_DIR}/../../rules/migration-impact.md`).
 2. **`manual` + status `needs_human` (kerja manusia).** Task ber-`manual:` yang belum beres → `build` set `status: needs_human` (attended: **STOP SELURUH build**, lapor checklist, lanjut setelah user beresin; unattended: tandai lalu **lanjut task lain** — subtree-nya otomatis tak READY, drain pagi yang beresin — amandemen 2026-08-27). `needs_human` ≠ `blocked` (blocked = ada error/bug; needs_human = bener, nunggu manusia).
-3. **Task integrasi (`unit: integration`).** Untuk tiap dependency lintas-app INTERNAL (app↔app / package↔consumer) di `_shared.md`/`fanout.md` — **BUKAN baris kontrak vendor eksternal yang `plan` §2c promote ke `_shared.md`** (itu app↔vendor; ditangani §D-5 inbound-eksternal pada `unit: <Receiver app>`, BUKAN pseudo-unit `integration` yang `deps`-nya tak punya sisi-vendor yang resolvable) — munculkan SATU task integrasi: `deps` ke KEDUA sisi kontrak, `test` = roundtrip end-to-end nyata. Pseudo-unit `integration` tak punya `path`/repo sendiri (jalan di atas repo unit di `deps`-nya). Fitur 1-app tanpa `_shared.md` → tidak perlu.
+3. **Task integrasi (`unit: integration`).** Untuk tiap dependency lintas-app INTERNAL (app↔app / package↔consumer) di `_shared.md`/`fanout.md` — **BUKAN baris kontrak vendor eksternal yang `plan` §2c promote ke `_shared.md`** (itu app↔vendor; ditangani §D-5 inbound-eksternal pada `unit: <Receiver app>`, BUKAN pseudo-unit `integration` yang `deps`-nya tak punya sisi-vendor yang resolvable) — munculkan SATU task integrasi: `deps` ke KEDUA sisi kontrak, `test` = roundtrip end-to-end nyata. Pseudo-unit `integration` tak punya `path`/repo sendiri (jalan di atas repo unit di `deps`-nya). Fitur 1-app tanpa `_shared.md` → tidak perlu (task acceptance §D-7 tetap wajib).
 4. **Task package & fan-IN.** Task yang hidup di shared package → `unit: <nama-pkg>` (cocok `packages[].name`); **DILARANG** `actions: [migrate]`/`actions: [env]` (package tak punya DB/infra); `test` = typecheck/unit exports. **Fan-IN (saat `plans/<pkg>.md` ber-flag `BREAKING`):** terbitkan 1 task `unit: <pkg>` (ubah package) + **1 update-task per consumer** (`unit: <consumer-app>`, `deps: [task-pkg]`) untuk tiap nama di `packages[<pkg>].consumers` + 1 task `unit: integration` (roundtrip package↔consumer). Pseudo-unit `integration` diperluas mencakup roundtrip package↔consumer (boot consumer app, panggil exports package, assert sesuai kontrak `plans/<pkg>.md`).
 5. **Task inbound-eksternal (webhook vendor).** Saat `plans/<Receiver app>.md` memuat baris "kebutuhan receiver" (dari `plan` §2c — vendor inbound/both di `integrations.md`), terbitkan task biasa `unit: <Receiver app>` (app NYATA — BUKAN pseudo-unit `integration`): `approach` = "terima webhook `<vendor>`: verifikasi signature per `integrations.md`, idempotent (dedup key), tahan replay"; `actions` boleh `env: [<VENDOR>_WEBHOOK_SECRET]` (NAMA var; `build` tulis ke `.env`, nilai GATE/manual); `test` (kasus keamanan baku) = "signature salah → tolak 401/403", "id/event duplikat → respons sama, tak proses 2× (idempotent/replay)". Vendor **outbound** = task biasa pada app pemanggil (panggil API vendor + idempotency-key + retry sesuai `integrations.md`) — tak butuh varian khusus.
 6. **Task UI ber-mockup (design fidelity).** Task yang `plans/<app>.md`-nya memuat baris `Mockup:` membawa key `mockup: <path>` (pointer ke file di `control/features/<fitur>/mockups/`). **Banyak task boleh berbagi satu path** (satu file mockup berisi banyak layar) — **layar mana** ditentukan dari `desc` task; tak ada mekanisme region/anchor. `mockup:` = metadata seperti `kind:`/`actions:` → **dipertahankan saat re-breakdown** bila plan tak berubah (SKILL.md §7). `build` yang mem-paste/melampirkan isinya ke implementer (`build/reference.md` §B). DILARANG pada `unit: <package>` (package tak punya UI).
+7. **Task acceptance (`kind: acceptance`, WAJIB tiap fitur).** Satu task `unit: integration` di milestone terakhir sendiri (`M_ACC`), `deps` = SEMUA task lain di `tasks.yaml` (bukan cuma daun — deterministik, gampang dicek). Beda dari task integrasi §D-3: integrasi = uji kontrak SATU sambungan sedini mungkin; acceptance = uji flow bisnis UTUH sesudah semuanya jadi. Fitur multi-app punya keduanya. Tanpa `files:`; batas ">5 kasus = pecah" (§B) tak berlaku — satu kasus per flow/skenario, sebanyak yang ada di `business.md`.
+   - **Isi `test`:** transkripsi slot `business.md` `Flow/Skenario` — tiap happy-path + tiap skenario edge/gagal = satu kasus; tambah kasus dari `Aturan` yang bisa diamati dari luar (mis. "kuota habis → tombol nonaktif"). Bahasa perilaku di app hidup (aksi → hasil yang kelihatan), BUKAN nama fungsi/endpoint internal. Jangan ngarang flow di luar `business.md`.
+   - **Flow yang tak bisa dijalankan AI** (vendor nyata tanpa sandbox, secret produksi, perangkat fisik): pakai sandbox/stub vendor bila `integrations.md` menyediakan; kalau tidak ada sama sekali → keluarkan dari `test` dan tulis di `approach` "tak diuji otomatis: <flow> — <alasan>" supaya muncul di report & gate. JANGAN taruh di `manual:` (itu bikin task `needs_human` sebelum jalan).
+   - **Waiver:** satu-satunya jalan tanpa task ini = waiver manusia eksplisit di gate (SKILL §4), alasan dicatat di PETA TASK — mis. fitur package-only / tanpa surface yang bisa dijalankan.
+   - **Re-breakdown:** `status` dipertahankan seperti task lain, tapi `deps` dihitung ulang; `deps` berubah atau `business.md` berubah saat ia `done` → reset `pending` (SKILL §7).
+   - **Di `build`:** dieksekusi sebagai pseudo-unit `integration` (boot app nyata, lock semua repo `deps`), dengan verifikasi khusus + jalan ulang saat basi (`build/SKILL.md` step 3/4/7).
 
 ## E. Rubrik critic `tasks.yaml` (review buildability)
 
 Saat `breakdown` invoke subagent `critic` atas `tasks.yaml` (WAJIB bila `risk != low`; lihat SKILL §6), bekali rubrik 4-kategori ini. Critic me-review **artefak rencana-kerja, BUKAN kode** — analog `plan-document-reviewer` superpowers, dikalibrasi cuma nge-flag yang **benar-benar memblokir implementasi** (bukan selera).
 
-1. **Completeness** — tiap baris `Model/Schema` & keputusan `_shared.md` di `plans/*` ke-map ke task/`action`/`manual`? (cermin palang coverage SKILL §4). Tiap vendor inbound punya task receiver? Tiap consumer `BREAKING` punya update-task?
+1. **Completeness** — tiap baris `Model/Schema` & keputusan `_shared.md` di `plans/*` ke-map ke task/`action`/`manual`? (cermin palang coverage SKILL §4). Tiap vendor inbound punya task receiver? Tiap consumer `BREAKING` punya update-task? Ada task `kind: acceptance` (atau waiver tercatat), `deps`-nya = semua task lain, dan `test`-nya mencakup tiap flow/skenario `business.md`?
 2. **Spec-alignment** — task selaras `business.md` + `plans/*`? Ada task yang **melar di luar** plan (scope creep) atau plan-item yang **hilang**? Verdict `reuse:` ditranskripsi setia (tak diam-diam jadi `create`)?
 3. **Decomposition** — granularitas wajar (1 task = unit testable terkecil; >~3 file inti / >5 kasus test = sinyal pecah)? Milestone tak kegedean? Urutan milestone masuk akal (fondasi dulu)?
 4. **Buildability** — "bisa nggak implementer ngikutin task ini tanpa nyangkut?": tiap task punya `files`+`approach`+`test` yang **actionable**; tiap `dep` resolve ke task NYATA (tak ada orphan/typo id); **tak ada siklus dep**; tiap task testable independen; tugas `actions: migrate` bawa `kind`+`affects`.
